@@ -94,7 +94,13 @@ export type Perfil = {
   /** colunas somadas no rodapé quando esta tabela aparece como grade em outra Tela
       (padrão: todas as colunas decimais) */
   totais?: string[];
+  /**
+   * Extrato com créditos e débitos: quando a tabela aparece como grade em outra
+   * Tela, o rodapé mostra créditos, débitos e saldo em vez de somar tudo junto.
+   */
+  saldo?: { valor: string; tipo: string; credito: string[]; debito: string[] };
   /** layout da visão "Tela"; colunas não citadas vão para "Outros campos" */
+
   tela?: Tela;
 };
 
@@ -107,6 +113,7 @@ const TELA_FATGOR: Tela = {
   subtitulo: [
     { coluna: "FGO_CODEMP", rotulo: "Empresa" },
     { coluna: "FGO_ESPDOC", rotulo: "Espécie" },
+    { coluna: "FGO_CODCLI", rotulo: "Cliente" },
     { coluna: "FGO_DTAENT", rotulo: "Entrada", hora: "FGO_HORENT" },
     { coluna: "FGO_ORIGEM", rotulo: "Origem" },
   ],
@@ -357,6 +364,7 @@ export const PERFIS: Perfil[] = [
       { perfil: "MOVCAR", colunaOrigem: "FGO_NUMPOK", colunaDestino: "MCA_NUMPOK", rotulo: "Movimentação de cartões" },
       { perfil: "HUBCIT_INFPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "INF_NUMPOK", rotulo: "Dados do pedido no HUB" },
       { perfil: "LOGNFE", colunaOrigem: "FGO_NUMFAT", colunaDestino: "NFE_NUMDOC", rotulo: "Log da NF-e" },
+      { perfil: "ADTCLI", colunaOrigem: "FGO_CODCLI", colunaDestino: "ADT_CODCLI", rotulo: "Adiantamentos do cliente" },
     ],
   },
   {
@@ -474,6 +482,111 @@ export const PERFIS: Perfil[] = [
             { coluna: "NFE_TIP_FC", rotulo: "Tipo" },
             { coluna: "NFE_NOMARQ", rotulo: "Arquivo", largo: true },
             { coluna: "NFE_NUM_IP", rotulo: "IP" },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "ADTCLI",
+    nome: "Adiantamentos do cliente",
+    assinatura: ["ADT_CODCLI", "ADT_VALLAN", "ADT_TIPLAN"],
+    colunasPadrao: [
+      "ADT_DTALAN", "ADT_HORLAN", "ADT_TIPLAN", "ADT_VALLAN", "ADT_DESCRI", "ADT_NUMDOC",
+      "ADT_ESPDOC", "ADT_CODEMP", "ADT_OPELAN", "ADT_ESTORN", "ADT_SEQCON", "ADT_CODCLI",
+    ],
+    colunaTitulo: "ADT_SEQCON",
+    graficoSugerido: { modo: "soma", categoria: "ADT_TIPLAN", valor: "ADT_VALLAN" },
+    rotulosInversos: { FATGOR: "Pedidos do cliente" },
+    totais: [],
+    saldo: { valor: "ADT_VALLAN", tipo: "ADT_TIPLAN", credito: ["C"], debito: ["D"] },
+    tela: {
+      titulo: "Lançamento",
+      subtitulo: [
+        { coluna: "ADT_CODCLI", rotulo: "Cliente" },
+        { coluna: "ADT_CODEMP", rotulo: "Empresa" },
+        { coluna: "ADT_DTALAN", rotulo: "Data", hora: "ADT_HORLAN" },
+        { coluna: "ADT_NUMDOC", rotulo: "Documento" },
+      ],
+      status: [
+        { coluna: "ADT_ESTORN", rotulo: "Estornado", valores: { S: { texto: "Sim", cor: "vermelho" }, N: { texto: "Não", cor: "cinza" } } },
+      ],
+      indicadores: [
+        {
+          coluna: "ADT_TIPLAN",
+          rotulo: "Tipo de lançamento",
+          valores: { C: "Crédito", D: "Débito" },
+          cores: { C: "verde", D: "vermelho" },
+          detalhes: [
+            { coluna: "ADT_OPELAN", rotulo: "Operador" },
+            { coluna: "ADT_DESCRI", rotulo: "Descrição" },
+          ],
+        },
+      ],
+      destaques: [{ coluna: "ADT_VALLAN", rotulo: "Valor do lançamento", formato: "moeda" }],
+      secoes: [
+        {
+          titulo: "Lançamento",
+          campos: [
+            { coluna: "ADT_SEQCON", rotulo: "Sequência" },
+            { coluna: "ADT_DTALAN", rotulo: "Data", hora: "ADT_HORLAN" },
+            { coluna: "ADT_TIPLAN", rotulo: "Tipo", valores: { C: "Crédito", D: "Débito" } },
+            { coluna: "ADT_VALLAN", rotulo: "Valor", formato: "moeda" },
+            { coluna: "ADT_DESCRI", rotulo: "Descrição", largo: true },
+            { coluna: "ADT_CODCLI", rotulo: "Cliente" },
+            { coluna: "ADT_CODEMP", rotulo: "Empresa" },
+            { coluna: "ADT_EMPLAN", rotulo: "Empresa do lançamento" },
+            { coluna: "ADT_NUMDOC", rotulo: "Nº documento" },
+            { coluna: "ADT_ESPDOC", rotulo: "Espécie" },
+            { coluna: "ADT_OPELAN", rotulo: "Operador" },
+            { coluna: "ADT_ESTORN", rotulo: "Estornado", valores: { S: "Sim", N: "Não" } },
+            { coluna: "ADT_ORIGEM", rotulo: "Origem" },
+            { coluna: "ADT_ADTORI", rotulo: "Adiantamento de origem" },
+            { coluna: "ADT_DOCBAI", rotulo: "Documento de baixa" },
+            { coluna: "AUTOINCREM", rotulo: "Sequência (AUTOINCREM)" },
+          ],
+        },
+        {
+          titulo: "Formas de pagamento",
+          campos: [
+            { coluna: "ADT_VALDIN", rotulo: "Dinheiro", formato: "moeda" },
+            { coluna: "ADT_VALCAR", rotulo: "Cartão", formato: "moeda" },
+            { coluna: "ADT_VALCHV", rotulo: "Cheque à vista", formato: "moeda" },
+            { coluna: "ADT_VALCHP", rotulo: "Cheque pré", formato: "moeda" },
+            { coluna: "ADT_VALCRE", rotulo: "Crédito", formato: "moeda" },
+            { coluna: "ADT_VALFIN", rotulo: "Financeira", formato: "moeda" },
+            { coluna: "ADT_VALORD", rotulo: "Ordem", formato: "moeda" },
+            { coluna: "ADT_VALJUR", rotulo: "Juros", formato: "moeda" },
+            { coluna: "ADT_RECPIX", rotulo: "Recebido via PIX", valores: { S: "Sim", N: "Não" } },
+          ],
+        },
+        {
+          titulo: "Boleto",
+          campos: [
+            { coluna: "ADT_NOSNUM", rotulo: "Nosso número" },
+            { coluna: "ADT_DTABOL", rotulo: "Data do boleto" },
+            { coluna: "ADT_BCOBOL", rotulo: "Banco do boleto" },
+            { coluna: "ADT_BCOENV", rotulo: "Banco de envio" },
+            { coluna: "ADT_DTAENV", rotulo: "Data de envio" },
+            { coluna: "ADT_CARTEI", rotulo: "Carteira" },
+            { coluna: "ADT_CODCED", rotulo: "Cedente" },
+            { coluna: "ADT_LINDIG", rotulo: "Linha digitável", largo: true },
+          ],
+        },
+        {
+          titulo: "Contábil e comissões",
+          campos: [
+            { coluna: "ADT_CODCTA", rotulo: "Conta" },
+            { coluna: "ADT_CODPOR", rotulo: "Portador" },
+            { coluna: "ADT_PARCEL", rotulo: "Parcela" },
+            { coluna: "ADT_RESCAI", rotulo: "Resumo de caixa" },
+            { coluna: "ADT_DTABAN", rotulo: "Data bancária" },
+            { coluna: "ADT_SEQBAN", rotulo: "Sequência bancária" },
+            { coluna: "ADT_CTR_CC", rotulo: "Centro de custo" },
+            { coluna: "ADT_VALCOM", rotulo: "Comissão", formato: "moeda" },
+            { coluna: "ADT_COMREP", rotulo: "Comissão representante", formato: "moeda" },
+            { coluna: "ADT_FATCOM", rotulo: "Fator comissão" },
+            { coluna: "ADT_FATREP", rotulo: "Fator representante" },
           ],
         },
       ],

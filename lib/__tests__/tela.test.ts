@@ -6,7 +6,7 @@ import { estadoInicial, reducer } from "../estado";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil } from "../perfis";
 import { relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
-import { montarTela, resumoRegistro, sqlRelacionado } from "../tela";
+import { calcularSaldo, montarTela, resumoRegistro, sqlRelacionado } from "../tela";
 
 const fgo = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-fgo.txt"), "utf-8"));
 const fatgor = buscarPerfil("FATGOR");
@@ -16,7 +16,7 @@ describe("montarTela com perfil", () => {
 
   it("título, subtítulo e destaques", () => {
     expect(t.titulo).toBe("Pedido 000001000004");
-    expect(t.subtitulo.map((c) => c.texto)).toEqual(["001", "PD", "14/10/2024 08:14:32", "AUTCOM"]);
+    expect(t.subtitulo.map((c) => c.texto)).toEqual(["001", "PD", "00001135", "14/10/2024 08:14:32", "AUTCOM"]);
     expect(t.destaques[0]).toMatchObject({ rotulo: "Valor contábil", texto: "R$ 165,49" });
   });
 
@@ -69,7 +69,7 @@ describe("apoio", () => {
   it("relações pendentes quando a aba relacionada não está aberta", () => {
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const p = relacoesPendentes(s.abas[0], 2, s.abas);
-    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE"]);
+    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE", "ADTCLI"]);
     // sem NUMPOK e sem fatura: a relação aparece, mas sem chave para consultar
     expect(p.filter((r) => r.chave === null).map((r) => r.colunaOrigem)).toEqual(["FGO_NUMPOK", "FGO_NUMPOK", "FGO_NUMFAT"]);
     expect(p[0]).toMatchObject({ tabela: "FATDOR", colunaDestino: "FDO_SEQGER", chave: "00100000000000004001" });
@@ -162,5 +162,45 @@ describe("títulos vazios", () => {
     const p = buscarPerfil("LOGNFE");
     expect(montarTela(lognfe, 0, p).titulo).toBe("NF-e (vazio)");
     expect(resumoRegistro(lognfe, 0, p).titulo).toBe("(vazio)");
+  });
+});
+
+const adtcli = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-adtcli.txt"), "utf-8"));
+
+describe("ADTCLI (adiantamentos do cliente)", () => {
+  it("é detectada e monta a Tela com crédito/débito", () => {
+    expect(adtcli.avisos).toEqual([]);
+    const s = reducer(estadoInicial, { tipo: "criar", dados: adtcli });
+    expect(s.abas[0].perfilId).toBe("ADTCLI");
+    const p = buscarPerfil("ADTCLI");
+    const t0 = montarTela(adtcli, 0, p);
+    expect(t0.titulo).toBe("Lançamento 299161");
+    expect(t0.indicadores[0]).toMatchObject({ campo: { texto: "Crédito" }, cor: "verde" });
+    expect(t0.destaques[0].texto).toBe("R$\u00a0231,63");
+    expect(montarTela(adtcli, 1, p).indicadores[0]).toMatchObject({ campo: { texto: "Débito" }, cor: "vermelho" });
+  });
+
+  it("FATGOR mostra o cliente no cabeçalho e sugere o SELECT da ADTCLI", () => {
+    const t = montarTela(fgo, 0, fatgor);
+    expect(t.subtitulo.find((c) => c.nome === "FGO_CODCLI")).toMatchObject({ rotulo: "Cliente", texto: "00000345" });
+    const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    const p = relacoesPendentes(s.abas[0], 0, s.abas).find((r) => r.perfilDestino === "ADTCLI")!;
+    expect(sqlRelacionado(p.tabela, p.colunaDestino, p.chave!)).toBe("SELECT * FROM ADTCLI WHERE ADT_CODCLI = '00000345';");
+  });
+
+  it("com a aba aberta, liga pelo código do cliente e calcula o saldo", () => {
+    const ped = parsearConsulta(
+      readFileSync(join(__dirname, "../../fixtures/exemplo-fgo.txt"), "utf-8").replace('"00000345"', '"00033402"'),
+    );
+    let s = reducer(estadoInicial, { tipo: "criar", dados: ped });
+    s = reducer(s, { tipo: "criar", dados: adtcli });
+    expect(relacionadosDoRegistro(s.abas[0], 0, s.abas)).toEqual([
+      expect.objectContaining({ rotulo: "Adiantamentos do cliente", quantidade: 2, chave: "00033402" }),
+    ]);
+    expect(relacionadosDoRegistro(s.abas[1], 0, s.abas)).toEqual([
+      expect.objectContaining({ rotulo: "Pedidos do cliente", quantidade: 1 }),
+    ]);
+    expect(calcularSaldo(adtcli, [0, 1], buscarPerfil("ADTCLI")!.saldo!)).toEqual({ creditos: 231.63, debitos: 231.63, saldo: 0 });
+    expect(calcularSaldo(adtcli, [0], buscarPerfil("ADTCLI")!.saldo!)).toEqual({ creditos: 231.63, debitos: 0, saldo: 231.63 });
   });
 });

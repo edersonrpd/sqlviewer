@@ -9,6 +9,7 @@ import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
 import { relacionadosDoRegistro, relacoesPendentes, type RelacaoPendente, type Relacionado } from "@/lib/relacionados";
 import {
+  calcularSaldo,
   montarTela,
   resumoRegistro,
   sqlRelacionado,
@@ -373,6 +374,7 @@ function BlocoRelacionado({ rel, abas, onAbrir }: { rel: Relacionado; abas: Aba[
   if (!destino) return null;
   const { dados } = destino;
   const perfilDestino = buscarPerfil(destino.perfilId);
+  const saldo = perfilDestino?.saldo ? calcularSaldo(dados, linhas, perfilDestino.saldo) : null;
   const decimais = colunas.filter((j) => {
     const c = dados.colunas[j];
     if (perfilDestino?.totais) return perfilDestino.totais.includes(c.nome) && (c.tipo === "decimal" || c.tipo === "inteiro");
@@ -441,6 +443,22 @@ function BlocoRelacionado({ rel, abas, onAbrir }: { rel: Relacionado; abas: Aba[
               </tfoot>
             )}
           </table>
+          {saldo && (
+            <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-x-5 gap-y-1 border-t-2 border-zinc-200 bg-zinc-50 px-4 py-2 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-900">
+              <span>
+                Créditos: <strong className="text-emerald-700 dark:text-emerald-400">{moedaBR(saldo.creditos)}</strong>
+              </span>
+              <span>
+                Débitos: <strong className="text-red-700 dark:text-red-400">{moedaBR(saldo.debitos)}</strong>
+              </span>
+              <span className="rounded-md bg-white px-2 py-0.5 ring-1 ring-zinc-200 dark:bg-zinc-950 dark:ring-zinc-700">
+                Saldo:{" "}
+                <strong className={saldo.saldo < 0 ? "text-red-700 dark:text-red-400" : saldo.saldo > 0 ? "text-emerald-700 dark:text-emerald-400" : ""}>
+                  {moedaBR(saldo.saldo)}
+                </strong>
+              </span>
+            </div>
+          )}
           {linhas.length > MAX_LINHAS_BLOCO && (
             <p className="px-4 py-2 text-xs text-zinc-500">
               Mostrando {MAX_LINHAS_BLOCO} de {linhas.length}. Abra a aba para ver todos.
@@ -451,6 +469,9 @@ function BlocoRelacionado({ rel, abas, onAbrir }: { rel: Relacionado; abas: Aba[
     </section>
   );
 }
+
+const FORMATO_MOEDA = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const moedaBR = (n: number) => FORMATO_MOEDA.format(n);
 
 /** Relações do perfil sem aba aberta: sugere a consulta para colar. */
 function BlocoPendentes({ pendentes, onColar }: { pendentes: RelacaoPendente[]; onColar: () => void }) {

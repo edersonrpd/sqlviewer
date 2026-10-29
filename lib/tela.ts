@@ -189,3 +189,23 @@ export function resumoRegistro(
 export function sqlRelacionado(tabela: string, coluna: string, valor: string): string {
   return `SELECT * FROM ${tabela} WHERE ${coluna} = '${valor.replace(/'/g, "''")}';`;
 }
+
+export type Saldo = { creditos: number; debitos: number; saldo: number };
+
+/** Créditos, débitos e saldo de um extrato (ex.: adiantamentos do cliente). */
+export function calcularSaldo(dados: ResultadoParse, linhas: number[], cfg: NonNullable<Perfil["saldo"]>): Saldo | null {
+  const jv = dados.colunas.findIndex((c) => c.nome === cfg.valor);
+  const jt = dados.colunas.findIndex((c) => c.nome === cfg.tipo);
+  if (jv < 0 || jt < 0) return null;
+  let creditos = 0;
+  let debitos = 0;
+  for (const i of linhas) {
+    const v = Number(dados.linhas[i][jv]) || 0;
+    const t = (dados.linhas[i][jt] ?? "").trim();
+    if (cfg.credito.includes(t)) creditos += v;
+    else if (cfg.debito.includes(t)) debitos += v;
+  }
+  // arredonda em centavos para não exibir resíduos de ponto flutuante
+  const r = (n: number) => Math.round(n * 100) / 100;
+  return { creditos: r(creditos), debitos: r(debitos), saldo: r(creditos - debitos) };
+}
