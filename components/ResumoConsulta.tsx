@@ -28,7 +28,7 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
   const qtdAvisos = dados.avisos.length + (deteccao.tipo === "combinada" ? 1 : 0);
 
   return (
-    <section className="border-b border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <section className="vidro relative z-10 animate-[aparecer_0.3s_ease-out_both] border-b border-zinc-200 px-3 py-2 text-sm dark:border-white/10">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <button className="inline-flex items-center gap-1 font-medium" onClick={() => setAberto(!aberto)} aria-expanded={aberto}>
           <IconeSeta className={`h-4 w-4 transition ${aberto ? "" : "-rotate-90"}`} />
@@ -42,8 +42,8 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
             perfil
-              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-              : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+              ? "border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+              : "border border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
           }`}
           title={perfil && detectadoId !== perfil.id ? "Perfil escolhido manualmente" : "Perfil detectado pelas colunas"}
         >
@@ -65,7 +65,7 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
 
         {qtdAvisos > 0 && (
           <button
-            className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+            className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 transition hover:-translate-y-px dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300"
             onClick={() => setAberto(true)}
           >
             <IconeAlerta className="h-3.5 w-3.5" /> {qtdAvisos} aviso(s)
@@ -81,8 +81,10 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
               <button
                 key={t}
                 onClick={() => setTipoAberto(tipoAberto === t ? null : t)}
-                className={`rounded border px-1.5 py-0.5 text-xs ${
-                  tipoAberto === t ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : "border-zinc-200 dark:border-zinc-700"
+                className={`rounded-md border px-1.5 py-0.5 text-xs transition ${
+                  tipoAberto === t
+                    ? "border-blue-500 bg-blue-50 shadow-[0_0_12px_-4px_rgb(99_102_241/0.7)] dark:bg-blue-500/15"
+                    : "border-zinc-200 hover:border-zinc-400 dark:border-white/10 dark:hover:border-white/25"
                 }`}
               >
                 {NOMES_TIPOS[t]}: <strong>{porTipo.get(t)!.length}</strong>
@@ -117,7 +119,7 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
 
 function Aviso({ children }: { children: React.ReactNode }) {
   return (
-    <li className="flex gap-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+    <li className="flex animate-subir gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200">
       <IconeAlerta className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <span>{children}</span>
     </li>

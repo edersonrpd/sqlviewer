@@ -67,9 +67,9 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
   const relacionados = useMemo(() => relacionadosDoRegistro(aba, registro, abas), [aba, registro, abas]);
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/20" onClick={onFechar}>
+    <div className="gaveta-fundo" onClick={onFechar}>
       <aside
-        className="flex h-full w-full max-w-xl flex-col border-l border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900"
+        className="gaveta max-w-xl"
         onClick={(e) => e.stopPropagation()}
         aria-label="Ficha do registro"
       >

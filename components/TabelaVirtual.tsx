@@ -16,6 +16,15 @@ const LARGURA_SELECAO = 36;
 const ID_SELECAO = "__selecao";
 const bordaCelula = "border-r border-b border-zinc-200 dark:border-zinc-800";
 const sombraFixa = "shadow-[2px_0_0_0_rgba(0,0,0,0.08)]";
+// barra índigo à esquerda da linha marcada, somada à sombra da última coluna fixa
+const sombraLinha = (barra: boolean, ultimaFixa: boolean) =>
+  barra
+    ? ultimaFixa
+      ? "shadow-[inset_3px_0_0_var(--color-blue-500),2px_0_0_0_rgba(0,0,0,0.08)]"
+      : "shadow-[inset_3px_0_0_var(--color-blue-500)]"
+    : ultimaFixa
+      ? sombraFixa
+      : "";
 
 type Props = {
   aba: Aba;
@@ -166,7 +175,7 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
           onClick={() => ordenar(j)}
         >
           <span className="truncate">{col.nome}</span>
-          <span className="shrink-0 text-[10px] text-blue-600 dark:text-blue-400">{sentido}</span>
+          <span className="shrink-0 animate-surgir text-[10px] text-blue-600 dark:text-blue-400">{sentido}</span>
         </button>
         <FiltroColuna
           valor={aba.filtros[j] ?? ""}
@@ -277,12 +286,12 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
   const fundo = p.aberta
     ? "bg-blue-100 dark:bg-blue-950"
     : p.marcada
-      ? "bg-blue-50 dark:bg-blue-950/50"
+      ? "bg-blue-50 dark:bg-[#141633]"
       : p.par
         ? "bg-white dark:bg-zinc-950"
-        : "bg-zinc-50 dark:bg-zinc-900/60";
-  const classeCelula = `flex shrink-0 items-center ${fundo} group-hover:bg-amber-50 dark:group-hover:bg-zinc-800 ${bordaCelula}`;
-  const classeDestaque = `flex shrink-0 items-center bg-amber-50 font-mono font-semibold text-amber-900 group-hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-200 ${bordaCelula}`;
+        : "bg-zinc-50 dark:bg-zinc-900";
+  const classeCelula = `flex shrink-0 items-center transition-colors duration-150 ${fundo} group-hover:bg-blue-50 dark:group-hover:bg-[#161a2e] ${bordaCelula}`;
+  const classeDestaque = `flex shrink-0 items-center bg-amber-50 font-mono font-semibold text-amber-900 group-hover:bg-amber-100 dark:bg-amber-950/50 dark:group-hover:bg-amber-900/60 dark:text-amber-200 ${bordaCelula}`;
   const classe = (c: Column<number>) => (c.id === p.idDestaque ? classeDestaque : classeCelula);
 
   const conteudo = (c: Column<number>) => {
@@ -327,7 +336,7 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
           key={c.id}
           role="gridcell"
           style={{ width: c.getSize(), left: p.offsets.get(c.id) }}
-          className={`sticky z-10 ${classe(c)} ${k === p.esquerda.length - 1 ? sombraFixa : ""}`}
+          className={`sticky z-10 ${classe(c)} ${sombraLinha(k === 0 && (p.marcada || p.aberta), k === p.esquerda.length - 1)}`}
         >
           {conteudo(c)}
         </div>
@@ -362,7 +371,7 @@ function FiltroColuna({ valor, onChange, nome }: { valor: string; onChange: (t: 
       onClick={(e) => e.stopPropagation()}
       placeholder="contém…"
       aria-label={`Filtrar ${nome}`}
-      className="w-full min-w-0 rounded border border-zinc-300 bg-white px-1.5 py-0.5 text-xs font-normal outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-950"
+      className="w-full min-w-0 rounded-md border border-zinc-300 bg-white px-1.5 py-0.5 text-xs font-normal transition outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgb(99_102_241/0.2)] dark:border-white/10 dark:bg-zinc-950"
     />
   );
 }

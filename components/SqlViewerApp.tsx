@@ -6,7 +6,7 @@ import { separarPorMarcadores } from "@/lib/join";
 import { parsearConsulta } from "@/lib/parser";
 import { AbaConsulta } from "./AbaConsulta";
 import { EntradaConsulta } from "./EntradaConsulta";
-import { IconeLua, IconeMais, IconeSol, IconeX } from "./Icones";
+import { IconeBanco, IconeLua, IconeMais, IconeSol, IconeX } from "./Icones";
 
 export function SqlViewerApp() {
   const [estado, dispatch] = useReducer(reducer, estadoInicial);
@@ -37,9 +37,14 @@ export function SqlViewerApp() {
 
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex items-center gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="flex items-center gap-2 py-2 text-base font-semibold whitespace-nowrap">
-          <span className="inline-block h-5 w-5 rounded bg-blue-600" aria-hidden />
+      <header className="vidro relative z-30 flex items-center gap-3 border-b border-zinc-200 px-3 dark:border-white/10">
+        <h1 className="flex items-center gap-2.5 py-2 text-base font-bold tracking-tight whitespace-nowrap">
+          <span
+            className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 text-white shadow-[0_0_20px_rgb(99_102_241/0.55)]"
+            aria-hidden
+          >
+            <IconeBanco className="h-4 w-4" />
+          </span>
           SQL Viewer
         </h1>
         <BarraAbas estado={estado} dispatch={dispatch} />
@@ -64,18 +69,28 @@ function BarraAbas({ estado, dispatch }: { estado: typeof estadoInicial; dispatc
   const [editando, setEditando] = useState<string | null>(null);
 
   return (
-    <nav className="flex min-w-0 flex-1 items-end gap-1 self-stretch overflow-x-auto pt-2" aria-label="Consultas abertas">
+    <nav className="flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-auto py-1.5" aria-label="Consultas abertas">
       {estado.abas.map((a) => {
         const ativa = a.id === estado.ativa;
         return (
           <div
             key={a.id}
-            className={`group flex max-w-56 shrink-0 items-center gap-1 rounded-t-md border border-b-0 px-2 py-1 text-sm ${
+            className={`group relative flex max-w-56 shrink-0 animate-surgir items-center gap-1.5 rounded-lg border px-2.5 py-1 text-sm transition ${
               ativa
-                ? "border-zinc-300 bg-zinc-50 font-medium dark:border-zinc-700 dark:bg-zinc-950"
-                : "border-transparent text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                ? "border-zinc-300 bg-white font-semibold shadow-sm dark:border-white/15 dark:bg-white/10"
+                : "border-transparent text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-200"
             }`}
           >
+            <span
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${ativa ? "animate-pulsar bg-emerald-400" : "bg-zinc-400 dark:bg-zinc-600"}`}
+              aria-hidden
+            />
+            {ativa && (
+              <span
+                className="absolute inset-x-2.5 -bottom-[7px] h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 shadow-[0_0_10px_rgb(99_102_241/0.9)]"
+                aria-hidden
+              />
+            )}
             {editando === a.id ? (
               <input
                 autoFocus
@@ -117,8 +132,10 @@ function BarraAbas({ estado, dispatch }: { estado: typeof estadoInicial; dispatc
         );
       })}
       <button
-        className={`mb-1 ml-1 inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-sm font-medium ${
-          estado.ativa === null ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300" : "text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950"
+        className={`ml-1 inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1 text-sm font-medium transition ${
+          estado.ativa === null
+            ? "border-blue-300 bg-blue-50 text-blue-700 shadow-[0_0_18px_-4px_rgb(99_102_241/0.6)] dark:border-blue-400/50 dark:bg-blue-500/15 dark:text-blue-200"
+            : "border-transparent text-blue-600 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-500/10"
         }`}
         onClick={() => dispatch({ tipo: "ativar", id: null })}
       >
@@ -133,7 +150,7 @@ function BotaoTema() {
   useEffect(() => setEscuro(document.documentElement.classList.contains("dark")), []);
   return (
     <button
-      className="btn-icone h-8 w-8"
+      className="btn-icone h-9 w-9 rounded-lg border border-zinc-200 dark:border-white/10"
       title={escuro ? "Usar tema claro" : "Usar tema escuro"}
       aria-label={escuro ? "Usar tema claro" : "Usar tema escuro"}
       onClick={() => {
