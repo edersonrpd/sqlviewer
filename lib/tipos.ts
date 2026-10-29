@@ -14,7 +14,7 @@ export type Coluna = {
 };
 
 export type Aviso = {
-  tipo: "colunas-divergentes" | "colunas-duplicadas" | "linhas-vazias" | "perfil";
+  tipo: "colunas-divergentes" | "colunas-duplicadas" | "linhas-vazias" | "perfil" | "separacao";
   mensagem: string;
 };
 

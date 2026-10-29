@@ -7,6 +7,7 @@ import { colunaDestaque } from "@/lib/destaque";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
+import { sqlJoin } from "@/lib/join";
 import { relacionadosDoRegistro, relacoesPendentes, type RelacaoPendente, type Relacionado } from "@/lib/relacionados";
 import {
   calcularSaldo,
@@ -58,6 +59,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
   const tela = useMemo(() => (registro === undefined ? null : montarTela(dados, registro, perfil)), [dados, registro, perfil]);
   const relacionados = useMemo(() => (registro === undefined ? [] : relacionadosDoRegistro(aba, registro, abas)), [aba, registro, abas]);
   const pendentes = useMemo(() => (registro === undefined ? [] : relacoesPendentes(aba, registro, abas)), [aba, registro, abas]);
+  const join = useMemo(() => (registro === undefined ? null : sqlJoin(dados, registro, aba.perfilId)), [dados, registro, aba.perfilId]);
   const exibidas = useMemo(() => colunasExibidas(aba), [aba]);
 
   if (registro === undefined || !tela) {
@@ -177,7 +179,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
               }}
             />
           ))}
-          {pendentes.length > 0 && <BlocoPendentes pendentes={pendentes} onColar={() => dispatch({ tipo: "ativar", id: null })} />}
+          {pendentes.length > 0 && <BlocoPendentes pendentes={pendentes} join={join} onColar={() => dispatch({ tipo: "ativar", id: null })} />}
 
           {tela.secoes.map((s) => (
             <Secao
@@ -474,7 +476,16 @@ const FORMATO_MOEDA = new Intl.NumberFormat("pt-BR", { style: "currency", curren
 const moedaBR = (n: number) => FORMATO_MOEDA.format(n);
 
 /** Relações do perfil sem aba aberta: sugere a consulta para colar. */
-function BlocoPendentes({ pendentes, onColar }: { pendentes: RelacaoPendente[]; onColar: () => void }) {
+function BlocoPendentes({
+  pendentes,
+  join,
+  onColar,
+}: {
+  pendentes: RelacaoPendente[];
+  join: string | null;
+  onColar: () => void;
+}) {
+  const [verJoin, setVerJoin] = useState(false);
   const [aviso, setAviso] = useAviso();
   return (
     <section className="rounded-lg border border-dashed border-zinc-300 bg-white/60 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900/40">
@@ -486,6 +497,28 @@ function BlocoPendentes({ pendentes, onColar }: { pendentes: RelacaoPendente[]; 
           <IconeMais className="h-3.5 w-3.5" /> Colar resultado
         </button>
       </div>
+      {join && (
+        <div className="mt-2 rounded-md border border-violet-200 bg-violet-50/60 px-3 py-2 dark:border-violet-900 dark:bg-violet-950/30">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-violet-900 dark:text-violet-200">Tudo de uma vez (JOIN)</span>
+            <span className="text-xs text-zinc-500">
+              uma consulta só; ao colar o resultado, cada tabela abre na sua aba, sem linhas repetidas
+            </span>
+            <button className="ml-auto text-xs text-violet-700 hover:underline dark:text-violet-300" onClick={() => setVerJoin(!verJoin)}>
+              {verJoin ? "Ocultar SQL" : "Ver SQL"}
+            </button>
+            <button
+              className="btn px-2 py-1 text-xs"
+              onClick={async () => setAviso((await copiarTexto(join)) ? "JOIN copiado" : "Não foi possível copiar")}
+            >
+              <IconeCopiar className="h-3.5 w-3.5" /> Copiar JOIN
+            </button>
+          </div>
+          {verJoin && (
+            <pre className="mt-2 max-h-72 overflow-auto rounded bg-white p-2 font-mono text-xs leading-relaxed dark:bg-zinc-950">{join}</pre>
+          )}
+        </div>
+      )}
       <ul className="mt-2 space-y-1.5">
         {pendentes.map((p) => {
           const chave = p.chave;

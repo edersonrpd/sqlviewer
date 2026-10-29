@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { estadoInicial, reducer, type Acao } from "@/lib/estado";
+import { separarPorMarcadores } from "@/lib/join";
 import { parsearConsulta } from "@/lib/parser";
 import { AbaConsulta } from "./AbaConsulta";
 import { EntradaConsulta } from "./EntradaConsulta";
@@ -25,7 +26,10 @@ export function SqlViewerApp() {
   const visualizar = useCallback((texto: string): string | null => {
     const dados = parsearConsulta(texto);
     if (dados.colunas.length === 0) return "Nada para visualizar: cole o resultado da consulta com a linha de cabeçalho.";
-    dispatch({ tipo: "criar", dados });
+    // resultado do JOIN sugerido (com marcadores >>TABELA): uma aba por tabela
+    const partes = separarPorMarcadores(dados);
+    if (partes) dispatch({ tipo: "criarVarias", dados: partes.map((p) => p.dados) });
+    else dispatch({ tipo: "criar", dados });
     return null;
   }, []);
 

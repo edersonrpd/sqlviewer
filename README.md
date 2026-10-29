@@ -93,6 +93,18 @@ agrupado por tipo. Os rótulos da FATGOR são um ponto de partida: revise-os em
 `config/perfis.ts`. Quando uma relação do perfil não tem aba aberta, a Tela sugere o
 `SELECT` para buscar os registros ligados.
 
+### JOIN de tudo de uma vez
+
+No "Ver também" da Tela há a opção **Tudo de uma vez (JOIN)**: uma única consulta com
+`LEFT JOIN` em todas as tabelas relacionadas ao registro (pela coluna `chave` do perfil,
+ex.: `AUTOINCREM` da FATGOR). Antes das colunas de cada tabela o SELECT inclui um
+marcador `'' AS \`>>TABELA\``. Ao colar o resultado, o app usa esses marcadores para abrir
+**uma aba por tabela**, remove as linhas repetidas que o JOIN gera (ex.: itens ×
+adiantamentos) e as linhas vazias dos `LEFT JOIN` sem correspondência. Tabelas sem
+registros ligados abrem como abas vazias, para deixar claro que não há dados. Qualquer
+resultado com colunas `>>NOME` é separado assim, então dá para montar JOINs à mão no mesmo
+formato.
+
 O que cada campo faz:
 
 | Campo | Obrigatório | Uso |
@@ -105,6 +117,7 @@ O que cada campo faz:
 | `colunaTitulo` | não | Coluna usada como título da ficha do registro. |
 | `graficoSugerido` | não | Gráfico inicial: `contagem` por `categoria`, ou `soma` de `valor` por `categoria`. Se as colunas não existirem, o gráfico é sugerido automaticamente. |
 | `relacoes` | não | Ligações com outros perfis. Valem nos dois sentidos: basta declarar em um dos lados. |
+| `chave` | não | Coluna que identifica um único registro, usada no `WHERE` do JOIN sugerido (padrão: `colunaTitulo`). |
 | `destaque` | não | Coluna-chave destacada em todas as visões, ex.: `{ coluna: "FGO_NUMPOK", rotulo: "NUMPOK" }`. Fica fixada na tabela, em destaque no cabeçalho da Tela, na lista lateral e no topo da ficha. |
 | `tabela` | não | Nome da tabela no banco usado no SQL sugerido (padrão: o `id`). |
 | `totais` | não | Colunas somadas no rodapé quando a tabela aparece como grade na Tela de outra (padrão: todas as decimais). |

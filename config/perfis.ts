@@ -79,6 +79,8 @@ export type Perfil = {
   colunasFixas?: string[];
   /** usada como título da ficha do registro */
   colunaTitulo?: string;
+  /** coluna que identifica um único registro, usada no WHERE do JOIN sugerido (padrão: colunaTitulo) */
+  chave?: string;
   /** coluna-chave destacada em todas as visões (ex.: NUMPOK do pedido) */
   destaque?: { coluna: string; rotulo: string };
   graficoSugerido?: { modo: "contagem" | "soma"; categoria: string; valor?: string };
@@ -354,6 +356,7 @@ export const PERFIS: Perfil[] = [
       "FGO_LIBERA", "FGO_LIBCOM",
     ],
     colunasFixas: ["FGO_NUMDOC"],
+    chave: "AUTOINCREM",
     destaque: { coluna: "FGO_NUMPOK", rotulo: "NUMPOK" },
     colunaTitulo: "FGO_NUMDOC",
     graficoSugerido: { modo: "soma", categoria: "FGO_CODVEN", valor: "FGO_VLRCON" },
@@ -496,6 +499,7 @@ export const PERFIS: Perfil[] = [
       "ADT_ESPDOC", "ADT_CODEMP", "ADT_OPELAN", "ADT_ESTORN", "ADT_SEQCON", "ADT_CODCLI",
     ],
     colunaTitulo: "ADT_SEQCON",
+    chave: "AUTOINCREM",
     graficoSugerido: { modo: "soma", categoria: "ADT_TIPLAN", valor: "ADT_VALLAN" },
     rotulosInversos: { FATGOR: "Pedidos do cliente" },
     totais: [],

@@ -46,6 +46,8 @@ export const estadoInicial: Estado = { abas: [], ativa: null, contadores: {}, pr
 
 export type Acao =
   | { tipo: "criar"; dados: ResultadoParse }
+  /** várias abas de uma vez (ex.: resultado de JOIN separado); ativa a primeira */
+  | { tipo: "criarVarias"; dados: ResultadoParse[] }
   | { tipo: "fechar"; id: string }
   | { tipo: "ativar"; id: string | null }
   | { tipo: "renomear"; id: string; nome: string }
@@ -139,6 +141,12 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         contadores: { ...estado.contadores, [chave]: k },
         proximoId: estado.proximoId + 1,
       };
+    }
+    case "criarVarias": {
+      if (acao.dados.length === 0) return estado;
+      const primeiro = `aba-${estado.proximoId}`;
+      const novo = acao.dados.reduce((e, dados) => reducer(e, { tipo: "criar", dados }), estado);
+      return { ...novo, ativa: primeiro };
     }
     case "fechar": {
       const pos = estado.abas.findIndex((a) => a.id === acao.id);
