@@ -40,8 +40,11 @@ export type SecaoTela = { titulo: string; campos: CampoTela[] };
 export type IndicadorTela = CampoTela & {
   /** campos exibidos em linha abaixo do valor (ex.: operador e data) */
   detalhes?: CampoTela[];
-  /** cor por valor; valores não listados usam azul */
+  /** cor por valor; valores não listados usam `cor` (padrão: azul) */
   cores?: Record<string, CorStatus>;
+  cor?: CorStatus;
+  /** não exibe o indicador quando o valor está vazio/NULL */
+  ocultarVazio?: boolean;
 };
 
 export type Tela = {
@@ -142,6 +145,8 @@ const TELA_FATGOR: Tela = {
         { coluna: "FGO_DTALIC", rotulo: "Em", hora: "FGO_HORLIC" },
       ],
     },
+    // só aparece quando o pedido foi baixado
+    { coluna: "FGO_MOTBAI", rotulo: "Motivo da baixa", cor: "amarelo", ocultarVazio: true, largo: true },
   ],
   destaques: [
     { coluna: "FGO_VLRCON", rotulo: "Valor contábil", formato: "moeda" },

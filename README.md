@@ -93,6 +93,26 @@ agrupado por tipo. Os rótulos da FATGOR são um ponto de partida: revise-os em
 `config/perfis.ts`. Quando uma relação do perfil não tem aba aberta, a Tela sugere o
 `SELECT` para buscar os registros ligados.
 
+### Diagnóstico automático
+
+Na Tela da FATGOR, o painel **Diagnóstico** cruza o pedido com as abas abertas e aponta
+inconsistências (erro, alerta, info, ok). Na lista lateral, uma bolinha vermelha ou laranja
+marca os pedidos com problema. Verificações atuais:
+
+| Verificação | Precisa da aba | Acusa quando |
+| --- | --- | --- |
+| Itens × total de produtos | FATDOR | pedido sem itens, ou soma de `FDO_TOTITE` ≠ `FGO_TOTPRO` |
+| NF-e | LOGNFE | fatura sem registro na LOGNFE, ou sem `NFE_DTAAUT`/retorno "Autorizado" |
+| Valor faturado | — | `FGO_VALFAT` ≠ `FGO_VLRCON` |
+| E-commerce sem NUMPOK | — | mensagem com "E-COMMERCE" e `FGO_NUMPOK` vazio |
+| Adiantamento do pedido | ADTCLI | saldo (créditos − débitos) dos lançamentos com `ADT_NUMDOC` = `FGO_NUMDOC` ≠ 0 |
+
+Sem a aba necessária, a verificação aparece como "Não verificado". As regras ficam em
+[`lib/diagnostico.ts`](lib/diagnostico.ts) (`REGRAS`, por id de perfil): cada regra é uma
+função que lê o registro (`texto`, `numero`) e os registros ligados (`relacionado`) e
+devolve achados. Para criar uma regra nova, copie uma existente e acrescente um teste em
+`lib/__tests__/diagnostico.test.ts`.
+
 ### JOIN de tudo de uma vez
 
 No "Ver também" da Tela há a opção **Tudo de uma vez (JOIN)**: uma única consulta com
@@ -121,7 +141,7 @@ O que cada campo faz:
 | `destaque` | não | Coluna-chave destacada em todas as visões, ex.: `{ coluna: "FGO_NUMPOK", rotulo: "NUMPOK" }`. Fica fixada na tabela, em destaque no cabeçalho da Tela, na lista lateral e no topo da ficha. |
 | `tabela` | não | Nome da tabela no banco usado no SQL sugerido (padrão: o `id`). |
 | `totais` | não | Colunas somadas no rodapé quando a tabela aparece como grade na Tela de outra (padrão: todas as decimais). |
-| `tela` | não | Layout da visão Tela: `titulo`, `subtitulo`, `status` (chips coloridos), `indicadores` (caixas em evidência, com `detalhes` e `cores` por valor — ex.: liberações da FATGOR), `destaques` (cartões de valores), `secoes`. Campos aceitam `formato` (`moeda`, `percentual`, `chaveAcesso`), `hora`, `valores` e `largo`. |
+| `tela` | não | Layout da visão Tela: `titulo`, `subtitulo`, `status` (chips coloridos), `indicadores` (caixas em evidência, com `detalhes`, `cores` por valor, `cor` padrão e `ocultarVazio` — ex.: liberações e motivo da baixa da FATGOR), `destaques` (cartões de valores), `secoes`. Campos aceitam `formato` (`moeda`, `percentual`, `chaveAcesso`), `hora`, `valores` e `largo`. |
 | `saldo` | não | Para extratos (ex.: ADTCLI): `{ valor, tipo, credito: ["C"], debito: ["D"] }`. Quando a tabela aparece como grade em outra Tela, o rodapé mostra créditos, débitos e saldo. |
 | `rotulosInversos` | não | Rótulo exibido **neste** perfil para uma relação declarada em outro (chave = id do perfil que declarou). Sem ele, aparece o `nome` do outro perfil. |
 

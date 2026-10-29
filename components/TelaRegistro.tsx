@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { CorStatus } from "@/config/perfis";
 import { colunaDestaque } from "@/lib/destaque";
+import { diagnosticar, nivelGeral, temDiagnostico } from "@/lib/diagnostico";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/tela";
 import { alinhamento, Celula } from "./Celula";
 import { IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeMais, IconeSeta } from "./Icones";
+import { ESTILO_NIVEL, PainelDiagnostico } from "./PainelDiagnostico";
 import { BotaoCopiarChamado } from "./Saidas";
 import { copiarTexto, useAviso } from "./util";
 
@@ -57,6 +59,10 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
   }, [anterior, proximo, atualizar]);
 
   const tela = useMemo(() => (registro === undefined ? null : montarTela(dados, registro, perfil)), [dados, registro, perfil]);
+  const diagnostico = useMemo(
+    () => (registro === undefined || !temDiagnostico(aba.perfilId) ? null : diagnosticar(aba, registro, abas)),
+    [aba, registro, abas],
+  );
   const relacionados = useMemo(() => (registro === undefined ? [] : relacionadosDoRegistro(aba, registro, abas)), [aba, registro, abas]);
   const pendentes = useMemo(() => (registro === undefined ? [] : relacoesPendentes(aba, registro, abas)), [aba, registro, abas]);
   const join = useMemo(() => (registro === undefined ? null : sqlJoin(dados, registro, aba.perfilId)), [dados, registro, aba.perfilId]);
@@ -74,7 +80,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
   return (
     <div className="absolute inset-0 flex">
       {indices.length > 1 && (
-        <ListaRegistros aba={aba} indices={indices} atual={registro} onEscolher={(i) => atualizar({ registroTela: i })} />
+        <ListaRegistros aba={aba} abas={abas} indices={indices} atual={registro} onEscolher={(i) => atualizar({ registroTela: i })} />
       )}
 
       <div className="min-w-0 flex-1 overflow-y-auto bg-zinc-100 dark:bg-zinc-950">
@@ -152,6 +158,8 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
             )}
           </header>
 
+          {diagnostico && <PainelDiagnostico diagnostico={diagnostico} />}
+
           {/* valores principais */}
           {tela.destaques.length > 0 && (
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -223,12 +231,12 @@ function Indicador({ indicador: { campo: c, detalhes, cor } }: { indicador: Indi
   const estilo = CORES_INDICADOR[cor];
   const detalhesVisiveis = detalhes.filter((d) => !d.vazio);
   return (
-    <div className={`rounded-md border px-3 py-2 ${estilo.caixa}`} title={c.nome}>
+    <div className={`rounded-md border px-3 py-2 ${estilo.caixa} ${c.largo ? "sm:col-span-2" : ""}`} title={c.nome}>
       <p className="flex items-center justify-between gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">
         {c.rotulo}
         <span className="font-mono text-[10px] text-zinc-400">{c.nome}</span>
       </p>
-      <p className={`mt-0.5 text-lg font-semibold ${estilo.valor}`}>
+      <p className={`mt-0.5 font-semibold break-words ${c.largo ? "text-base" : "text-lg"} ${estilo.valor}`}>
         {c.texto === null ? <span className="valor-null">NULL</span> : c.raw?.trim() === "" ? "não informado" : c.texto}
       </p>
       {detalhesVisiveis.length > 0 && (
@@ -556,12 +564,33 @@ function BlocoPendentes({
 }
 
 /** Lista lateral de registros (virtualizada), respeitando filtro e ordenação. */
-function ListaRegistros({ aba, indices, atual, onEscolher }: { aba: Aba; indices: number[]; atual: number; onEscolher: (i: number) => void }) {
+function ListaRegistros({
+  aba,
+  abas,
+  indices,
+  atual,
+  onEscolher,
+}: {
+  aba: Aba;
+  abas: Aba[];
+  indices: number[];
+  atual: number;
+  onEscolher: (i: number) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const perfil = buscarPerfil(aba.perfilId);
   const temChave = useMemo(() => colunaDestaque(aba.dados.colunas, perfil) !== null, [aba.dados.colunas, perfil]);
   const virt = useVirtualizer({ count: indices.length, getScrollElement: () => ref.current, estimateSize: () => (temChave ? 66 : 52), overscan: 8 });
   const pos = indices.indexOf(atual);
+
+  // nível do diagnóstico por registro (bolinha colorida), calculado só para os visíveis e guardado
+  const comDiagnostico = temDiagnostico(aba.perfilId);
+  const cacheNivel = useMemo(() => new Map<number, ReturnType<typeof nivelGeral>>(), [aba.dados, aba.perfilId, abas]); // eslint-disable-line react-hooks/exhaustive-deps
+  const nivelDe = (i: number) => {
+    if (!comDiagnostico) return null;
+    if (!cacheNivel.has(i)) cacheNivel.set(i, nivelGeral(diagnosticar(aba, i, abas)));
+    return cacheNivel.get(i) ?? null;
+  };
 
   // mantém o registro atual visível ao navegar com Anterior/Próximo
   useEffect(() => {
@@ -590,7 +619,15 @@ function ListaRegistros({ aba, indices, atual, onEscolher }: { aba: Aba; indices
                 }`}
                 style={{ height: temChave ? 66 : 52, transform: `translateY(${v.start}px)` }}
               >
-                <span className="truncate font-mono text-sm font-medium">{r.titulo}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate font-mono text-sm font-medium">{r.titulo}</span>
+                  {(() => {
+                    const n = nivelDe(i);
+                    return n && n !== "ok" && n !== "info" ? (
+                      <span className={`ml-auto h-2.5 w-2.5 shrink-0 rounded-full ${ESTILO_NIVEL[n].ponto}`} title={`Diagnóstico: ${ESTILO_NIVEL[n].rotulo}`} />
+                    ) : null;
+                  })()}
+                </span>
                 <span className="truncate text-xs text-zinc-500">{r.detalhe}</span>
                 {r.chave && <span className="truncate font-mono text-xs font-semibold text-amber-700 dark:text-amber-400">{r.chave}</span>}
               </button>

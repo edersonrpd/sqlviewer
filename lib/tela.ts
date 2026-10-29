@@ -121,8 +121,9 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
     const j = porNome.get(ind.coluna);
     if (j === undefined) return [];
     const campo = montarCampo(dados, linha, j, ind);
+    if (ind.ocultarVazio && campo.vazio) return [];
     const v = campo.raw;
-    const cor: CorStatus = campo.vazio ? "cinza" : ((v !== null && ind.cores?.[v]) || "azul");
+    const cor: CorStatus = campo.vazio ? "cinza" : ((v !== null && ind.cores?.[v]) || ind.cor || "azul");
     return [{ campo, detalhes: resolver(ind.detalhes, false), cor }];
   });
   const destaques = resolver(tela?.destaques, false);
