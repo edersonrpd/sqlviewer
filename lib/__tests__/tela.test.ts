@@ -5,7 +5,7 @@ import { colunaDestaque } from "../destaque";
 import { estadoInicial, reducer } from "../estado";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil } from "../perfis";
-import { relacoesPendentes } from "../relacionados";
+import { relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
 import { montarTela, resumoRegistro, sqlRelacionado } from "../tela";
 
 const fgo = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-fgo.txt"), "utf-8"));
@@ -98,5 +98,67 @@ describe("destaque do NUMPOK", () => {
     const j = fgo.colunas.findIndex((c) => c.nome === "FGO_NUMPOK");
     expect(s.abas[0].fixas).toEqual([fgo.colunas.findIndex((c) => c.nome === "FGO_NUMDOC"), j]);
     expect(s.abas[0].visiveis[j]).toBe(true);
+  });
+});
+
+const lognfe = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-lognfe.txt"), "utf-8"));
+
+describe("LOGNFE", () => {
+  it("é detectada e preserva os códigos e a chave de acesso", () => {
+    expect(lognfe.avisos).toEqual([]);
+    expect(lognfe.linhas).toHaveLength(10);
+    const s = reducer(estadoInicial, { tipo: "criar", dados: lognfe });
+    expect(s.abas[0].perfilId).toBe("LOGNFE");
+    const t = montarTela(lognfe, 9, buscarPerfil("LOGNFE"));
+    expect(t.titulo).toBe("NF-e 000000067471");
+    const campos = Object.fromEntries(t.secoes.flatMap((x) => x.campos).map((c) => [c.nome, c]));
+    expect(campos.NFE_ACESSO.raw).toBe("35260160344348000390650020000674711809524811");
+    expect(campos.NFE_ACESSO.texto).toBe("3526 0160 3443 4800 0390 6500 2000 0674 7118 0952 4811");
+    expect(campos.NFE_CODCLI.texto).toBe("02048893");
+    expect(campos.NFE_DTAAUT.texto).toBe("02/01/2026 08:12:53");
+    expect(t.indicadores[0]).toMatchObject({ campo: { texto: "AT" }, cor: "azul" });
+    expect(t.indicadores[0].detalhes.map((d) => d.texto)).toEqual(["02/01/2026 08:12:53", "Autorizado o uso da NF-e"]);
+  });
+
+  it("FATGOR sugere o SELECT da LOGNFE pelo número da fatura", () => {
+    const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    const p = relacoesPendentes(s.abas[0], 0, s.abas).find((r) => r.perfilDestino === "LOGNFE");
+    expect(p).toMatchObject({ tabela: "LOGNFE", colunaDestino: "NFE_NUMDOC", chave: "000000053684" });
+    expect(sqlRelacionado(p!.tabela, p!.colunaDestino, p!.chave)).toBe("SELECT * FROM LOGNFE WHERE NFE_NUMDOC = '000000053684';");
+    // pedido sem fatura não sugere a consulta
+    expect(relacoesPendentes(s.abas[0], 2, s.abas).some((r) => r.perfilDestino === "LOGNFE")).toBe(false);
+  });
+
+  it("com as duas abas abertas, liga pedido e NF-e nos dois sentidos", () => {
+    const nfe = parsearConsulta(
+      readFileSync(join(__dirname, "../../fixtures/exemplo-lognfe.txt"), "utf-8").replace('"000000003014"', '"000000053684"'),
+    );
+    let s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    s = reducer(s, { tipo: "criar", dados: nfe });
+    expect(relacionadosDoRegistro(s.abas[0], 0, s.abas)).toEqual([expect.objectContaining({ rotulo: "Log da NF-e", quantidade: 1 })]);
+    expect(relacionadosDoRegistro(s.abas[1], 1, s.abas)).toEqual([
+      expect.objectContaining({ rotulo: "Pedido (cabeçalho)", quantidade: 1, colunaDestinoNome: "FGO_NUMFAT" }),
+    ]);
+  });
+});
+
+describe("indicadores de liberação da FATGOR", () => {
+  it("LIBERA e LIBCOM viram indicadores com operador e data, e saem dos chips", () => {
+    const t = montarTela(fgo, 0, fatgor);
+    expect(t.indicadores.map((i) => [i.campo.nome, i.campo.texto])).toEqual([
+      ["FGO_LIBERA", "1"],
+      ["FGO_LIBCOM", "1"],
+    ]);
+    expect(t.indicadores[0].detalhes.filter((d) => !d.vazio).map((d) => d.texto)).toEqual(["047", "14/10/2024 08:03:43"]);
+    expect(t.status.map((s) => s.nome)).not.toContain("FGO_LIBERA");
+    expect(t.status.map((s) => s.nome)).not.toContain("FGO_LIBCOM");
+  });
+});
+
+describe("títulos vazios", () => {
+  it("registro com a coluna de título vazia mostra (vazio)", () => {
+    const p = buscarPerfil("LOGNFE");
+    expect(montarTela(lognfe, 0, p).titulo).toBe("NF-e (vazio)");
+    expect(resumoRegistro(lognfe, 0, p).titulo).toBe("(vazio)");
   });
 });

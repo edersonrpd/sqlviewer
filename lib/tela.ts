@@ -21,12 +21,14 @@ export type CampoMontado = {
 };
 
 export type StatusMontado = { rotulo: string; nome: string; texto: string; cor: CorStatus };
+export type IndicadorMontado = { campo: CampoMontado; detalhes: CampoMontado[]; cor: CorStatus };
 export type SecaoMontada = { titulo: string; campos: CampoMontado[] };
 
 export type TelaMontada = {
   titulo: string;
   /** coluna-chave destacada (ex.: NUMPOK) */
   chave: CampoMontado | null;
+  indicadores: IndicadorMontado[];
   subtitulo: CampoMontado[];
   status: StatusMontado[];
   destaques: CampoMontado[];
@@ -38,6 +40,11 @@ const pct = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFr
 
 function ehNumerica(c: Coluna) {
   return c.tipo === "inteiro" || c.tipo === "decimal";
+}
+
+/** Valor usado em títulos: NULL e vazio ficam explícitos. */
+function textoTitulo(v: Valor | undefined): string {
+  return v === null || v === undefined ? "NULL" : v.trim() === "" ? "(vazio)" : v;
 }
 
 /** Zero numérico ("0", "0.00", "-0.0000"). Códigos como "000" são texto e não entram aqui. */
@@ -55,6 +62,8 @@ export function montarCampo(dados: ResultadoParse, linha: Valor[], j: number, de
     if (def?.valores && raw in def.valores) texto = def.valores[raw];
     else if (def?.formato === "moeda" && raw !== "" && Number.isFinite(n)) texto = moeda.format(n);
     else if (def?.formato === "percentual" && raw !== "" && Number.isFinite(n)) texto = `${pct.format(n)}%`;
+    // chave de acesso de NF-e (44 dígitos) em blocos de 4, como no DANFE
+    else if (def?.formato === "chaveAcesso") texto = raw.replace(/(\d{4})(?=\d)/g, "$1 ");
     else texto = formatarValor(raw, col.tipo);
   }
   if (def?.hora) {
@@ -93,7 +102,7 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   const jTitulo = perfil?.colunaTitulo ? porNome.get(perfil.colunaTitulo) : undefined;
   let titulo: string;
   if (jTitulo !== undefined) {
-    const v = linha[jTitulo] ?? "NULL";
+    const v = textoTitulo(linha[jTitulo]);
     titulo = tela?.titulo ? `${tela.titulo} ${v}` : `${dados.colunas[jTitulo].nome}: ${v}`;
   } else {
     titulo = dados.colunas.length ? `${dados.colunas[0].nome}: ${linha[0] ?? "NULL"}` : "Registro";
@@ -108,6 +117,14 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   });
 
   const subtitulo = resolver(tela?.subtitulo, false);
+  const indicadores: IndicadorMontado[] = (tela?.indicadores ?? []).flatMap((ind) => {
+    const j = porNome.get(ind.coluna);
+    if (j === undefined) return [];
+    const campo = montarCampo(dados, linha, j, ind);
+    const v = campo.raw;
+    const cor: CorStatus = campo.vazio ? "cinza" : ((v !== null && ind.cores?.[v]) || "azul");
+    return [{ campo, detalhes: resolver(ind.detalhes, false), cor }];
+  });
   const destaques = resolver(tela?.destaques, false);
   let secoes: SecaoMontada[] = (tela?.secoes ?? [])
     .map((s) => ({ titulo: s.titulo, campos: resolver(s.campos, true) }))
@@ -121,7 +138,7 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   }
   const d = colunaDestaque(dados.colunas, perfil);
   const chave = d ? montarCampo(dados, linha, d.j, { rotulo: d.rotulo }) : null;
-  return { titulo, chave, subtitulo, status, destaques, secoes };
+  return { titulo, chave, indicadores, subtitulo, status, destaques, secoes };
 }
 
 function agruparPorTipo(dados: ResultadoParse, linha: Valor[], js: number[]): SecaoMontada[] {
@@ -148,7 +165,7 @@ export function resumoRegistro(
   const linha = dados.linhas[registro];
   const porNome = new Map(dados.colunas.map((c, j) => [c.nome, j]));
   const jT = perfil?.colunaTitulo ? porNome.get(perfil.colunaTitulo) : undefined;
-  const titulo = String(linha[jT ?? 0] ?? "NULL");
+  const titulo = textoTitulo(linha[jT ?? 0]);
   const partes: string[] = [];
   const tela = perfil?.tela;
   for (const d of [...(tela?.subtitulo ?? []).slice(0, 1), ...(tela?.destaques ?? []).slice(0, 1)]) {

@@ -8,7 +8,7 @@
  */
 
 /** Como o valor aparece na Tela. Sem formato, segue o tipo detectado da coluna. */
-export type FormatoCampo = "moeda" | "percentual";
+export type FormatoCampo = "moeda" | "percentual" | "chaveAcesso";
 
 export type CorStatus = "verde" | "amarelo" | "vermelho" | "azul" | "cinza";
 
@@ -33,12 +33,25 @@ export type StatusTela = {
 
 export type SecaoTela = { titulo: string; campos: CampoTela[] };
 
+/**
+ * Indicador de destaque intermediário (menor que o `destaque` do perfil, maior
+ * que um chip de status): valor em evidência com detalhes logo abaixo.
+ */
+export type IndicadorTela = CampoTela & {
+  /** campos exibidos em linha abaixo do valor (ex.: operador e data) */
+  detalhes?: CampoTela[];
+  /** cor por valor; valores não listados usam azul */
+  cores?: Record<string, CorStatus>;
+};
+
 export type Tela = {
   /** ex.: "Pedido" — exibido antes do valor de colunaTitulo */
   titulo?: string;
   /** colunas exibidas abaixo do título */
   subtitulo?: CampoTela[];
   status?: StatusTela[];
+  /** indicadores em evidência no cabeçalho (ex.: liberações) */
+  indicadores?: IndicadorTela[];
   /** cartões de destaque (valores principais) */
   destaques?: CampoTela[];
   secoes: SecaoTela[];
@@ -99,10 +112,27 @@ const TELA_FATGOR: Tela = {
   ],
   status: [
     { coluna: "FGO_JAFATU", rotulo: "Já faturado" },
-    { coluna: "FGO_LIBERA", rotulo: "Liberação" },
-    { coluna: "FGO_LIBCOM", rotulo: "Lib. comercial" },
     { coluna: "FGO_PEDSIT", rotulo: "Situação" },
     { coluna: "FGO_CORTPD", rotulo: "Corte", valores: { S: { texto: "Sim", cor: "amarelo" }, N: { texto: "Não", cor: "cinza" } } },
+  ],
+  indicadores: [
+    {
+      coluna: "FGO_LIBERA",
+      rotulo: "Liberação",
+      detalhes: [
+        { coluna: "FGO_OPELIB", rotulo: "Operador" },
+        { coluna: "FGO_DTALIB", rotulo: "Em", hora: "FGO_HORLIB" },
+        { coluna: "FGO_MOTLIB", rotulo: "Motivo" },
+      ],
+    },
+    {
+      coluna: "FGO_LIBCOM",
+      rotulo: "Liberação comercial",
+      detalhes: [
+        { coluna: "FGO_OPELIC", rotulo: "Operador" },
+        { coluna: "FGO_DTALIC", rotulo: "Em", hora: "FGO_HORLIC" },
+      ],
+    },
   ],
   destaques: [
     { coluna: "FGO_VLRCON", rotulo: "Valor contábil", formato: "moeda" },
@@ -326,6 +356,7 @@ export const PERFIS: Perfil[] = [
       { perfil: "EXTGOR", colunaOrigem: "AUTOINCREM", colunaDestino: "FGO_SEQFGO", rotulo: "Extensão do pedido" },
       { perfil: "MOVCAR", colunaOrigem: "FGO_NUMPOK", colunaDestino: "MCA_NUMPOK", rotulo: "Movimentação de cartões" },
       { perfil: "HUBCIT_INFPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "INF_NUMPOK", rotulo: "Dados do pedido no HUB" },
+      { perfil: "LOGNFE", colunaOrigem: "FGO_NUMFAT", colunaDestino: "NFE_NUMDOC", rotulo: "Log da NF-e" },
     ],
   },
   {
@@ -380,5 +411,72 @@ export const PERFIS: Perfil[] = [
     destaque: { coluna: "INF_NUMPOK", rotulo: "NUMPOK" },
     colunasPadrao: ["INF_NUMPOK", "INF_VALTAX"],
     rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
+  },
+  {
+    id: "LOGNFE",
+    nome: "Log de NF-e",
+    assinatura: ["NFE_NUMDOC", "NFE_ACESSO", "NFE_STATUS"],
+    colunasPadrao: [
+      "NFE_NUMDOC", "NFE_ESPDOC", "NFE_SERIE_", "NFE_CODEMP", "NFE_CODCLI", "NFE_STATUS",
+      "NFE_HORINI", "NFE_DTAAUT", "NFE_OBSERV", "NFE_ACESSO",
+    ],
+    colunasFixas: ["NFE_NUMDOC"],
+    colunaTitulo: "NFE_NUMDOC",
+    graficoSugerido: { modo: "contagem", categoria: "NFE_STATUS" },
+    rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
+    tela: {
+      titulo: "NF-e",
+      subtitulo: [
+        { coluna: "NFE_ESPDOC", rotulo: "Espécie" },
+        { coluna: "NFE_SERIE_", rotulo: "Série" },
+        { coluna: "NFE_CODEMP", rotulo: "Empresa" },
+        { coluna: "NFE_CODCLI", rotulo: "Cliente" },
+      ],
+      indicadores: [
+        {
+          coluna: "NFE_STATUS",
+          rotulo: "Status",
+          detalhes: [
+            { coluna: "NFE_DTAAUT", rotulo: "Autorizada em" },
+            { coluna: "NFE_OBSERV", rotulo: "Retorno" },
+          ],
+        },
+      ],
+      secoes: [
+        {
+          titulo: "Documento",
+          campos: [
+            { coluna: "NFE_NUMDOC", rotulo: "Nº documento" },
+            { coluna: "NFE_ESPDOC", rotulo: "Espécie" },
+            { coluna: "NFE_SERIE_", rotulo: "Série" },
+            { coluna: "NFE_CODEMP", rotulo: "Empresa" },
+            { coluna: "NFE_CODCLI", rotulo: "Cliente" },
+            { coluna: "NFE_DTAEMI", rotulo: "Emissão" },
+            { coluna: "NFE_ACESSO", rotulo: "Chave de acesso", formato: "chaveAcesso", largo: true },
+          ],
+        },
+        {
+          titulo: "Autorização",
+          campos: [
+            { coluna: "NFE_STATUS", rotulo: "Status" },
+            { coluna: "NFE_CODAUT", rotulo: "Protocolo / cód. autorização" },
+            { coluna: "NFE_HORINI", rotulo: "Início" },
+            { coluna: "NFE_DTAAUT", rotulo: "Autorização" },
+            { coluna: "NFE_EMPROC", rotulo: "Em processamento" },
+            { coluna: "NFE_OBSERV", rotulo: "Retorno da SEFAZ", largo: true },
+          ],
+        },
+        {
+          titulo: "Impressão e envio",
+          campos: [
+            { coluna: "NFE_PONIMP", rotulo: "Ponto de impressão", largo: true },
+            { coluna: "NFE_VIANFE", rotulo: "Via" },
+            { coluna: "NFE_TIP_FC", rotulo: "Tipo" },
+            { coluna: "NFE_NOMARQ", rotulo: "Arquivo", largo: true },
+            { coluna: "NFE_NUM_IP", rotulo: "IP" },
+          ],
+        },
+      ],
+    },
   },
 ];

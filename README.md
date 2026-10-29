@@ -108,7 +108,7 @@ O que cada campo faz:
 | `destaque` | não | Coluna-chave destacada em todas as visões, ex.: `{ coluna: "FGO_NUMPOK", rotulo: "NUMPOK" }`. Fica fixada na tabela, em destaque no cabeçalho da Tela, na lista lateral e no topo da ficha. |
 | `tabela` | não | Nome da tabela no banco usado no SQL sugerido (padrão: o `id`). |
 | `totais` | não | Colunas somadas no rodapé quando a tabela aparece como grade na Tela de outra (padrão: todas as decimais). |
-| `tela` | não | Layout da visão Tela: `titulo`, `subtitulo`, `status` (chips coloridos), `destaques` (cartões), `secoes`. Campos aceitam `formato` (`moeda`, `percentual`), `hora`, `valores` e `largo`. |
+| `tela` | não | Layout da visão Tela: `titulo`, `subtitulo`, `status` (chips coloridos), `indicadores` (caixas em evidência, com `detalhes` e `cores` por valor — ex.: liberações da FATGOR), `destaques` (cartões de valores), `secoes`. Campos aceitam `formato` (`moeda`, `percentual`, `chaveAcesso`), `hora`, `valores` e `largo`. |
 | `rotulosInversos` | não | Rótulo exibido **neste** perfil para uma relação declarada em outro (chave = id do perfil que declarou). Sem ele, aparece o `nome` do outro perfil. |
 
 Para destacar uma coluna mesmo sem perfil (consultas genéricas e JOINs), use
@@ -140,7 +140,7 @@ lib/estado.ts        estado das abas (useReducer)
 lib/filtragem.ts     busca, filtros e ordenação
 lib/graficos.ts      candidatas e agregação dos gráficos
 lib/exportar.ts      CSV, Excel e "copiar para chamado"
-fixtures/            exemplo real de resultado (FATGOR)
+fixtures/            exemplos reais de resultado (FATGOR e LOGNFE)
 ```
 
 ### Formato aceito

@@ -8,7 +8,14 @@ import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
 import { relacionadosDoRegistro, relacoesPendentes, type RelacaoPendente, type Relacionado } from "@/lib/relacionados";
-import { montarTela, resumoRegistro, sqlRelacionado, type CampoMontado, type SecaoMontada } from "@/lib/tela";
+import {
+  montarTela,
+  resumoRegistro,
+  sqlRelacionado,
+  type CampoMontado,
+  type IndicadorMontado,
+  type SecaoMontada,
+} from "@/lib/tela";
 import { alinhamento, Celula } from "./Celula";
 import { IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeMais, IconeSeta } from "./Icones";
 import { BotaoCopiarChamado } from "./Saidas";
@@ -133,6 +140,13 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                 </div>
               </div>
             </div>
+            {tela.indicadores.length > 0 && (
+              <div className="grid gap-3 border-t border-zinc-100 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-zinc-800">
+                {tela.indicadores.map((ind) => (
+                  <Indicador key={ind.campo.j} indicador={ind} />
+                ))}
+              </div>
+            )}
           </header>
 
           {/* valores principais */}
@@ -192,6 +206,40 @@ const CORES: Record<CorStatus, string> = {
   azul: "bg-blue-100 text-blue-800 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-900",
   cinza: "bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700",
 };
+
+const CORES_INDICADOR: Record<CorStatus, { caixa: string; valor: string }> = {
+  azul: { caixa: "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40", valor: "text-blue-900 dark:text-blue-100" },
+  verde: { caixa: "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40", valor: "text-emerald-900 dark:text-emerald-100" },
+  amarelo: { caixa: "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40", valor: "text-amber-900 dark:text-amber-100" },
+  vermelho: { caixa: "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40", valor: "text-red-900 dark:text-red-100" },
+  cinza: { caixa: "border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900", valor: "text-zinc-500" },
+};
+
+/** Indicador intermediário (ex.: liberações): menor que o NUMPOK, maior que um chip. */
+function Indicador({ indicador: { campo: c, detalhes, cor } }: { indicador: IndicadorMontado }) {
+  const estilo = CORES_INDICADOR[cor];
+  const detalhesVisiveis = detalhes.filter((d) => !d.vazio);
+  return (
+    <div className={`rounded-md border px-3 py-2 ${estilo.caixa}`} title={c.nome}>
+      <p className="flex items-center justify-between gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        {c.rotulo}
+        <span className="font-mono text-[10px] text-zinc-400">{c.nome}</span>
+      </p>
+      <p className={`mt-0.5 text-lg font-semibold ${estilo.valor}`}>
+        {c.texto === null ? <span className="valor-null">NULL</span> : c.raw?.trim() === "" ? "não informado" : c.texto}
+      </p>
+      {detalhesVisiveis.length > 0 && (
+        <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-zinc-600 dark:text-zinc-400">
+          {detalhesVisiveis.map((d) => (
+            <span key={d.j} title={d.nome}>
+              {d.rotulo}: <span className="font-medium text-zinc-800 dark:text-zinc-200">{d.texto}</span>
+            </span>
+          ))}
+        </p>
+      )}
+    </div>
+  );
+}
 
 /** Coluna-chave em destaque no cabeçalho (ex.: NUMPOK do pedido). */
 function BlocoChave({ campo: c, onCopiar }: { campo: CampoMontado; onCopiar: (rotulo: string, raw: string | null) => void }) {
