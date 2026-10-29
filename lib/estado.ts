@@ -40,15 +40,21 @@ export type Estado = {
   ativa: string | null;
   contadores: Record<string, number>;
   proximoId: number;
+  /** última aba fechada, guardada para "Desfazer" */
+  fechada: { aba: Aba; posicao: number } | null;
 };
 
-export const estadoInicial: Estado = { abas: [], ativa: null, contadores: {}, proximoId: 1 };
+export const estadoInicial: Estado = { abas: [], ativa: null, contadores: {}, proximoId: 1, fechada: null };
 
 export type Acao =
   | { tipo: "criar"; dados: ResultadoParse }
   /** várias abas de uma vez (ex.: resultado de JOIN separado); ativa a primeira */
   | { tipo: "criarVarias"; dados: ResultadoParse[] }
   | { tipo: "fechar"; id: string }
+  /** desfaz o último fechamento */
+  | { tipo: "reabrir" }
+  /** esquece a aba fechada (o "Desfazer" expirou) */
+  | { tipo: "descartarFechada" }
   | { tipo: "ativar"; id: string | null }
   | { tipo: "renomear"; id: string; nome: string }
   | { tipo: "atualizar"; id: string; patch: Partial<Omit<Aba, "id" | "dados">> }
@@ -136,6 +142,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         registroTela: null,
       };
       return {
+        ...estado,
         abas: [...estado.abas, aba],
         ativa: id,
         contadores: { ...estado.contadores, [chave]: k },
@@ -154,8 +161,17 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       const abas = estado.abas.filter((a) => a.id !== acao.id);
       let ativa = estado.ativa;
       if (ativa === acao.id) ativa = abas.length ? abas[Math.min(pos, abas.length - 1)].id : null;
-      return { ...estado, abas, ativa };
+      return { ...estado, abas, ativa, fechada: { aba: estado.abas[pos], posicao: pos } };
     }
+    case "reabrir": {
+      const f = estado.fechada;
+      if (!f) return estado;
+      const abas = [...estado.abas];
+      abas.splice(Math.min(f.posicao, abas.length), 0, f.aba);
+      return { ...estado, abas, ativa: f.aba.id, fechada: null };
+    }
+    case "descartarFechada":
+      return estado.fechada ? { ...estado, fechada: null } : estado;
     case "ativar":
       return { ...estado, ativa: acao.id };
     case "renomear": {

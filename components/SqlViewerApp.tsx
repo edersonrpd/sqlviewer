@@ -33,6 +33,10 @@ export function SqlViewerApp() {
     return null;
   }, []);
 
+  // estáveis, para o aviso de "Desfazer" não reiniciar a contagem a cada renderização
+  const reabrir = useCallback(() => dispatch({ tipo: "reabrir" }), []);
+  const descartarFechada = useCallback(() => dispatch({ tipo: "descartarFechada" }), []);
+
   const ativa = estado.abas.find((a) => a.id === estado.ativa) ?? null;
 
   return (
@@ -56,6 +60,56 @@ export function SqlViewerApp() {
           />
         )}
       </main>
+
+      {estado.fechada && (
+        <AvisoDesfazer
+          key={estado.fechada.aba.id}
+          nome={estado.fechada.aba.nome}
+          onDesfazer={reabrir}
+          onExpirar={descartarFechada}
+        />
+      )}
+    </div>
+  );
+}
+
+const SEGUNDOS_DESFAZER = 10;
+
+/** "Aba X fechada · Desfazer": fechar é imediato e o engano tem volta (Ctrl+Shift+Z também desfaz). */
+function AvisoDesfazer({ nome, onDesfazer, onExpirar }: { nome: string; onDesfazer: () => void; onExpirar: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onExpirar, SEGUNDOS_DESFAZER * 1000);
+    const teclas = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        onDesfazer();
+      }
+    };
+    window.addEventListener("keydown", teclas);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("keydown", teclas);
+    };
+  }, [onDesfazer, onExpirar]);
+
+  return (
+    <div
+      role="status"
+      className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-zinc-900 py-2 pr-2 pl-4 text-sm text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
+    >
+      <span>
+        Aba <strong>{nome}</strong> fechada
+      </span>
+      <button
+        className="rounded-md px-2 py-1 font-semibold text-blue-300 hover:bg-white/10 dark:text-blue-700 dark:hover:bg-black/10"
+        onClick={onDesfazer}
+        title="Ctrl+Shift+Z"
+      >
+        Desfazer
+      </button>
+      <button className="rounded p-1 opacity-60 hover:opacity-100" onClick={onExpirar} aria-label="Dispensar">
+        <IconeX className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
@@ -70,6 +124,10 @@ function BarraAbas({ estado, dispatch }: { estado: typeof estadoInicial; dispatc
         return (
           <div
             key={a.id}
+            // clique com o botão do meio fecha, como nas abas do navegador
+            onAuxClick={(e) => {
+              if (e.button === 1) dispatch({ tipo: "fechar", id: a.id });
+            }}
             className={`group flex max-w-56 shrink-0 items-center gap-1 rounded-t-md border border-b-0 px-2 py-1 text-sm ${
               ativa
                 ? "border-zinc-300 bg-zinc-50 font-medium dark:border-zinc-700 dark:bg-zinc-950"
@@ -105,11 +163,7 @@ function BarraAbas({ estado, dispatch }: { estado: typeof estadoInicial; dispatc
               className="btn-icone h-5 w-5"
               title="Fechar aba"
               aria-label={`Fechar ${a.nome}`}
-              onClick={() => {
-                if (window.confirm(`Fechar a aba "${a.nome}"? Os dados colados nela serão descartados.`)) {
-                  dispatch({ tipo: "fechar", id: a.id });
-                }
-              }}
+              onClick={() => dispatch({ tipo: "fechar", id: a.id })}
             >
               <IconeX className="h-3.5 w-3.5" />
             </button>

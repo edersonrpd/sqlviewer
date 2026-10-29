@@ -66,3 +66,30 @@ describe("relacionados", () => {
     expect(relacionadosDoRegistro(s.abas[0], 0, s.abas)).toEqual([]);
   });
 });
+
+describe("fechar e desfazer", () => {
+  it("fecha sem perguntar e o Desfazer devolve a aba na mesma posição, com o estado", () => {
+    let s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    s = reducer(s, { tipo: "criar", dados: itens });
+    s = reducer(s, { tipo: "atualizar", id: s.abas[0].id, patch: { busca: "047", registroTela: 2 } });
+    const id = s.abas[0].id;
+    s = reducer(s, { tipo: "ativar", id });
+    s = reducer(s, { tipo: "fechar", id });
+    expect(s.abas.map((a) => a.nome)).toEqual(["FATDOR"]);
+    expect(s.fechada?.aba.nome).toBe("FATGOR");
+    s = reducer(s, { tipo: "reabrir" });
+    expect(s.abas.map((a) => a.nome)).toEqual(["FATGOR", "FATDOR"]);
+    expect(s.ativa).toBe(id);
+    expect(s.abas[0]).toMatchObject({ busca: "047", registroTela: 2 });
+    expect(s.fechada).toBeNull();
+  });
+
+  it("depois que o aviso expira não há o que desfazer; criar aba não perde o Desfazer", () => {
+    let s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    s = reducer(s, { tipo: "fechar", id: s.abas[0].id });
+    s = reducer(s, { tipo: "criar", dados: itens });
+    expect(s.fechada).not.toBeNull();
+    s = reducer(s, { tipo: "descartarFechada" });
+    expect(reducer(s, { tipo: "reabrir" })).toBe(s);
+  });
+});
