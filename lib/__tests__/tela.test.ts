@@ -98,7 +98,8 @@ describe("destaque do NUMPOK", () => {
   it("a coluna destacada começa visível e fixada", () => {
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const j = fgo.colunas.findIndex((c) => c.nome === "FGO_NUMPOK");
-    expect(s.abas[0].fixas).toEqual([fgo.colunas.findIndex((c) => c.nome === "FGO_NUMDOC"), j]);
+    const idx = (n: string) => fgo.colunas.findIndex((c) => c.nome === n);
+    expect(s.abas[0].fixas).toEqual([idx("FGO_NUMDOC"), j, idx("FGO_MOTBAI")]);
     expect(s.abas[0].visiveis[j]).toBe(true);
   });
 });

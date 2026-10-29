@@ -355,7 +355,8 @@ export const PERFIS: Perfil[] = [
       "FGO_CODCLI", "FGO_CODVEN", "FGO_ESTADO", "FGO_VLRCON", "FGO_JAFATU", "FGO_NUMFAT",
       "FGO_LIBERA", "FGO_LIBCOM",
     ],
-    colunasFixas: ["FGO_NUMDOC"],
+    // NUMPOK (destaque) e motivo da baixa ficam sempre à vista na tabela
+    colunasFixas: ["FGO_NUMDOC", "FGO_NUMPOK", "FGO_MOTBAI"],
     chave: "AUTOINCREM",
     destaque: { coluna: "FGO_NUMPOK", rotulo: "NUMPOK" },
     colunaTitulo: "FGO_NUMDOC",

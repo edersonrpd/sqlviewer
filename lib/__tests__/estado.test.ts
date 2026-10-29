@@ -29,9 +29,9 @@ describe("abas", () => {
     const l = layoutColunas(fgo, buscarPerfil("FATGOR"));
     const nomes = colunasExibidas(l).map((j) => fgo.colunas[j].nome);
     expect(nomes[0]).toBe("FGO_NUMDOC");
-    expect(nomes).toHaveLength(14);
-    // NUMPOK destacado é fixado logo após as fixas do perfil
-    expect(nomes.slice(1, 4)).toEqual(["FGO_NUMPOK", "AUTOINCREM", "FGO_CODEMP"]);
+    expect(nomes).toHaveLength(15);
+    // fixas do perfil na ordem: Nº documento, NUMPOK e motivo da baixa
+    expect(nomes.slice(0, 4)).toEqual(["FGO_NUMDOC", "FGO_NUMPOK", "FGO_MOTBAI", "AUTOINCREM"]);
     // nenhuma coluna padrão existe → todas visíveis
     const outro = layoutColunas(itens, buscarPerfil("FATGOR"));
     expect(outro.visiveis.every(Boolean)).toBe(true);
