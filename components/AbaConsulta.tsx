@@ -61,16 +61,18 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
     <div className="flex h-full flex-col">
       <ResumoConsulta aba={aba} onTrocarPerfil={(perfilId) => dispatch({ tipo: "trocarPerfil", id: aba.id, perfilId })} />
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-800">
-        <div className="inline-flex rounded-md border border-zinc-300 p-0.5 dark:border-zinc-700" role="tablist">
+      <div className="vidro relative z-10 flex flex-wrap items-center gap-2 border-b border-zinc-200 px-3 py-2 dark:border-white/10">
+        <div className="inline-flex rounded-xl border border-zinc-300 bg-white/60 p-1 dark:border-white/10 dark:bg-white/5" role="tablist">
           {(["tela", "tabela", "graficos"] as const).map((v) => (
             <button
               key={v}
               role="tab"
               aria-selected={aba.visao === v}
               onClick={() => atualizar({ visao: v })}
-              className={`rounded px-3 py-1 text-sm font-medium ${
-                aba.visao === v ? "bg-blue-600 text-white" : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className={`rounded-lg px-4 py-1 text-sm font-semibold transition duration-300 ${
+                aba.visao === v
+                  ? "bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-[0_4px_18px_-4px_rgb(99_102_241/0.9)]"
+                  : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-100"
               }`}
             >
               {v === "tela" ? "Tela" : v === "tabela" ? "Tabela" : "Gráficos"}
@@ -95,7 +97,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
         </span>
 
         {aba.selecionadas.size > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+          <span className="inline-flex animate-surgir items-center gap-1 rounded-full border border-blue-300 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-200">
             {aba.selecionadas.size} selecionada(s)
             {selecionadasVisiveis.length !== aba.selecionadas.size && ` (${selecionadasVisiveis.length} no filtro)`}
             <button className="ml-0.5 hover:text-blue-900" title="Limpar seleção" onClick={() => atualizar({ selecionadas: new Set() })}>
@@ -123,7 +125,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
       </div>
 
       {temFiltros && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-zinc-200 px-3 py-1.5 text-xs dark:border-zinc-800">
+        <div className="vidro relative z-10 flex flex-wrap items-center gap-1.5 border-b border-zinc-200 px-3 py-1.5 text-xs dark:border-white/10">
           <span className="text-zinc-500">Filtros:</span>
           {aba.relacoes.map((r, k) => (
             <Chip
@@ -220,10 +222,10 @@ function Chip({
   return (
     <span
       title={titulo}
-      className={`inline-flex max-w-96 items-center gap-1 rounded-full px-2 py-0.5 font-mono ${
+      className={`inline-flex max-w-96 animate-surgir items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono ${
         destaque
-          ? "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200"
-          : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+          ? "border-violet-300 bg-violet-100 text-violet-800 dark:border-violet-400/40 dark:bg-violet-500/15 dark:text-violet-200"
+          : "border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
       }`}
     >
       <span className="truncate">{children}</span>

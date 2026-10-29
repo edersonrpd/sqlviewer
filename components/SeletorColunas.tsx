@@ -50,9 +50,9 @@ export function SeletorColunas({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/20" onClick={onFechar}>
+    <div className="gaveta-fundo" onClick={onFechar}>
       <aside
-        className="flex h-full w-full max-w-sm flex-col border-l border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900"
+        className="gaveta max-w-sm"
         onClick={(e) => e.stopPropagation()}
         aria-label="Seletor de colunas"
       >
