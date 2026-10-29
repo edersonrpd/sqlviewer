@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { colunaDestaque } from "../destaque";
 import { estadoInicial, reducer } from "../estado";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil } from "../perfis";
@@ -58,7 +59,7 @@ describe("montarTela genérica", () => {
 
 describe("apoio", () => {
   it("resumo da lista de registros", () => {
-    expect(resumoRegistro(fgo, 0, fatgor)).toEqual({ titulo: "000001000001", detalhe: "001 · R$ 26,64" });
+    expect(resumoRegistro(fgo, 0, fatgor)).toEqual({ titulo: "000001000001", detalhe: "001 · R$\u00a026,64", chave: "NUMPOK: —" });
   });
 
   it("SQL sugerido escapa aspas", () => {
@@ -76,5 +77,26 @@ describe("apoio", () => {
 describe("configuração dos perfis", () => {
   it("FATDOR totaliza quantidade e total do item, não o unitário", () => {
     expect(buscarPerfil("FATDOR")?.totais).toEqual(["FDO_QTDITE", "FDO_TOTITE"]);
+  });
+});
+
+describe("destaque do NUMPOK", () => {
+  it("perfil FATGOR destaca FGO_NUMPOK, inclusive vazio", () => {
+    expect(colunaDestaque(fgo.colunas, fatgor)).toMatchObject({ nome: "FGO_NUMPOK", rotulo: "NUMPOK" });
+    expect(montarTela(fgo, 0, fatgor).chave).toMatchObject({ nome: "FGO_NUMPOK", raw: "" });
+  });
+
+  it("consulta genérica ou JOIN também destaca colunas *_NUMPOK", () => {
+    const d = parsearConsulta('"ID"\t"MCA_NUMPOK"\t"INF_NUMPOK"\n"1"\t"0001234567"\t"0001234567"\n');
+    expect(colunaDestaque(d.colunas)).toMatchObject({ j: 1, nome: "MCA_NUMPOK" });
+    expect(montarTela(d, 0).chave).toMatchObject({ texto: "0001234567" });
+    expect(colunaDestaque(parsearConsulta('"NUMPOKX"\t"A"\n"1"\t"2"').colunas)).toBeNull();
+  });
+
+  it("a coluna destacada começa visível e fixada", () => {
+    const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    const j = fgo.colunas.findIndex((c) => c.nome === "FGO_NUMPOK");
+    expect(s.abas[0].fixas).toEqual([fgo.colunas.findIndex((c) => c.nome === "FGO_NUMDOC"), j]);
+    expect(s.abas[0].visiveis[j]).toBe(true);
   });
 });

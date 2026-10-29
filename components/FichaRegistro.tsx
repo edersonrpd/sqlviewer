@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { colunaDestaque } from "@/lib/destaque";
 import type { Aba } from "@/lib/estado";
 import { buscarPerfil } from "@/lib/perfis";
 import { relacionadosDoRegistro } from "@/lib/relacionados";
@@ -49,15 +50,19 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
 
   const perfil = buscarPerfil(aba.perfilId);
   const jTitulo = perfil?.colunaTitulo ? dados.colunas.findIndex((c) => c.nome === perfil.colunaTitulo) : -1;
+  const destaque = colunaDestaque(dados.colunas, perfil);
+  const valorDestaque = destaque ? linha[destaque.j] : null;
   const titulo = jTitulo >= 0 ? `${dados.colunas[jTitulo].nome}: ${linha[jTitulo] ?? "NULL"}` : `Registro ${registro + 1}`;
 
   // todos os campos: visíveis na ordem da tabela, depois os ocultos
   const campos = useMemo(() => {
     const vis = new Set(colunasExibidas);
-    const ordem = [...colunasExibidas, ...dados.colunas.map((_, j) => j).filter((j) => !vis.has(j))];
+    const todas = [...colunasExibidas, ...dados.colunas.map((_, j) => j).filter((j) => !vis.has(j))];
+    // coluna destacada (ex.: NUMPOK) sempre no topo
+    const ordem = destaque ? [destaque.j, ...todas.filter((j) => j !== destaque.j)] : todas;
     const t = busca.trim().toLowerCase();
     return ordem.filter((j) => !t || dados.colunas[j].nome.toLowerCase().includes(t)).map((j) => ({ j, oculta: !vis.has(j) }));
-  }, [colunasExibidas, dados.colunas, busca]);
+  }, [colunasExibidas, dados.colunas, busca, destaque]);
 
   const relacionados = useMemo(() => relacionadosDoRegistro(aba, registro, abas), [aba, registro, abas]);
 
@@ -74,6 +79,27 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
               <h2 className="truncate font-mono text-base font-semibold" title={titulo}>
                 {titulo}
               </h2>
+              {destaque && (
+                <p className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-sm dark:border-amber-700 dark:bg-amber-950/50" title={destaque.nome}>
+                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">{destaque.rotulo}</span>
+                  {valorDestaque === null ? (
+                    <span className="valor-null">NULL</span>
+                  ) : valorDestaque.trim() === "" ? (
+                    <span className="text-zinc-400">não informado</span>
+                  ) : (
+                    <>
+                      <span className="font-mono font-bold text-amber-950 dark:text-amber-100">{valorDestaque}</span>
+                      <button
+                        className="btn-icone h-5 w-5"
+                        title="Copiar"
+                        onClick={async () => setAviso((await copiarTexto(valorDestaque)) ? `${destaque.nome} copiado` : "Não foi possível copiar")}
+                      >
+                        <IconeCopiar className="h-3 w-3" />
+                      </button>
+                    </>
+                  )}
+                </p>
+              )}
               <p className="text-xs text-zinc-500 tabular-nums">
                 {posicao >= 0
                   ? `Registro ${posicao + 1} de ${indices.length} (filtro e ordenação atuais)`
@@ -135,7 +161,14 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
               const c = dados.colunas[j];
               const v = linha[j];
               return (
-                <div key={j} className="group grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)_auto] items-start gap-2 px-4 py-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                <div
+                  key={j}
+                  className={`group grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)_auto] items-start gap-2 px-4 py-1.5 ${
+                    destaque?.j === j
+                      ? "bg-amber-50 font-semibold dark:bg-amber-950/40"
+                      : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                  }`}
+                >
                   <dt className="flex items-center gap-1 truncate pt-0.5 font-mono text-xs text-zinc-500" title={c.nome}>
                     {oculta && <IconeOlhoFechado className="h-3 w-3 shrink-0 opacity-60" />}
                     <span className="truncate">{c.nome}</span>

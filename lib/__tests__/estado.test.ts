@@ -30,7 +30,8 @@ describe("abas", () => {
     const nomes = colunasExibidas(l).map((j) => fgo.colunas[j].nome);
     expect(nomes[0]).toBe("FGO_NUMDOC");
     expect(nomes).toHaveLength(14);
-    expect(nomes.slice(1, 3)).toEqual(["AUTOINCREM", "FGO_CODEMP"]);
+    // NUMPOK destacado é fixado logo após as fixas do perfil
+    expect(nomes.slice(1, 4)).toEqual(["FGO_NUMPOK", "AUTOINCREM", "FGO_CODEMP"]);
     // nenhuma coluna padrão existe → todas visíveis
     const outro = layoutColunas(itens, buscarPerfil("FATGOR"));
     expect(outro.visiveis.every(Boolean)).toBe(true);

@@ -3,8 +3,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef, type Column } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { colunaDestaque } from "@/lib/destaque";
 import type { Aba } from "@/lib/estado";
 import { NOMES_TIPOS } from "@/lib/formatacao";
+import { buscarPerfil } from "@/lib/perfis";
 import { alinhamento, Celula } from "./Celula";
 import { useDebounce } from "./util";
 
@@ -32,6 +34,13 @@ type Props = {
  */
 export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Props) {
   const { dados, larguras, ordenacao, selecionadas, registro } = aba;
+  // coluna-chave destacada (ex.: NUMPOK)
+  const idDestaque = useMemo(() => {
+    const d = colunaDestaque(dados.colunas, buscarPerfil(aba.perfilId));
+    return d ? String(d.j) : null;
+  }, [dados.colunas, aba.perfilId]);
+  const fundoCabecalho = (id: string) =>
+    id === idDestaque ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" : "bg-zinc-100 dark:bg-zinc-900";
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const definicoes = useMemo<ColumnDef<number>[]>(
@@ -188,7 +197,7 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
               key={c.id}
               role="columnheader"
               style={estiloFixa(c)}
-              className={`sticky z-30 shrink-0 bg-zinc-100 dark:bg-zinc-900 ${bordaCelula} ${
+              className={`sticky z-30 shrink-0 ${fundoCabecalho(c.id)} ${bordaCelula} ${
                 k === esquerda.length - 1 ? sombraFixa : ""
               }`}
             >
@@ -199,7 +208,7 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
           {itensColuna.map((vc) => {
             const c = centro[vc.index];
             return (
-              <div key={c.id} role="columnheader" style={{ width: c.getSize() }} className={`shrink-0 ${bordaCelula}`}>
+              <div key={c.id} role="columnheader" style={{ width: c.getSize() }} className={`shrink-0 ${fundoCabecalho(c.id)} ${bordaCelula}`}>
                 {cabecalho(c)}
               </div>
             );
@@ -229,6 +238,7 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
                 larguraTotal={larguraTotal}
                 onAlternar={alternarLinha}
                 onAbrir={abrirRegistro}
+                idDestaque={idDestaque}
               />
             );
           })}
@@ -259,6 +269,7 @@ type PropsLinha = {
   larguraTotal: number;
   onAlternar: (i: number) => void;
   onAbrir: (i: number) => void;
+  idDestaque: string | null;
 };
 
 const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
@@ -271,6 +282,8 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
         ? "bg-white dark:bg-zinc-950"
         : "bg-zinc-50 dark:bg-zinc-900/60";
   const classeCelula = `flex shrink-0 items-center ${fundo} group-hover:bg-amber-50 dark:group-hover:bg-zinc-800 ${bordaCelula}`;
+  const classeDestaque = `flex shrink-0 items-center bg-amber-50 font-mono font-semibold text-amber-900 group-hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-200 ${bordaCelula}`;
+  const classe = (c: Column<number>) => (c.id === p.idDestaque ? classeDestaque : classeCelula);
 
   const conteudo = (c: Column<number>) => {
     if (c.id === ID_SELECAO) {
@@ -295,7 +308,7 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
     const c = p.centro[k];
     if (!c) continue;
     centro.push(
-      <div key={c.id} role="gridcell" style={{ width: c.getSize() }} className={classeCelula}>
+      <div key={c.id} role="gridcell" style={{ width: c.getSize() }} className={classe(c)}>
         {conteudo(c)}
       </div>,
     );
@@ -314,7 +327,7 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
           key={c.id}
           role="gridcell"
           style={{ width: c.getSize(), left: p.offsets.get(c.id) }}
-          className={`sticky z-10 ${classeCelula} ${k === p.esquerda.length - 1 ? sombraFixa : ""}`}
+          className={`sticky z-10 ${classe(c)} ${k === p.esquerda.length - 1 ? sombraFixa : ""}`}
         >
           {conteudo(c)}
         </div>

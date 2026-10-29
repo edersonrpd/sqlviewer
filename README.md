@@ -105,10 +105,15 @@ O que cada campo faz:
 | `colunaTitulo` | não | Coluna usada como título da ficha do registro. |
 | `graficoSugerido` | não | Gráfico inicial: `contagem` por `categoria`, ou `soma` de `valor` por `categoria`. Se as colunas não existirem, o gráfico é sugerido automaticamente. |
 | `relacoes` | não | Ligações com outros perfis. Valem nos dois sentidos: basta declarar em um dos lados. |
+| `destaque` | não | Coluna-chave destacada em todas as visões, ex.: `{ coluna: "FGO_NUMPOK", rotulo: "NUMPOK" }`. Fica fixada na tabela, em destaque no cabeçalho da Tela, na lista lateral e no topo da ficha. |
 | `tabela` | não | Nome da tabela no banco usado no SQL sugerido (padrão: o `id`). |
 | `totais` | não | Colunas somadas no rodapé quando a tabela aparece como grade na Tela de outra (padrão: todas as decimais). |
 | `tela` | não | Layout da visão Tela: `titulo`, `subtitulo`, `status` (chips coloridos), `destaques` (cartões), `secoes`. Campos aceitam `formato` (`moeda`, `percentual`), `hora`, `valores` e `largo`. |
 | `rotulosInversos` | não | Rótulo exibido **neste** perfil para uma relação declarada em outro (chave = id do perfil que declarou). Sem ele, aparece o `nome` do outro perfil. |
+
+Para destacar uma coluna mesmo sem perfil (consultas genéricas e JOINs), use
+`DESTAQUES_GLOBAIS` no mesmo arquivo. Hoje qualquer coluna terminada em `NUMPOK`
+(`FGO_NUMPOK`, `MCA_NUMPOK`, `INF_NUMPOK`...) é destacada.
 
 Regras da detecção:
 

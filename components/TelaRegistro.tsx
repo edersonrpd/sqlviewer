@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { CorStatus } from "@/config/perfis";
+import { colunaDestaque } from "@/lib/destaque";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
@@ -103,6 +104,8 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                 )}
               </div>
 
+              {tela.chave && <BlocoChave campo={tela.chave} onCopiar={copiarValor} />}
+
               <div className="flex flex-col items-end gap-2">
                 <div className="flex items-center gap-1.5">
                   <button className="btn px-2" disabled={anterior === null} onClick={() => ir(anterior)} title="Anterior (←)">
@@ -189,6 +192,38 @@ const CORES: Record<CorStatus, string> = {
   azul: "bg-blue-100 text-blue-800 ring-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:ring-blue-900",
   cinza: "bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700",
 };
+
+/** Coluna-chave em destaque no cabeçalho (ex.: NUMPOK do pedido). */
+function BlocoChave({ campo: c, onCopiar }: { campo: CampoMontado; onCopiar: (rotulo: string, raw: string | null) => void }) {
+  const semValor = c.raw === null || c.raw.trim() === "";
+  return (
+    <div
+      className={`rounded-lg border-2 px-4 py-2 ${
+        semValor
+          ? "border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"
+          : "border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-950/50"
+      }`}
+      title={c.nome}
+    >
+      <p className="flex items-center justify-between gap-3 text-xs font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">
+        {c.rotulo}
+        <span className="font-mono text-[10px] font-normal tracking-normal text-zinc-400 normal-case">{c.nome}</span>
+      </p>
+      <div className="mt-0.5 flex items-center gap-2">
+        {semValor ? (
+          <span className="text-lg text-zinc-400">{c.raw === null ? <span className="valor-null">NULL</span> : "não informado"}</span>
+        ) : (
+          <>
+            <span className="font-mono text-2xl font-bold tracking-tight text-amber-950 dark:text-amber-100">{c.raw}</span>
+            <button className="btn-icone" title="Copiar NUMPOK" aria-label={`Copiar ${c.nome}`} onClick={() => onCopiar(c.nome, c.raw)}>
+              <IconeCopiar />
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ChipStatus({ cor, titulo, children }: { cor: CorStatus; titulo: string; children: React.ReactNode }) {
   return (
@@ -410,7 +445,8 @@ function BlocoPendentes({ pendentes, onColar }: { pendentes: RelacaoPendente[]; 
 function ListaRegistros({ aba, indices, atual, onEscolher }: { aba: Aba; indices: number[]; atual: number; onEscolher: (i: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const perfil = buscarPerfil(aba.perfilId);
-  const virt = useVirtualizer({ count: indices.length, getScrollElement: () => ref.current, estimateSize: () => 52, overscan: 8 });
+  const temChave = useMemo(() => colunaDestaque(aba.dados.colunas, perfil) !== null, [aba.dados.colunas, perfil]);
+  const virt = useVirtualizer({ count: indices.length, getScrollElement: () => ref.current, estimateSize: () => (temChave ? 66 : 52), overscan: 8 });
   const pos = indices.indexOf(atual);
 
   // mantém o registro atual visível ao navegar com Anterior/Próximo
@@ -438,10 +474,11 @@ function ListaRegistros({ aba, indices, atual, onEscolher }: { aba: Aba; indices
                     ? "border-l-blue-600 bg-blue-50 dark:bg-blue-950/60"
                     : "border-l-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                 }`}
-                style={{ height: 52, transform: `translateY(${v.start}px)` }}
+                style={{ height: temChave ? 66 : 52, transform: `translateY(${v.start}px)` }}
               >
                 <span className="truncate font-mono text-sm font-medium">{r.titulo}</span>
                 <span className="truncate text-xs text-zinc-500">{r.detalhe}</span>
+                {r.chave && <span className="truncate font-mono text-xs font-semibold text-amber-700 dark:text-amber-400">{r.chave}</span>}
               </button>
             );
           })}

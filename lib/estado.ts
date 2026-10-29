@@ -2,6 +2,7 @@ import { PERFIS, type Perfil } from "@/config/perfis";
 import type { FiltroRelacao, Ordenacao } from "./filtragem";
 import { formatarValor } from "./formatacao";
 import { sugerirGrafico, type ConfigGrafico } from "./graficos";
+import { colunaDestaque } from "./destaque";
 import { buscarPerfil, detectarPerfil, type Deteccao } from "./perfis";
 import type { ResultadoParse } from "./tipos";
 
@@ -61,6 +62,9 @@ export function layoutColunas(dados: ResultadoParse, perfil?: Perfil): Pick<Aba,
   const natural = Array.from({ length: n }, (_, j) => j);
   const padrao = (perfil?.colunasPadrao ?? []).map((c) => porNome.get(c)).filter((j): j is number => j !== undefined);
   const fixas = (perfil?.colunasFixas ?? []).map((c) => porNome.get(c)).filter((j): j is number => j !== undefined);
+  // a coluna destacada (ex.: NUMPOK) fica sempre visível e fixada
+  const destaque = colunaDestaque(dados.colunas, perfil);
+  if (destaque && !fixas.includes(destaque.j)) fixas.push(destaque.j);
   if (padrao.length === 0) {
     return { ordem: natural, visiveis: Array(n).fill(true), fixas };
   }

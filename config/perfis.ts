@@ -66,6 +66,8 @@ export type Perfil = {
   colunasFixas?: string[];
   /** usada como título da ficha do registro */
   colunaTitulo?: string;
+  /** coluna-chave destacada em todas as visões (ex.: NUMPOK do pedido) */
+  destaque?: { coluna: string; rotulo: string };
   graficoSugerido?: { modo: "contagem" | "soma"; categoria: string; valor?: string };
   relacoes?: Relacao[];
   /**
@@ -296,6 +298,14 @@ const TELA_FATGOR: Tela = {
 };
 
 
+/**
+ * Colunas destacadas mesmo sem perfil (consultas genéricas e JOINs).
+ * O primeiro padrão que casar com uma coluna do resultado vence.
+ */
+export const DESTAQUES_GLOBAIS: { padrao: RegExp; rotulo: string }[] = [
+  { padrao: /(^|_)NUMPOK$/, rotulo: "NUMPOK" },
+];
+
 export const PERFIS: Perfil[] = [
   {
     id: "FATGOR",
@@ -307,6 +317,7 @@ export const PERFIS: Perfil[] = [
       "FGO_LIBERA", "FGO_LIBCOM",
     ],
     colunasFixas: ["FGO_NUMDOC"],
+    destaque: { coluna: "FGO_NUMPOK", rotulo: "NUMPOK" },
     colunaTitulo: "FGO_NUMDOC",
     graficoSugerido: { modo: "soma", categoria: "FGO_CODVEN", valor: "FGO_VLRCON" },
     tela: TELA_FATGOR,
@@ -358,6 +369,7 @@ export const PERFIS: Perfil[] = [
     id: "MOVCAR",
     nome: "Movimentação de cartões",
     assinatura: ["MCA_NUMPOK"],
+    destaque: { coluna: "MCA_NUMPOK", rotulo: "NUMPOK" },
     colunasPadrao: ["MCA_NUMPOK", "MCA_VALTAX", "MCA_HIST01"],
     rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
   },
@@ -365,6 +377,7 @@ export const PERFIS: Perfil[] = [
     id: "HUBCIT_INFPED",
     nome: "Pedidos no HUB",
     assinatura: ["INF_NUMPOK"],
+    destaque: { coluna: "INF_NUMPOK", rotulo: "NUMPOK" },
     colunasPadrao: ["INF_NUMPOK", "INF_VALTAX"],
     rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
   },

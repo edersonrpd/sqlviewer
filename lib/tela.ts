@@ -1,4 +1,5 @@
 import type { CampoTela, CorStatus, Perfil } from "@/config/perfis";
+import { colunaDestaque } from "./destaque";
 import { formatarValor } from "./formatacao";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
 
@@ -24,6 +25,8 @@ export type SecaoMontada = { titulo: string; campos: CampoMontado[] };
 
 export type TelaMontada = {
   titulo: string;
+  /** coluna-chave destacada (ex.: NUMPOK) */
+  chave: CampoMontado | null;
   subtitulo: CampoMontado[];
   status: StatusMontado[];
   destaques: CampoMontado[];
@@ -116,7 +119,9 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   } else {
     secoes = agruparPorTipo(dados, linha, restantes);
   }
-  return { titulo, subtitulo, status, destaques, secoes };
+  const d = colunaDestaque(dados.colunas, perfil);
+  const chave = d ? montarCampo(dados, linha, d.j, { rotulo: d.rotulo }) : null;
+  return { titulo, chave, subtitulo, status, destaques, secoes };
 }
 
 function agruparPorTipo(dados: ResultadoParse, linha: Valor[], js: number[]): SecaoMontada[] {
@@ -135,7 +140,11 @@ function agruparPorTipo(dados: ResultadoParse, linha: Valor[], js: number[]): Se
 }
 
 /** Texto curto para a lista de registros: título + primeiro destaque/subtítulo. */
-export function resumoRegistro(dados: ResultadoParse, registro: number, perfil?: Perfil): { titulo: string; detalhe: string } {
+export function resumoRegistro(
+  dados: ResultadoParse,
+  registro: number,
+  perfil?: Perfil,
+): { titulo: string; detalhe: string; chave: string | null } {
   const linha = dados.linhas[registro];
   const porNome = new Map(dados.colunas.map((c, j) => [c.nome, j]));
   const jT = perfil?.colunaTitulo ? porNome.get(perfil.colunaTitulo) : undefined;
@@ -154,7 +163,9 @@ export function resumoRegistro(dados: ResultadoParse, registro: number, perfil?:
       if (v) partes.push(formatarValor(v, dados.colunas[j].tipo));
     }
   }
-  return { titulo, detalhe: partes.join(" · ") };
+  const d = colunaDestaque(dados.colunas, perfil);
+  const v = d ? linha[d.j] : null;
+  return { titulo, detalhe: partes.join(" · "), chave: d ? `${d.rotulo}: ${v === null ? "NULL" : v.trim() || "—"}` : null };
 }
 
 /** SQL sugerido para buscar os registros relacionados que ainda não foram colados. */
