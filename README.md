@@ -63,6 +63,36 @@ na lista `PERFIS`:
 },
 ```
 
+Para a visão **Tela** (o registro exibido como formulário de ERP), acrescente `tela`:
+
+```ts
+  tabela: "CADCLI",                    // nome no banco para o SQL sugerido (padrão: id)
+  totais: ["CLI_LIMITE"],              // colunas somadas quando esta tabela aparece como grade em outra Tela
+  tela: {
+    titulo: "Cliente",                 // título = "Cliente " + valor de colunaTitulo
+    subtitulo: [{ coluna: "CLI_CIDADE", rotulo: "Cidade" }],
+    status: [
+      { coluna: "CLI_BLOQUE", rotulo: "Bloqueado",
+        valores: { S: { texto: "Sim", cor: "vermelho" }, N: { texto: "Não", cor: "verde" } } },
+    ],
+    destaques: [{ coluna: "CLI_LIMITE", rotulo: "Limite de crédito", formato: "moeda" }],
+    secoes: [
+      { titulo: "Dados cadastrais", campos: [
+        { coluna: "CLI_NOMCLI", rotulo: "Razão social", largo: true },
+        { coluna: "CLI_DTACAD", rotulo: "Cadastro", hora: "CLI_HORCAD" },
+        { coluna: "CLI_TIPPES", rotulo: "Tipo", valores: { F: "Física", J: "Jurídica" } },
+      ] },
+    ],
+  },
+```
+
+Na Tela, colunas não citadas em nenhuma seção vão para "Outros campos"; campos NULL, vazios
+ou zerados ficam ocultos até marcar "Mostrar campos vazios"; o nome técnico da coluna
+aparece ao lado de cada rótulo. Sem `tela`, o formulário é montado automaticamente,
+agrupado por tipo. Os rótulos da FATGOR são um ponto de partida: revise-os em
+`config/perfis.ts`. Quando uma relação do perfil não tem aba aberta, a Tela sugere o
+`SELECT` para buscar os registros ligados.
+
 O que cada campo faz:
 
 | Campo | Obrigatório | Uso |
@@ -75,6 +105,9 @@ O que cada campo faz:
 | `colunaTitulo` | não | Coluna usada como título da ficha do registro. |
 | `graficoSugerido` | não | Gráfico inicial: `contagem` por `categoria`, ou `soma` de `valor` por `categoria`. Se as colunas não existirem, o gráfico é sugerido automaticamente. |
 | `relacoes` | não | Ligações com outros perfis. Valem nos dois sentidos: basta declarar em um dos lados. |
+| `tabela` | não | Nome da tabela no banco usado no SQL sugerido (padrão: o `id`). |
+| `totais` | não | Colunas somadas no rodapé quando a tabela aparece como grade na Tela de outra (padrão: todas as decimais). |
+| `tela` | não | Layout da visão Tela: `titulo`, `subtitulo`, `status` (chips coloridos), `destaques` (cartões), `secoes`. Campos aceitam `formato` (`moeda`, `percentual`), `hora`, `valores` e `largo`. |
 | `rotulosInversos` | não | Rótulo exibido **neste** perfil para uma relação declarada em outro (chave = id do perfil que declarou). Sem ele, aparece o `nome` do outro perfil. |
 
 Regras da detecção:

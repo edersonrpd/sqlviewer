@@ -1,5 +1,5 @@
 import type { Aba } from "./estado";
-import { chaveRelacao, ligacoesDoPerfil, linhasLigadas } from "./perfis";
+import { buscarPerfil, chaveRelacao, ligacoesDoPerfil, linhasLigadas } from "./perfis";
 
 export type Relacionado = {
   rotulo: string;
@@ -38,6 +38,37 @@ export function relacionadosDoRegistro(aba: Aba, registro: number, abas: Aba[]):
         quantidade: linhasLigadas(valor, destino.dados.linhas, jDestino).length,
       });
     }
+  }
+  return res;
+}
+
+export type RelacaoPendente = {
+  rotulo: string;
+  perfilDestino: string;
+  /** nome da tabela para o SQL sugerido */
+  tabela: string;
+  colunaDestino: string;
+  chave: string;
+};
+
+/** Relações declaradas no perfil cuja aba ainda não foi aberta (para sugerir a consulta). */
+export function relacoesPendentes(aba: Aba, registro: number, abas: Aba[]): RelacaoPendente[] {
+  if (!aba.perfilId) return [];
+  const res: RelacaoPendente[] = [];
+  for (const lig of ligacoesDoPerfil(aba.perfilId)) {
+    if (abas.some((a) => a.id !== aba.id && a.perfilId === lig.perfilDestino)) continue;
+    const j = aba.dados.colunas.findIndex((c) => c.nome === lig.colunaOrigem);
+    if (j < 0) continue;
+    const chave = chaveRelacao(aba.dados.linhas[registro]?.[j] ?? null);
+    if (chave === null) continue;
+    const destino = buscarPerfil(lig.perfilDestino);
+    res.push({
+      rotulo: lig.rotulo,
+      perfilDestino: lig.perfilDestino,
+      tabela: destino?.tabela ?? lig.perfilDestino,
+      colunaDestino: lig.colunaDestino,
+      chave,
+    });
   }
   return res;
 }

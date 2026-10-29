@@ -11,7 +11,7 @@ const ORDEM_TIPOS: TipoColuna[] = ["texto", "decimal", "inteiro", "data", "datah
 
 export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerfil: (perfilId: string | null) => void }) {
   const { dados, deteccao } = aba;
-  const [aberto, setAberto] = useState(true);
+  const [aberto, setAberto] = useState(dados.avisos.length > 0 || deteccao.tipo === "combinada");
   const [tipoAberto, setTipoAberto] = useState<TipoColuna | null>(null);
 
   const porTipo = new Map<TipoColuna, string[]>();

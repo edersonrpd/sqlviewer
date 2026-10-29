@@ -17,10 +17,11 @@ type Props = {
   colunasExibidas: number[];
   onNavegar: (registro: number) => void;
   onFechar: () => void;
+  onAbrirTela: () => void;
   onAbrirRelacao: (destino: string, coluna: number, valor: string, rotulo: string) => void;
 };
 
-export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, onFechar, onAbrirRelacao }: Props) {
+export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, onFechar, onAbrirTela, onAbrirRelacao }: Props) {
   const registro = aba.registro!;
   const { dados } = aba;
   const linha = dados.linhas[registro];
@@ -90,7 +91,10 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
             <button className="btn px-2" disabled={proximo === null} onClick={() => proximo !== null && onNavegar(proximo)} title="Próximo (→)">
               Próximo <IconeDireita />
             </button>
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-2">
+              <button className="btn" onClick={onAbrirTela} title="Ver este registro como tela de ERP">
+                Abrir como tela
+              </button>
               <BotaoCopiarChamado dados={dados} linhas={[registro]} colunas={colunasExibidas} rotulo="Copiar para chamado" semLinhas="Nenhuma coluna visível" />
             </div>
           </div>

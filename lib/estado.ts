@@ -5,7 +5,7 @@ import { sugerirGrafico, type ConfigGrafico } from "./graficos";
 import { buscarPerfil, detectarPerfil, type Deteccao } from "./perfis";
 import type { ResultadoParse } from "./tipos";
 
-export type Visao = "tabela" | "graficos";
+export type Visao = "tela" | "tabela" | "graficos";
 
 export type Aba = {
   id: string;
@@ -29,6 +29,8 @@ export type Aba = {
   visao: Visao;
   /** linha aberta na ficha do registro */
   registro: number | null;
+  /** linha exibida na visão Tela (null = primeira do filtro) */
+  registroTela: number | null;
 };
 
 export type Estado = {
@@ -122,8 +124,10 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         ordenacao: null,
         selecionadas: new Set(),
         grafico: sugerirGrafico(dados, perfil),
-        visao: "tabela",
+        // perfis com layout de tela abrem como formulário; os demais como tabela
+        visao: perfil?.tela ? "tela" : "tabela",
         registro: null,
+        registroTela: null,
       };
       return {
         abas: [...estado.abas, aba],
@@ -162,8 +166,9 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       const s = atualizarAba(estado, acao.destino, (a) => ({
         ...a,
         relacoes: [{ coluna: acao.coluna, valor: acao.valor, rotulo: acao.rotulo }],
-        visao: "tabela",
+        visao: a.visao === "graficos" ? "tabela" : a.visao,
         registro: null,
+        registroTela: null,
       }));
       return { ...s, ativa: acao.destino };
     }

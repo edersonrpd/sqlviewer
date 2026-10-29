@@ -10,6 +10,7 @@ import { IconeBusca, IconeColunas, IconeX } from "./Icones";
 import { ResumoConsulta } from "./ResumoConsulta";
 import { SeletorColunas } from "./SeletorColunas";
 import { TabelaVirtual } from "./TabelaVirtual";
+import { TelaRegistro } from "./TelaRegistro";
 import { useDebounce } from "./util";
 
 export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; dispatch: React.Dispatch<Acao> }) {
@@ -62,7 +63,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
 
       <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-800">
         <div className="inline-flex rounded-md border border-zinc-300 p-0.5 dark:border-zinc-700" role="tablist">
-          {(["tabela", "graficos"] as const).map((v) => (
+          {(["tela", "tabela", "graficos"] as const).map((v) => (
             <button
               key={v}
               role="tab"
@@ -72,7 +73,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
                 aba.visao === v ? "bg-blue-600 text-white" : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
               }`}
             >
-              {v === "tabela" ? "Tabela" : "Gráficos"}
+              {v === "tela" ? "Tela" : v === "tabela" ? "Tabela" : "Gráficos"}
             </button>
           ))}
         </div>
@@ -163,7 +164,9 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
       )}
 
       <div className="relative min-h-0 flex-1">
-        {aba.visao === "tabela" ? (
+        {aba.visao === "tela" ? (
+          <TelaRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
+        ) : aba.visao === "tabela" ? (
           exibidas.length === 0 ? (
             <div className="p-8 text-center text-sm text-zinc-500">
               Nenhuma coluna visível.{" "}
@@ -195,6 +198,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           colunasExibidas={exibidas}
           onNavegar={(registro) => atualizar({ registro })}
           onFechar={() => atualizar({ registro: null })}
+          onAbrirTela={() => atualizar({ visao: "tela", registroTela: aba.registro, registro: null })}
           onAbrirRelacao={(destino, coluna, valor, rotulo) => dispatch({ tipo: "abrirRelacao", destino, coluna, valor, rotulo })}
         />
       )}
