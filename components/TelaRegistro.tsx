@@ -467,7 +467,19 @@ function BlocoPendentes({ pendentes, onColar }: { pendentes: RelacaoPendente[]; 
       </div>
       <ul className="mt-2 space-y-1.5">
         {pendentes.map((p) => {
-          const sql = sqlRelacionado(p.tabela, p.colunaDestino, p.chave);
+          const chave = p.chave;
+          if (chave === null) {
+            // sem chave não há o que consultar, mas a relação continua visível com o motivo
+            return (
+              <li key={`${p.perfilDestino}-${p.colunaDestino}`} className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="w-48 shrink-0 text-zinc-400">{p.rotulo}</span>
+                <span className="min-w-0 flex-1 rounded border border-dashed border-zinc-200 px-2 py-1 text-xs text-zinc-400 dark:border-zinc-800">
+                  Sem consulta: <span className="font-mono">{p.colunaOrigem}</span> está vazio neste registro
+                </span>
+              </li>
+            );
+          }
+          const sql = sqlRelacionado(p.tabela, p.colunaDestino, chave);
           return (
             <li key={`${p.perfilDestino}-${p.colunaDestino}`} className="flex flex-wrap items-center gap-2 text-sm">
               <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400">{p.rotulo}</span>

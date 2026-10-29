@@ -48,7 +48,10 @@ export type RelacaoPendente = {
   /** nome da tabela para o SQL sugerido */
   tabela: string;
   colunaDestino: string;
-  chave: string;
+  /** coluna deste registro usada como chave */
+  colunaOrigem: string;
+  /** null quando a coluna de origem está vazia/NULL (ex.: pedido sem fatura) */
+  chave: string | null;
 };
 
 /** Relações declaradas no perfil cuja aba ainda não foi aberta (para sugerir a consulta). */
@@ -60,13 +63,13 @@ export function relacoesPendentes(aba: Aba, registro: number, abas: Aba[]): Rela
     const j = aba.dados.colunas.findIndex((c) => c.nome === lig.colunaOrigem);
     if (j < 0) continue;
     const chave = chaveRelacao(aba.dados.linhas[registro]?.[j] ?? null);
-    if (chave === null) continue;
     const destino = buscarPerfil(lig.perfilDestino);
     res.push({
       rotulo: lig.rotulo,
       perfilDestino: lig.perfilDestino,
       tabela: destino?.tabela ?? lig.perfilDestino,
       colunaDestino: lig.colunaDestino,
+      colunaOrigem: lig.colunaOrigem,
       chave,
     });
   }

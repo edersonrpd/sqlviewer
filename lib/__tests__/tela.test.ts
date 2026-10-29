@@ -69,7 +69,9 @@ describe("apoio", () => {
   it("relações pendentes quando a aba relacionada não está aberta", () => {
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const p = relacoesPendentes(s.abas[0], 2, s.abas);
-    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR"]);
+    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE"]);
+    // sem NUMPOK e sem fatura: a relação aparece, mas sem chave para consultar
+    expect(p.filter((r) => r.chave === null).map((r) => r.colunaOrigem)).toEqual(["FGO_NUMPOK", "FGO_NUMPOK", "FGO_NUMFAT"]);
     expect(p[0]).toMatchObject({ tabela: "FATDOR", colunaDestino: "FDO_SEQGER", chave: "00100000000000004001" });
   });
 });
@@ -124,9 +126,9 @@ describe("LOGNFE", () => {
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const p = relacoesPendentes(s.abas[0], 0, s.abas).find((r) => r.perfilDestino === "LOGNFE");
     expect(p).toMatchObject({ tabela: "LOGNFE", colunaDestino: "NFE_NUMDOC", chave: "000000053684" });
-    expect(sqlRelacionado(p!.tabela, p!.colunaDestino, p!.chave)).toBe("SELECT * FROM LOGNFE WHERE NFE_NUMDOC = '000000053684';");
-    // pedido sem fatura não sugere a consulta
-    expect(relacoesPendentes(s.abas[0], 2, s.abas).some((r) => r.perfilDestino === "LOGNFE")).toBe(false);
+    expect(sqlRelacionado(p!.tabela, p!.colunaDestino, p!.chave!)).toBe("SELECT * FROM LOGNFE WHERE NFE_NUMDOC = '000000053684';");
+    // pedido sem fatura mostra a relação, mas sem chave
+    expect(relacoesPendentes(s.abas[0], 2, s.abas).find((r) => r.perfilDestino === "LOGNFE")).toMatchObject({ chave: null });
   });
 
   it("com as duas abas abertas, liga pedido e NF-e nos dois sentidos", () => {
