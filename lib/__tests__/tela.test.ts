@@ -82,12 +82,13 @@ describe("cadastros (chaves estrangeiras)", () => {
     const c = cadastrosPendentes(s.abas[0], 0);
     expect(c.map((x) => [x.rotulo, x.tabela, x.chave])).toEqual([
       ["Cliente", "CADCLI", "00000345"],
-      ["Vendedor · Vendedor do faturamento · Operador da liberação · Operador da liberação comercial", "CADOPE", "047"],
+      ["Operador", "CADOPE", "047"],
       ["Transportadora", "CADTRA", "99999"],
-      ["Empresa · Empresa de faturamento", "CADEMP", "001"],
+      ["Empresa", "CADEMP", "001"],
       ["Condição de pagamento", "CADCND", "001"],
       ["Forma de pagamento", "CADFPG", "015"],
     ]);
+    expect(c[1].papeis).toEqual(["Vendedor", "Vendedor do faturamento", "Operador da liberação", "Operador da liberação comercial"]);
     expect(sqlRelacionado(c[1].tabela, c[1].colunaTabela, c[1].chave)).toBe("SELECT * FROM CADOPE WHERE OPE_CODOPE = '047';");
   });
 });

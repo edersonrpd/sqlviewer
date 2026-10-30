@@ -506,7 +506,7 @@ function BlocoPendentes({
   onColar: () => void;
 }) {
   const [verJoin, setVerJoin] = useState(false);
-  const [verCadastros, setVerCadastros] = useState(true);
+  const [verCadastros, setVerCadastros] = useState(false);
   const [aviso, setAviso] = useAviso();
   return (
     <section className="rounded-lg border border-dashed border-zinc-300 bg-white/60 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900/40">
@@ -586,7 +586,7 @@ function BlocoPendentes({
                 const sql = sqlRelacionado(c.tabela, c.colunaTabela, c.chave);
                 return (
                   <li key={`${c.tabela}-${c.colunas[0]}`} className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400" title={c.colunas.join(", ")}>
+                    <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400" title={c.papeis.map((p, k) => `${p} (${c.colunas[k]})`).join("\n")}>
                       {c.rotulo}
                     </span>
                     <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-800" title={sql}>

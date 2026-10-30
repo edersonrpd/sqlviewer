@@ -77,8 +77,10 @@ export function relacoesPendentes(aba: Aba, registro: number, abas: Aba[]): Rela
 }
 
 export type CadastroPendente = {
-  /** rótulos de todas as colunas que apontam para o mesmo registro (ex.: "Vendedor · Digitador") */
+  /** rótulo da coluna, ou o `grupo` quando várias colunas apontam para o mesmo registro */
   rotulo: string;
+  /** rótulos de todas as colunas que apontam para o registro (para a dica) */
+  papeis: string[];
   tabela: string;
   colunaTabela: string;
   colunas: string[];
@@ -98,10 +100,11 @@ export function cadastrosPendentes(aba: Aba, registro: number): CadastroPendente
     if (chave === null) continue;
     const igual = res.find((r) => r.tabela === c.tabela && r.colunaTabela === c.colunaTabela && r.chave === chave);
     if (igual) {
-      igual.rotulo += ` · ${c.rotulo}`;
+      igual.rotulo = c.grupo ?? igual.rotulo;
+      igual.papeis.push(c.rotulo);
       igual.colunas.push(c.coluna);
     } else {
-      res.push({ rotulo: c.rotulo, tabela: c.tabela, colunaTabela: c.colunaTabela, colunas: [c.coluna], chave });
+      res.push({ rotulo: c.rotulo, papeis: [c.rotulo], tabela: c.tabela, colunaTabela: c.colunaTabela, colunas: [c.coluna], chave });
     }
   }
   return res;
