@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { estadoInicial, reducer, type Acao } from "@/lib/estado";
 import { separarPorMarcadores } from "@/lib/join";
 import { parsearConsulta } from "@/lib/parser";
+import { lerSessao, nomeArquivoSessao, serializarSessao } from "@/lib/sessao";
 import { AbaConsulta } from "./AbaConsulta";
 import { EntradaConsulta } from "./EntradaConsulta";
-import { IconeBanco, IconeLua, IconeMais, IconeSol, IconeX } from "./Icones";
+import { IconeBanco, IconeLua, IconeMais, IconePasta, IconeSalvar, IconeSol, IconeX } from "./Icones";
+import { baixarArquivo, useAviso } from "./util";
 
 export function SqlViewerApp() {
   const [estado, dispatch] = useReducer(reducer, estadoInicial);
@@ -52,6 +54,7 @@ export function SqlViewerApp() {
           SQL Viewer
         </h1>
         <BarraAbas estado={estado} dispatch={dispatch} />
+        <BotoesSessao estado={estado} dispatch={dispatch} />
         <BotaoTema />
       </header>
 
@@ -196,6 +199,64 @@ function BarraAbas({ estado, dispatch }: { estado: typeof estadoInicial; dispatc
         <IconeMais /> Nova consulta
       </button>
     </nav>
+  );
+}
+
+/** Salvar/abrir a sessão em arquivo .json (as abas com dados e layout). Nada fica no navegador. */
+function BotoesSessao({ estado, dispatch }: { estado: typeof estadoInicial; dispatch: React.Dispatch<Acao> }) {
+  const arquivo = useRef<HTMLInputElement>(null);
+  const [aviso, setAviso] = useAviso(4000);
+
+  const abrir = async (f: File) => {
+    try {
+      const s = lerSessao(await f.text());
+      dispatch({ tipo: "abrirSessao", abas: s.abas, ativa: s.ativa });
+      setAviso(`${s.abas.length} aba(s) aberta(s) de ${f.name}`);
+    } catch (e) {
+      setAviso(e instanceof Error ? e.message : "Não foi possível abrir a sessão.");
+    }
+  };
+
+  return (
+    <div className="relative flex shrink-0 items-center gap-1">
+      {aviso && (
+        <span role="status" className="absolute top-full right-0 mt-2 w-max max-w-80 animate-surgir rounded-lg bg-zinc-900 px-3 py-1.5 text-xs text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">
+          {aviso}
+        </span>
+      )}
+      <button
+        className="btn-icone h-9 w-9 rounded-lg border border-zinc-200 dark:border-white/10"
+        title="Salvar sessão em arquivo (.json) — contém os dados das abas; guarde com o mesmo cuidado do resultado da consulta"
+        aria-label="Salvar sessão"
+        style={{ opacity: estado.abas.length === 0 ? 0.4 : undefined }}
+        disabled={estado.abas.length === 0}
+        onClick={() => {
+          baixarArquivo(serializarSessao(estado), nomeArquivoSessao(), "application/json");
+          setAviso("Sessão salva");
+        }}
+      >
+        <IconeSalvar className="h-4 w-4" />
+      </button>
+      <button
+        className="btn-icone h-9 w-9 rounded-lg border border-zinc-200 dark:border-white/10"
+        title="Abrir sessão salva (.json)"
+        aria-label="Abrir sessão"
+        onClick={() => arquivo.current?.click()}
+      >
+        <IconePasta className="h-4 w-4" />
+      </button>
+      <input
+        ref={arquivo}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void abrir(f);
+        }}
+      />
+    </div>
   );
 }
 

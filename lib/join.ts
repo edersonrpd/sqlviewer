@@ -21,6 +21,11 @@ function colunaChave(p: Perfil): string | undefined {
 
 const literal = (v: string) => `'${v.replace(/'/g, "''")}'`;
 
+/** `= 'x'` para um valor, `IN ('x', 'y')` para vários. */
+export function condicaoValores(valores: string[]): string {
+  return valores.length === 1 ? `= ${literal(valores[0])}` : `IN (${valores.map(literal).join(", ")})`;
+}
+
 /**
  * JOIN de um registro com todas as tabelas relacionadas no perfil e, um nível
  * abaixo, com as relações declaradas nessas tabelas (ex.: cadastro dos itens).
@@ -33,8 +38,22 @@ export function sqlJoin(dados: ResultadoParse, registro: number, perfilId: strin
   const jChave = nomeChave ? dados.colunas.findIndex((c) => c.nome === nomeChave) : -1;
   const valorChave = jChave >= 0 ? chaveRelacao(dados.linhas[registro]?.[jChave] ?? null) : null;
   if (!nomeChave || valorChave === null) return null;
+  return sqlJoinPor(perfil.id, nomeChave, [valorChave], (nome) => dados.colunas.some((c) => c.nome === nome));
+}
 
-  const existe = (nome: string) => dados.colunas.some((c) => c.nome === nome);
+/**
+ * JOIN "com marcadores" filtrando a tabela principal por `coluna` (um ou vários
+ * valores). `existe` diz quais colunas da tabela principal podem ser usadas nas
+ * ligações (sem resultado colado, todas as declaradas no perfil).
+ */
+export function sqlJoinPor(
+  perfilId: string,
+  coluna: string,
+  valores: string[],
+  existe: (coluna: string) => boolean = () => true,
+): string | null {
+  const perfil = buscarPerfil(perfilId);
+  if (!perfil || valores.length === 0) return null;
   const ligacoes = ligacoesDoPerfil(perfil.id).filter((l) => existe(l.colunaOrigem));
   if (ligacoes.length === 0) return null;
 
@@ -66,7 +85,7 @@ export function sqlJoin(dados: ResultadoParse, registro: number, perfilId: strin
     `SELECT ${selects.join(",\n       ")}`,
     `  FROM ${tabelaDe(perfil, perfil.id)} t0`,
     ...joins.map((j) => `  ${j}`),
-    ` WHERE t0.${nomeChave} = ${literal(valorChave)};`,
+    ` WHERE t0.${coluna} ${condicaoValores(valores)};`,
   ].join("\n");
 }
 

@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { colunasPorNome, filtrarOrdenar } from "@/lib/filtragem";
+import { ComparacaoRegistros } from "./ComparacaoRegistros";
 import { BotaoCopiarChamado, BotoesExportar } from "./Saidas";
 import { FichaRegistro } from "./FichaRegistro";
 import { Graficos } from "./Graficos";
-import { IconeBusca, IconeColunas, IconeX } from "./Icones";
+import { IconeBusca, IconeColunas, IconeComparar, IconeX } from "./Icones";
 import { ResumoConsulta } from "./ResumoConsulta";
 import { SeletorColunas } from "./SeletorColunas";
 import { TabelaVirtual } from "./TabelaVirtual";
@@ -17,6 +18,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
   const { dados } = aba;
   const atualizar = useCallback((patch: Partial<Aba>) => dispatch({ tipo: "atualizar", id: aba.id, patch }), [dispatch, aba.id]);
   const [seletorAberto, setSeletorAberto] = useState(false);
+  const [comparando, setComparando] = useState<[number, number] | null>(null);
 
   // busca global com debounce (pode varrer 200 colunas × 10.000 linhas)
   const [busca, setBusca] = useState(aba.busca);
@@ -116,6 +118,15 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
         )}
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          <button
+            className="btn"
+            disabled={selecionadasVisiveis.length !== 2}
+            style={{ opacity: selecionadasVisiveis.length === 2 ? undefined : 0.5 }}
+            title={selecionadasVisiveis.length === 2 ? "Ver as colunas que diferem entre as 2 linhas marcadas" : "Marque 2 linhas na tabela para comparar"}
+            onClick={() => setComparando([selecionadasVisiveis[0], selecionadasVisiveis[1]])}
+          >
+            <IconeComparar /> Comparar
+          </button>
           <button className="btn" onClick={() => setSeletorAberto(true)}>
             <IconeColunas /> Colunas
             <span className="text-xs text-zinc-500 tabular-nums">
@@ -215,6 +226,8 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           <Graficos aba={aba} indices={indices} atualizar={atualizar} />
         )}
       </div>
+
+      {comparando && <ComparacaoRegistros aba={aba} a={comparando[0]} b={comparando[1]} onFechar={() => setComparando(null)} />}
 
       {seletorAberto && <SeletorColunas aba={aba} atualizar={atualizar} onFechar={() => setSeletorAberto(false)} />}
 

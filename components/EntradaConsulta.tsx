@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { IconeCadeado, IconeDireita } from "./Icones";
+import { MontarConsulta } from "./MontarConsulta";
 
 export function EntradaConsulta({
   onVisualizar,
@@ -43,6 +44,8 @@ export function EntradaConsulta({
           <strong className="text-zinc-900 dark:text-zinc-100">Visualizar</strong>. Ao fechar a página, tudo é descartado.
         </p>
       </div>
+
+      <MontarConsulta />
 
       {/* moldura com borda luminosa girando */}
       <div className="relative flex min-h-72 flex-1 animate-subir overflow-hidden rounded-2xl p-[1.5px] [animation-delay:80ms]">

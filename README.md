@@ -6,7 +6,7 @@ do grid do cliente SQL: tabela interativa, ficha do registro, gráficos simples 
 
 **Todo o processamento acontece no navegador.** Não há API routes, server actions,
 analytics, logs, login, banco de dados nem localStorage. Os dados colados ficam só na
-memória da página e somem ao fechá-la.
+memória da página e somem ao fechá-la, a não ser que você salve a sessão em arquivo.
 
 ## Rodar localmente
 
@@ -112,6 +112,19 @@ Sem a aba necessária, a verificação aparece como "Não verificado". As regras
 função que lê o registro (`texto`, `numero`) e os registros ligados (`relacionado`) e
 devolve achados. Para criar uma regra nova, copie uma existente e acrescente um teste em
 `lib/__tests__/diagnostico.test.ts`.
+
+### Montar consulta, comparar e sessão
+
+- **Montar consulta** (tela "Nova consulta"): escolha o tipo (pedido por nº documento,
+  NUMPOK, NF ou AUTOINCREM; NF-e; item por código, código de barras ou código do
+  fabricante), digite um ou vários valores e copie o `SELECT` — ou o JOIN completo, com
+  as tabelas relacionadas. Os tipos ficam em `BUSCAS_RAPIDAS`, em `config/perfis.ts`.
+- **Comparar**: marque 2 linhas na tabela e clique em **Comparar** para ver só as colunas
+  que diferem (com o rótulo da Tela ao lado do nome técnico).
+- **Salvar/abrir sessão** (ícones no topo): baixa um arquivo `.json` com as abas abertas
+  (dados, colunas, filtros e seleção) e o abre de novo depois, acrescentando as abas às
+  abertas. O arquivo contém os dados das consultas: guarde-o com o mesmo cuidado. Nada é
+  salvo no navegador.
 
 ### JOIN de tudo de uma vez
 

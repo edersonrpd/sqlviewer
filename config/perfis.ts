@@ -357,6 +357,48 @@ const TELA_FATGOR: Tela = {
 };
 
 
+/* Rótulos da FATDOR: ponto de partida. Colunas que não vierem no resultado são
+   ignoradas; as não citadas vão para "Outros campos". */
+const TELA_FATDOR: Tela = {
+  titulo: "Item",
+  subtitulo: [
+    { coluna: "FDO_NUMDOC", rotulo: "Pedido" },
+    { coluna: "FDO_CODEMP", rotulo: "Empresa" },
+    { coluna: "FDO_CODCLI", rotulo: "Cliente" },
+    { coluna: "FDO_CODVEN", rotulo: "Vendedor" },
+  ],
+  destaques: [
+    { coluna: "FDO_QTDITE", rotulo: "Quantidade" },
+    { coluna: "FDO_UNITAR", rotulo: "Valor unitário", formato: "moeda" },
+    { coluna: "FDO_TOTITE", rotulo: "Total do item", formato: "moeda" },
+  ],
+  secoes: [
+    {
+      titulo: "Item",
+      campos: [
+        { coluna: "FDO_CODITE", rotulo: "Código do item" },
+        { coluna: "FDO_CODMAR", rotulo: "Marca" },
+        { coluna: "FDO_CODDIV", rotulo: "Divisão" },
+        { coluna: "FDO_NUMLOT", rotulo: "Lote" },
+        { coluna: "FDO_QTDITE", rotulo: "Quantidade" },
+        { coluna: "FDO_UNITAR", rotulo: "Valor unitário", formato: "moeda" },
+        { coluna: "FDO_TOTITE", rotulo: "Total do item", formato: "moeda" },
+      ],
+    },
+    {
+      titulo: "Pedido",
+      campos: [
+        { coluna: "FDO_SEQGER", rotulo: "Pedido (AUTOINCREM da FATGOR)" },
+        { coluna: "FDO_NUMDOC", rotulo: "Nº documento" },
+        { coluna: "FDO_CODEMP", rotulo: "Empresa" },
+        { coluna: "FDO_CODCLI", rotulo: "Cliente" },
+        { coluna: "FDO_CODVEN", rotulo: "Vendedor" },
+        { coluna: "AUTOINCREM", rotulo: "Sequência do item (AUTOINCREM)" },
+      ],
+    },
+  ],
+};
+
 /* Rótulos da CADITE: ponto de partida a revisar pela equipe. Colunas não citadas
    (tabela nutricional, fiscais específicas etc.) vão para "Outros campos".
    O cadastro é único para todas as empresas: ITE_CODITE sozinho identifica o item. */
@@ -431,6 +473,20 @@ const TELA_CADITE: Tela = {
   ],
 };
 
+/** Buscas da tela "Nova consulta": monta o SELECT (ou o JOIN) a partir de um número. */
+export type BuscaRapida = { id: string; rotulo: string; perfil: string; coluna: string; exemplo: string };
+
+export const BUSCAS_RAPIDAS: BuscaRapida[] = [
+  { id: "pedido", rotulo: "Pedido – nº documento", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001" },
+  { id: "numpok", rotulo: "Pedido – NUMPOK", perfil: "FATGOR", coluna: "FGO_NUMPOK", exemplo: "2000123456789" },
+  { id: "nf", rotulo: "Pedido – nº da NF (fatura)", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684" },
+  { id: "autoincrem", rotulo: "Pedido – AUTOINCREM", perfil: "FATGOR", coluna: "AUTOINCREM", exemplo: "00100000000000001001" },
+  { id: "nfe", rotulo: "NF-e – nº documento (LOGNFE)", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684" },
+  { id: "item", rotulo: "Item – código (CADITE)", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
+  { id: "itebar", rotulo: "Item – código de barras", perfil: "CADITE", coluna: "ITE_CODBAR", exemplo: "7891252071268" },
+  { id: "itefab", rotulo: "Item – código do fabricante", perfil: "CADITE", coluna: "ITE_CODFAB", exemplo: "7126" },
+];
+
 /**
  * Colunas destacadas mesmo sem perfil (consultas genéricas e JOINs).
  * O primeiro padrão que casar com uma coluna do resultado vence.
@@ -495,31 +551,20 @@ export const PERFIS: Perfil[] = [
     assinatura: ["FDO_SEQGER", "FDO_CODITE"],
     colunasPadrao: ["FDO_SEQGER", "FDO_CODITE", "FDO_QTDITE", "FDO_UNITAR", "FDO_TOTITE"],
     colunaTitulo: "FDO_CODITE",
+    // cada item é identificado pelo próprio AUTOINCREM (FDO_CODITE se repete em vários pedidos)
+    chave: "AUTOINCREM",
     relacoes: [
       { perfil: "CADITE", colunaOrigem: "FDO_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Cadastro do item" },
     ],
+    cadastros: [
+      { coluna: "FDO_CODCLI", tabela: "CADCLI", colunaTabela: "CLI_CODCLI", rotulo: "Cliente" },
+      { coluna: "FDO_CODVEN", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Vendedor", grupo: "Operador" },
+      { coluna: "FDO_CODEMP", tabela: "CADEMP", colunaTabela: "EMP_CODEMP", rotulo: "Empresa", grupo: "Empresa" },
+      { coluna: "FDO_CODDIV", tabela: "CADDIV", colunaTabela: "DIV_CODDIV", rotulo: "Divisão" },
+    ],
     totais: ["FDO_QTDITE", "FDO_TOTITE"],
     graficoSugerido: { modo: "soma", categoria: "FDO_CODITE", valor: "FDO_TOTITE" },
-    tela: {
-      titulo: "Item",
-      destaques: [
-        { coluna: "FDO_QTDITE", rotulo: "Quantidade" },
-        { coluna: "FDO_UNITAR", rotulo: "Valor unitário", formato: "moeda" },
-        { coluna: "FDO_TOTITE", rotulo: "Total do item", formato: "moeda" },
-      ],
-      secoes: [
-        {
-          titulo: "Item",
-          campos: [
-            { coluna: "FDO_CODITE", rotulo: "Código do item" },
-            { coluna: "FDO_SEQGER", rotulo: "Pedido (AUTOINCREM)" },
-            { coluna: "FDO_QTDITE", rotulo: "Quantidade" },
-            { coluna: "FDO_UNITAR", rotulo: "Valor unitário", formato: "moeda" },
-            { coluna: "FDO_TOTITE", rotulo: "Total do item", formato: "moeda" },
-          ],
-        },
-      ],
-    },
+    tela: TELA_FATDOR,
     rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
   },
   {

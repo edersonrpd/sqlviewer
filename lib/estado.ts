@@ -59,7 +59,9 @@ export type Acao =
   | { tipo: "renomear"; id: string; nome: string }
   | { tipo: "atualizar"; id: string; patch: Partial<Omit<Aba, "id" | "dados">> }
   | { tipo: "trocarPerfil"; id: string; perfilId: string | null }
-  | { tipo: "abrirRelacao"; destino: string; coluna: number; valor: string; rotulo: string };
+  | { tipo: "abrirRelacao"; destino: string; coluna: number; valor: string; rotulo: string }
+  /** abas de uma sessão salva em arquivo, acrescentadas às abertas */
+  | { tipo: "abrirSessao"; abas: Aba[]; ativa: string | null };
 
 const CHAVE_GENERICA = "__generica__";
 
@@ -190,6 +192,18 @@ export function reducer(estado: Estado, acao: Acao): Estado {
           grafico: sugerirGrafico(a.dados, perfil),
         };
       });
+    case "abrirSessao": {
+      if (acao.abas.length === 0) return estado;
+      // ids novos, para não colidir com as abas já abertas
+      let proximoId = estado.proximoId;
+      let ativa: string | null = null;
+      const novas = acao.abas.map((a) => {
+        const id = `aba-${proximoId++}`;
+        if (a.id === acao.ativa) ativa = id;
+        return { ...a, id };
+      });
+      return { ...estado, abas: [...estado.abas, ...novas], ativa: ativa ?? novas[0].id, proximoId };
+    }
     case "abrirRelacao": {
       const s = atualizarAba(estado, acao.destino, (a) => ({
         ...a,

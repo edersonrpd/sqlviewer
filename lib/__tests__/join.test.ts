@@ -37,10 +37,11 @@ describe("sqlJoin", () => {
   });
 
   it("a partir de um item não sobe de volta para as relações do pedido", () => {
-    const d = parsearConsulta('"FDO_SEQGER"\t"FDO_CODITE"\n"00100000000000001001"\t"00004"');
+    const d = parsearConsulta('"FDO_SEQGER"\t"FDO_CODITE"\t"AUTOINCREM"\n"00100000000000001001"\t"00004"\t"00100000000000555001"');
     const sql = sqlJoin(d, 0, "FATDOR")!;
     expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>FATGOR"]);
-    expect(sql).toContain(" WHERE t0.FDO_CODITE = '00004';");
+    // o item é identificado pelo AUTOINCREM, não pelo código do produto (que se repete em vários pedidos)
+    expect(sql).toContain(" WHERE t0.AUTOINCREM = '00100000000000555001';");
   });
 
   it("sem perfil ou sem chave não sugere", () => {
