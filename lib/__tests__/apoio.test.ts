@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buscarPerfil } from "../perfis";
 import { celulasPlanilha, gerarCSV, gerarLista, gerarTabulado } from "../exportar";
-import { filtrarOrdenar, type Criterios } from "../filtragem";
+import { colunasPorNome, filtrarOrdenar, type Criterios } from "../filtragem";
 import { formatarDecimal, formatarValor } from "../formatacao";
 import { agregar, candidatasCategoria, candidatasValor, motivoSemGrafico, sugerirGrafico } from "../graficos";
 import { parsearConsulta } from "../parser";
@@ -106,5 +106,16 @@ describe("saídas", () => {
     expect(c[2][0]).toEqual({ t: "s", v: "00100000000000004001" });
     expect(c[1][1]).toEqual({ t: "n", v: 1.5, z: "#,##0.00" });
     expect(c[2][1]).toEqual({ t: "s", v: "NULL" });
+  });
+});
+
+describe("colunasPorNome", () => {
+  const d = parsearConsulta('"FDO_SEQGER"\t"FDO_NUMLOT"\t"FDO_LOTSER"\n"1"\t"2"\t"3"');
+  it("acha colunas pelo nome, sem diferenciar maiúsculas", () => {
+    expect(colunasPorNome(d, "FDO_NUMLOT")).toEqual([1]);
+    expect(colunasPorNome(d, " lot")).toEqual([1, 2]);
+  });
+  it("ignora termos muito curtos", () => {
+    expect(colunasPorNome(d, "fd")).toEqual([]);
   });
 });

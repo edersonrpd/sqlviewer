@@ -93,3 +93,17 @@ export function filtrarOrdenar(dados: ResultadoParse, c: Criterios): number[] {
   if (c.ordenacao) indices.sort(comparadorColuna(dados, c.ordenacao.coluna, c.ordenacao.desc));
   return indices;
 }
+
+/**
+ * Colunas cujo nome contém o texto buscado (ex.: "NUMLOT" → FDO_NUMLOT), para
+ * levar o usuário até a coluna quando ele procura pelo nome e não pelo valor.
+ */
+export function colunasPorNome(dados: ResultadoParse, termo: string, limite = 8): number[] {
+  const t = termo.trim().toLowerCase();
+  if (t.length < 3) return [];
+  const res: number[] = [];
+  dados.colunas.forEach((c, j) => {
+    if (res.length < limite && c.nome.toLowerCase().includes(t)) res.push(j);
+  });
+  return res;
+}

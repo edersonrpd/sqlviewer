@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
-import { filtrarOrdenar } from "@/lib/filtragem";
+import { colunasPorNome, filtrarOrdenar } from "@/lib/filtragem";
 import { BotaoCopiarChamado, BotoesExportar } from "./Saidas";
 import { FichaRegistro } from "./FichaRegistro";
 import { Graficos } from "./Graficos";
@@ -47,6 +47,15 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
     () => (aba.selecionadas.size ? indices.filter((i) => aba.selecionadas.has(i)) : []),
     [indices, aba.selecionadas],
   );
+
+  // a busca também acha colunas pelo nome: um clique mostra a coluna logo após as fixas
+  const colunasAchadas = useMemo(() => colunasPorNome(dados, aba.busca), [dados, aba.busca]);
+  const irParaColuna = (j: number) => {
+    const visiveis = [...aba.visiveis];
+    visiveis[j] = true;
+    setBusca("");
+    atualizar({ busca: "", visiveis, ordem: [j, ...aba.ordem.filter((x) => x !== j)], visao: aba.visao === "graficos" ? "tabela" : aba.visao });
+  };
 
   const filtrosColuna = Object.entries(aba.filtros).filter(([, t]) => t.trim());
   const temFiltros = aba.busca.trim() !== "" || filtrosColuna.length > 0 || aba.relacoes.length > 0;
@@ -162,6 +171,23 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           <button className="ml-1 text-blue-600 hover:underline dark:text-blue-400" onClick={limparFiltros}>
             Limpar filtros
           </button>
+        </div>
+      )}
+
+      {colunasAchadas.length > 0 && (
+        <div className="vidro relative z-10 flex flex-wrap items-center gap-1.5 border-b border-zinc-200 px-3 py-1.5 text-xs dark:border-white/10">
+          <span className="text-zinc-500">Colunas com “{aba.busca.trim()}” no nome:</span>
+          {colunasAchadas.map((j) => (
+            <button
+              key={j}
+              className="rounded-full border border-blue-300 bg-blue-50 px-2.5 py-0.5 font-mono text-blue-700 hover:bg-blue-100 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-200"
+              title="Mostrar a coluna no início da tabela e limpar a busca"
+              onClick={() => irParaColuna(j)}
+            >
+              {dados.colunas[j].nome}
+            </button>
+          ))}
+          <span className="text-zinc-400">a busca procura nos valores; clique para ir até a coluna</span>
         </div>
       )}
 
