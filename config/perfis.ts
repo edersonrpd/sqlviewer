@@ -343,12 +343,12 @@ const TELA_FATGOR: Tela = {
 
 
 /* Rótulos da CADITE: ponto de partida a revisar pela equipe. Colunas não citadas
-   (tabela nutricional, fiscais específicas etc.) vão para "Outros campos". */
+   (tabela nutricional, fiscais específicas etc.) vão para "Outros campos".
+   O cadastro é único para todas as empresas: ITE_CODITE sozinho identifica o item. */
 const TELA_CADITE: Tela = {
   titulo: "Item",
   subtitulo: [
     { coluna: "ITE_DESITE", rotulo: "Descrição" },
-    { coluna: "ITE_CODEMP", rotulo: "Empresa" },
     { coluna: "ITE_CODGRU", rotulo: "Grupo" },
     { coluna: "ITE_CODMAR", rotulo: "Marca" },
   ],
@@ -360,7 +360,7 @@ const TELA_CADITE: Tela = {
         { coluna: "ITE_DESITE", rotulo: "Descrição", largo: true },
         { coluna: "ITE_DESSIM", rotulo: "Descrição simplificada" },
         { coluna: "ITE_DESFAB", rotulo: "Descrição do fabricante" },
-        { coluna: "ITE_CODEMP", rotulo: "Empresa" },
+        { coluna: "ITE_CODEMP", rotulo: "Empresa do cadastro" },
         { coluna: "ITE_CODGRU", rotulo: "Grupo" },
         { coluna: "ITE_CODMAR", rotulo: "Marca" },
         { coluna: "ITE_CODUNI", rotulo: "Unidade" },
