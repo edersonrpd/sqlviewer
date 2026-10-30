@@ -13,6 +13,13 @@ describe("detectarPerfil", () => {
     expect(d.tipo === "perfil" && d.perfil.id).toBe("FATGOR");
   });
 
+  it("cadastro de itens é detectado como CADITE, com zeros à esquerda preservados", () => {
+    const d = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-cadite.txt"), "utf-8"));
+    const det = detectarPerfil(d.colunas.map((c) => c.nome));
+    expect(det.tipo === "perfil" && det.perfil.id).toBe("CADITE");
+    expect(d.linhas.map((l) => l[d.colunas.findIndex((c) => c.nome === "ITE_CODITE")])).toEqual(["99999", "00001", "00004"]);
+  });
+
   it("cabeçalho com FGO_SEQFGO é EXTGOR, não FATGOR", () => {
     const d = detectarPerfil(["FGO_SEQFGO", "FGO_EMPEXP", "FGO_DTCOAG", "FGO_CANHUB", "FGO_NUMDOC"]);
     expect(d.tipo === "perfil" && d.perfil.id).toBe("EXTGOR");
@@ -70,7 +77,14 @@ describe("ligacoesDoPerfil", () => {
 
   it("a relação vale no sentido inverso", () => {
     expect(ligacoesDoPerfil("FATDOR")).toEqual([
+      { perfilDestino: "CADITE", colunaOrigem: "FDO_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Cadastro do item" },
       { perfilDestino: "FATGOR", colunaOrigem: "FDO_SEQGER", colunaDestino: "AUTOINCREM", rotulo: "Pedido (cabeçalho)" },
+    ]);
+  });
+
+  it("CADITE enxerga os itens de pedido pelo código do item", () => {
+    expect(ligacoesDoPerfil("CADITE")).toEqual([
+      { perfilDestino: "FATDOR", colunaOrigem: "ITE_CODITE", colunaDestino: "FDO_CODITE", rotulo: "Pedidos com o item" },
     ]);
   });
 });

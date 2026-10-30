@@ -174,7 +174,7 @@ lib/estado.ts        estado das abas (useReducer)
 lib/filtragem.ts     busca, filtros e ordenação
 lib/graficos.ts      candidatas e agregação dos gráficos
 lib/exportar.ts      CSV, Excel e "copiar para chamado"
-fixtures/            exemplos de resultado (FATGOR, LOGNFE e ADTCLI, este com nome fictício)
+fixtures/            exemplos de resultado (FATGOR, LOGNFE, CADITE e ADTCLI, este com nome fictício)
 ```
 
 ### Formato aceito

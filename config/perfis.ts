@@ -342,6 +342,80 @@ const TELA_FATGOR: Tela = {
 };
 
 
+/* Rótulos da CADITE: ponto de partida a revisar pela equipe. Colunas não citadas
+   (tabela nutricional, fiscais específicas etc.) vão para "Outros campos". */
+const TELA_CADITE: Tela = {
+  titulo: "Item",
+  subtitulo: [
+    { coluna: "ITE_DESITE", rotulo: "Descrição" },
+    { coluna: "ITE_CODEMP", rotulo: "Empresa" },
+    { coluna: "ITE_CODGRU", rotulo: "Grupo" },
+    { coluna: "ITE_CODMAR", rotulo: "Marca" },
+  ],
+  secoes: [
+    {
+      titulo: "Identificação",
+      campos: [
+        { coluna: "ITE_CODITE", rotulo: "Código do item" },
+        { coluna: "ITE_DESITE", rotulo: "Descrição", largo: true },
+        { coluna: "ITE_DESSIM", rotulo: "Descrição simplificada" },
+        { coluna: "ITE_DESFAB", rotulo: "Descrição do fabricante" },
+        { coluna: "ITE_CODEMP", rotulo: "Empresa" },
+        { coluna: "ITE_CODGRU", rotulo: "Grupo" },
+        { coluna: "ITE_CODMAR", rotulo: "Marca" },
+        { coluna: "ITE_CODUNI", rotulo: "Unidade" },
+        { coluna: "ITE_CODSIM", rotulo: "Código do similar" },
+        { coluna: "AUTOINCREM", rotulo: "Sequência (AUTOINCREM)" },
+      ],
+    },
+    {
+      titulo: "Códigos e referências",
+      campos: [
+        { coluna: "ITE_REFERE", rotulo: "Referência" },
+        { coluna: "ITE_CODFAB", rotulo: "Código do fabricante" },
+        { coluna: "ITE_CODBAR", rotulo: "Código de barras" },
+        { coluna: "ITE_BARRAS", rotulo: "Códigos de barras", largo: true },
+        { coluna: "ITE_FABRIC", rotulo: "Códigos do fabricante", largo: true },
+        { coluna: "ITE_CODFOR", rotulo: "Fornecedor" },
+      ],
+    },
+    {
+      titulo: "Fiscal",
+      campos: [
+        { coluna: "ITE_CLAIPI", rotulo: "NCM" },
+        { coluna: "ITE_CDCEST", rotulo: "CEST" },
+        { coluna: "ITE_CSTORI", rotulo: "Origem (CST)" },
+        { coluna: "ITE_INCPIS", rotulo: "Incide PIS/COFINS", valores: SIM_NAO },
+        { coluna: "ITE_CODABF", rotulo: "Abrangência fiscal" },
+      ],
+    },
+    {
+      titulo: "Embalagem e venda",
+      campos: [
+        { coluna: "ITE_PESOIT", rotulo: "Peso" },
+        { coluna: "ITE_PESLIQ", rotulo: "Peso líquido" },
+        { coluna: "ITE_EMBALA", rotulo: "Embalagem" },
+        { coluna: "ITE_QTDEMB", rotulo: "Quantidade na embalagem" },
+        { coluna: "ITE_MLTCOM", rotulo: "Múltiplo de compra" },
+        { coluna: "ITE_MLTVEN", rotulo: "Múltiplo de venda" },
+        { coluna: "ITE_TMPGAR", rotulo: "Tempo de garantia" },
+        { coluna: "ITE_APLICA", rotulo: "Aplicação", largo: true },
+      ],
+    },
+    {
+      titulo: "Controle",
+      campos: [
+        { coluna: "ITE_DTACAD", rotulo: "Cadastro" },
+        { coluna: "ITE_ULTALT", rotulo: "Última alteração", hora: "ITE_HULALT" },
+        { coluna: "ITE_DTAINA", rotulo: "Inativação" },
+        { coluna: "ITE_CODOPE", rotulo: "Operador" },
+        { coluna: "ITE_CODDEP", rotulo: "Departamento" },
+        { coluna: "ITE_PESQUI", rotulo: "Texto de pesquisa", largo: true },
+      ],
+    },
+  ],
+};
+
 /**
  * Colunas destacadas mesmo sem perfil (consultas genéricas e JOINs).
  * O primeiro padrão que casar com uma coluna do resultado vence.
@@ -382,6 +456,9 @@ export const PERFIS: Perfil[] = [
     assinatura: ["FDO_SEQGER", "FDO_CODITE"],
     colunasPadrao: ["FDO_SEQGER", "FDO_CODITE", "FDO_QTDITE", "FDO_UNITAR", "FDO_TOTITE"],
     colunaTitulo: "FDO_CODITE",
+    relacoes: [
+      { perfil: "CADITE", colunaOrigem: "FDO_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Cadastro do item" },
+    ],
     totais: ["FDO_QTDITE", "FDO_TOTITE"],
     graficoSugerido: { modo: "soma", categoria: "FDO_CODITE", valor: "FDO_TOTITE" },
     tela: {
@@ -601,5 +678,20 @@ export const PERFIS: Perfil[] = [
         },
       ],
     },
+  },
+  {
+    id: "CADITE",
+    nome: "Cadastro de itens",
+    assinatura: ["ITE_CODITE", "ITE_DESITE", "ITE_CODGRU"],
+    colunasPadrao: [
+      "ITE_CODITE", "ITE_DESITE", "ITE_CODGRU", "ITE_CODMAR", "ITE_REFERE", "ITE_CODFAB",
+      "ITE_CODBAR", "ITE_CODUNI", "ITE_CLAIPI", "ITE_CODFOR", "ITE_DTACAD", "ITE_ULTALT",
+    ],
+    colunasFixas: ["ITE_CODITE", "ITE_DESITE"],
+    colunaTitulo: "ITE_CODITE",
+    chave: "ITE_CODITE",
+    graficoSugerido: { modo: "contagem", categoria: "ITE_CODGRU" },
+    rotulosInversos: { FATDOR: "Pedidos com o item" },
+    tela: TELA_CADITE,
   },
 ];
