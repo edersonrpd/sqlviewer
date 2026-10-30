@@ -71,6 +71,17 @@ export type Relacao = {
   rotulo: string;
 };
 
+/**
+ * Tabela de cadastro apontada por uma coluna (chave estrangeira), ex.: vendedor
+ * em CADOPE. Aparece em "Ver também" só como SELECT individual, fora do JOIN.
+ */
+export type Cadastro = {
+  coluna: string;
+  tabela: string;
+  colunaTabela: string;
+  rotulo: string;
+};
+
 export type Perfil = {
   id: string;
   nome: string;
@@ -88,6 +99,8 @@ export type Perfil = {
   destaque?: { coluna: string; rotulo: string };
   graficoSugerido?: { modo: "contagem" | "soma"; categoria: string; valor?: string };
   relacoes?: Relacao[];
+  /** cadastros apontados por colunas deste perfil (chaves estrangeiras) */
+  cadastros?: Cadastro[];
   /**
    * Rótulo da relação quando vista a partir do perfil de destino
    * (ex.: na ficha de um item da FATDOR, "Pedido (cabeçalho)").
@@ -448,6 +461,30 @@ export const PERFIS: Perfil[] = [
       { perfil: "HUBCIT_INFPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "INF_NUMPOK", rotulo: "Dados do pedido no HUB" },
       { perfil: "LOGNFE", colunaOrigem: "FGO_NUMFAT", colunaDestino: "NFE_NUMDOC", rotulo: "Log da NF-e" },
       { perfil: "ADTCLI", colunaOrigem: "FGO_CODCLI", colunaDestino: "ADT_CODCLI", rotulo: "Adiantamentos do cliente" },
+    ],
+    // chaves estrangeiras da FATGOR no banco
+    cadastros: [
+      { coluna: "FGO_CODCLI", tabela: "CADCLI", colunaTabela: "CLI_CODCLI", rotulo: "Cliente" },
+      { coluna: "FGO_CLICTT", tabela: "CLICTT", colunaTabela: "AUTOINCREM", rotulo: "Contato do cliente" },
+      { coluna: "FGO_CODVEN", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Vendedor" },
+      { coluna: "FGO_VENFAT", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Vendedor do faturamento" },
+      { coluna: "FGO_CODDIG", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Digitador" },
+      { coluna: "FGO_OPELIB", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Operador da liberação" },
+      { coluna: "FGO_DIGLIB", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Digitador da liberação" },
+      { coluna: "FGO_OPELIC", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Operador da liberação comercial" },
+      { coluna: "FGO_DIGLIC", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Digitador da liberação comercial" },
+      { coluna: "FGO_OPEROM", tabela: "CADOPE", colunaTabela: "OPE_CODOPE", rotulo: "Operador do romaneio" },
+      { coluna: "FGO_CODTRA", tabela: "CADTRA", colunaTabela: "TRA_CODTRA", rotulo: "Transportadora" },
+      { coluna: "FGO_CODEMP", tabela: "CADEMP", colunaTabela: "EMP_CODEMP", rotulo: "Empresa" },
+      { coluna: "FGO_EMPFAT", tabela: "CADEMP", colunaTabela: "EMP_CODEMP", rotulo: "Empresa de faturamento" },
+      { coluna: "FGO_EMPROM", tabela: "CADEMP", colunaTabela: "EMP_CODEMP", rotulo: "Empresa do romaneio" },
+      { coluna: "FGO_EMPFOR", tabela: "CADEMP", colunaTabela: "EMP_CODEMP", rotulo: "Empresa (EMPFOR)" },
+      { coluna: "FGO_CODCND", tabela: "CADCND", colunaTabela: "CND_CODIGO", rotulo: "Condição de pagamento" },
+      { coluna: "FGO_CODFPG", tabela: "CADFPG", colunaTabela: "FPG_CODIGO", rotulo: "Forma de pagamento" },
+      { coluna: "FGO_CODFIN", tabela: "CADFIN", colunaTabela: "FIN_CODIGO", rotulo: "Financeira" },
+      { coluna: "FGO_CODDIV", tabela: "CADDIV", colunaTabela: "DIV_CODDIV", rotulo: "Divisão" },
+      { coluna: "FGO_CIDCON", tabela: "CADCID", colunaTabela: "CID_CODCID", rotulo: "Cidade do consumidor" },
+      { coluna: "FGO_CIDETR", tabela: "CADCID", colunaTabela: "CID_CODCID", rotulo: "Cidade de entrega" },
     ],
   },
   {

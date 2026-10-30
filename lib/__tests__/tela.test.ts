@@ -5,7 +5,7 @@ import { colunaDestaque } from "../destaque";
 import { estadoInicial, reducer } from "../estado";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil } from "../perfis";
-import { relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
+import { cadastrosPendentes, relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
 import { calcularSaldo, montarTela, resumoRegistro, sqlRelacionado } from "../tela";
 
 const fgo = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-fgo.txt"), "utf-8"));
@@ -73,6 +73,22 @@ describe("apoio", () => {
     // sem NUMPOK e sem fatura: a relação aparece, mas sem chave para consultar
     expect(p.filter((r) => r.chave === null).map((r) => r.colunaOrigem)).toEqual(["FGO_NUMPOK", "FGO_NUMPOK", "FGO_NUMFAT"]);
     expect(p[0]).toMatchObject({ tabela: "FATDOR", colunaDestino: "FDO_SEQGER", chave: "00100000000000004001" });
+  });
+});
+
+describe("cadastros (chaves estrangeiras)", () => {
+  it("sugere um SELECT por cadastro, juntando colunas com o mesmo código e pulando as vazias", () => {
+    const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    const c = cadastrosPendentes(s.abas[0], 0);
+    expect(c.map((x) => [x.rotulo, x.tabela, x.chave])).toEqual([
+      ["Cliente", "CADCLI", "00000345"],
+      ["Vendedor · Vendedor do faturamento · Operador da liberação · Operador da liberação comercial", "CADOPE", "047"],
+      ["Transportadora", "CADTRA", "99999"],
+      ["Empresa · Empresa de faturamento", "CADEMP", "001"],
+      ["Condição de pagamento", "CADCND", "001"],
+      ["Forma de pagamento", "CADFPG", "015"],
+    ]);
+    expect(sqlRelacionado(c[1].tabela, c[1].colunaTabela, c[1].chave)).toBe("SELECT * FROM CADOPE WHERE OPE_CODOPE = '047';");
   });
 });
 

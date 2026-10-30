@@ -137,6 +137,7 @@ O que cada campo faz:
 | `colunasFixas` | não | Colunas fixadas à esquerda. |
 | `colunaTitulo` | não | Coluna usada como título da ficha do registro. |
 | `graficoSugerido` | não | Gráfico inicial: `contagem` por `categoria`, ou `soma` de `valor` por `categoria`. Se as colunas não existirem, o gráfico é sugerido automaticamente. |
+| `cadastros` | não | Chaves estrangeiras para tabelas de cadastro (`{ coluna, tabela, colunaTabela, rotulo }`, ex.: `FGO_CODVEN` → `CADOPE.OPE_CODOPE`). Aparecem em "Ver também" → **Cadastros** como `SELECT` individual, fora do JOIN; colunas vazias são omitidas e colunas com o mesmo código viram uma linha só. |
 | `relacoes` | não | Ligações com outros perfis. Valem nos dois sentidos: basta declarar em um dos lados. |
 | `chave` | não | Coluna que identifica um único registro, usada no `WHERE` do JOIN sugerido (padrão: `colunaTitulo`). |
 | `destaque` | não | Coluna-chave destacada em todas as visões, ex.: `{ coluna: "FGO_NUMPOK", rotulo: "NUMPOK" }`. Fica fixada na tabela, em destaque no cabeçalho da Tela, na lista lateral e no topo da ficha. |

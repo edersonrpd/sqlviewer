@@ -75,3 +75,34 @@ export function relacoesPendentes(aba: Aba, registro: number, abas: Aba[]): Rela
   }
   return res;
 }
+
+export type CadastroPendente = {
+  /** rótulos de todas as colunas que apontam para o mesmo registro (ex.: "Vendedor · Digitador") */
+  rotulo: string;
+  tabela: string;
+  colunaTabela: string;
+  colunas: string[];
+  chave: string;
+};
+
+/**
+ * Cadastros apontados pelo registro (chaves estrangeiras), para o SELECT individual.
+ * Colunas vazias ficam de fora; colunas que apontam para o mesmo registro viram uma linha só.
+ */
+export function cadastrosPendentes(aba: Aba, registro: number): CadastroPendente[] {
+  const res: CadastroPendente[] = [];
+  for (const c of buscarPerfil(aba.perfilId)?.cadastros ?? []) {
+    const j = aba.dados.colunas.findIndex((col) => col.nome === c.coluna);
+    if (j < 0) continue;
+    const chave = chaveRelacao(aba.dados.linhas[registro]?.[j] ?? null);
+    if (chave === null) continue;
+    const igual = res.find((r) => r.tabela === c.tabela && r.colunaTabela === c.colunaTabela && r.chave === chave);
+    if (igual) {
+      igual.rotulo += ` · ${c.rotulo}`;
+      igual.colunas.push(c.coluna);
+    } else {
+      res.push({ rotulo: c.rotulo, tabela: c.tabela, colunaTabela: c.colunaTabela, colunas: [c.coluna], chave });
+    }
+  }
+  return res;
+}

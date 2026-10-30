@@ -9,7 +9,14 @@ import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
 import { sqlJoin } from "@/lib/join";
-import { relacionadosDoRegistro, relacoesPendentes, type RelacaoPendente, type Relacionado } from "@/lib/relacionados";
+import {
+  cadastrosPendentes,
+  relacionadosDoRegistro,
+  relacoesPendentes,
+  type CadastroPendente,
+  type RelacaoPendente,
+  type Relacionado,
+} from "@/lib/relacionados";
 import {
   calcularSaldo,
   montarTela,
@@ -65,6 +72,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
   );
   const relacionados = useMemo(() => (registro === undefined ? [] : relacionadosDoRegistro(aba, registro, abas)), [aba, registro, abas]);
   const pendentes = useMemo(() => (registro === undefined ? [] : relacoesPendentes(aba, registro, abas)), [aba, registro, abas]);
+  const cadastros = useMemo(() => (registro === undefined ? [] : cadastrosPendentes(aba, registro)), [aba, registro]);
   const join = useMemo(() => (registro === undefined ? null : sqlJoin(dados, registro, aba.perfilId)), [dados, registro, aba.perfilId]);
   const exibidas = useMemo(() => colunasExibidas(aba), [aba]);
 
@@ -187,7 +195,9 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
               }}
             />
           ))}
-          {pendentes.length > 0 && <BlocoPendentes pendentes={pendentes} join={join} onColar={() => dispatch({ tipo: "ativar", id: null })} />}
+          {(pendentes.length > 0 || cadastros.length > 0) && (
+            <BlocoPendentes pendentes={pendentes} cadastros={cadastros} join={join} onColar={() => dispatch({ tipo: "ativar", id: null })} />
+          )}
 
           {tela.secoes.map((s) => (
             <Secao
@@ -486,14 +496,17 @@ const moedaBR = (n: number) => FORMATO_MOEDA.format(n);
 /** Relações do perfil sem aba aberta: sugere a consulta para colar. */
 function BlocoPendentes({
   pendentes,
+  cadastros,
   join,
   onColar,
 }: {
   pendentes: RelacaoPendente[];
+  cadastros: CadastroPendente[];
   join: string | null;
   onColar: () => void;
 }) {
   const [verJoin, setVerJoin] = useState(false);
+  const [verCadastros, setVerCadastros] = useState(true);
   const [aviso, setAviso] = useAviso();
   return (
     <section className="rounded-lg border border-dashed border-zinc-300 bg-white/60 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900/40">
@@ -533,7 +546,7 @@ function BlocoPendentes({
           if (chave === null) {
             // sem chave não há o que consultar, mas a relação continua visível com o motivo
             return (
-              <li key={`${p.perfilDestino}-${p.colunaDestino}`} className="flex flex-wrap items-center gap-2 text-sm">
+              <li key={`${p.perfilDestino}-${p.colunaOrigem}`} className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="w-48 shrink-0 text-zinc-400">{p.rotulo}</span>
                 <span className="min-w-0 flex-1 rounded border border-dashed border-zinc-200 px-2 py-1 text-xs text-zinc-400 dark:border-zinc-800">
                   Sem consulta: <span className="font-mono">{p.colunaOrigem}</span> está vazio neste registro
@@ -543,7 +556,7 @@ function BlocoPendentes({
           }
           const sql = sqlRelacionado(p.tabela, p.colunaDestino, chave);
           return (
-            <li key={`${p.perfilDestino}-${p.colunaDestino}`} className="flex flex-wrap items-center gap-2 text-sm">
+            <li key={`${p.perfilDestino}-${p.colunaOrigem}`} className="flex flex-wrap items-center gap-2 text-sm">
               <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400">{p.rotulo}</span>
               <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-800" title={sql}>
                 {sql}
@@ -559,6 +572,40 @@ function BlocoPendentes({
           );
         })}
       </ul>
+      {cadastros.length > 0 && (
+        <div className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+          <button
+            className="text-xs font-semibold uppercase tracking-wide text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            onClick={() => setVerCadastros(!verCadastros)}
+          >
+            {verCadastros ? "▾" : "▸"} Cadastros ({cadastros.length})
+          </button>
+          {verCadastros && (
+            <ul className="mt-1.5 space-y-1.5">
+              {cadastros.map((c) => {
+                const sql = sqlRelacionado(c.tabela, c.colunaTabela, c.chave);
+                return (
+                  <li key={`${c.tabela}-${c.colunas[0]}`} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400" title={c.colunas.join(", ")}>
+                      {c.rotulo}
+                    </span>
+                    <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-800" title={sql}>
+                      {sql}
+                    </code>
+                    <button
+                      className="btn-icone"
+                      title="Copiar SQL"
+                      onClick={async () => setAviso((await copiarTexto(sql)) ? "SQL copiado" : "Não foi possível copiar")}
+                    >
+                      <IconeCopiar />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </section>
   );
 }
