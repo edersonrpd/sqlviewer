@@ -117,7 +117,8 @@ devolve achados. Para criar uma regra nova, copie uma existente e acrescente um 
 
 No "Ver também" da Tela há a opção **Tudo de uma vez (JOIN)**: uma única consulta com
 `LEFT JOIN` em todas as tabelas relacionadas ao registro (pela coluna `chave` do perfil,
-ex.: `AUTOINCREM` da FATGOR). Antes das colunas de cada tabela o SELECT inclui um
+ex.: `AUTOINCREM` da FATGOR). O JOIN desce também um nível pelas relações declaradas
+nas tabelas ligadas: o da FATGOR traz a CADITE (cadastro) dos itens da FATDOR. Antes das colunas de cada tabela o SELECT inclui um
 marcador `'' AS \`>>TABELA\``. Ao colar o resultado, o app usa esses marcadores para abrir
 **uma aba por tabela**, remove as linhas repetidas que o JOIN gera (ex.: itens ×
 adiantamentos) e as linhas vazias dos `LEFT JOIN` sem correspondência. Tabelas sem

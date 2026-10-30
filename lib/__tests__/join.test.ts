@@ -17,21 +17,30 @@ describe("sqlJoin", () => {
       [
         "SELECT '' AS `>>FATGOR`, t0.*,",
         "       '' AS `>>FATDOR`, t1.*,",
-        "       '' AS `>>EXTGOR`, t2.*,",
-        "       '' AS `>>MOVCAR`, t3.*,",
-        "       '' AS `>>HUBCIT_INFPED`, t4.*,",
-        "       '' AS `>>LOGNFE`, t5.*,",
-        "       '' AS `>>ADTCLI`, t6.*",
+        "       '' AS `>>CADITE`, t2.*,",
+        "       '' AS `>>EXTGOR`, t3.*,",
+        "       '' AS `>>MOVCAR`, t4.*,",
+        "       '' AS `>>HUBCIT_INFPED`, t5.*,",
+        "       '' AS `>>LOGNFE`, t6.*,",
+        "       '' AS `>>ADTCLI`, t7.*",
         "  FROM FATGOR t0",
         "  LEFT JOIN FATDOR t1\n       ON t1.FDO_SEQGER = t0.AUTOINCREM AND t0.AUTOINCREM <> ''",
-        "  LEFT JOIN EXTGOR t2\n       ON t2.FGO_SEQFGO = t0.AUTOINCREM AND t0.AUTOINCREM <> ''",
-        "  LEFT JOIN MOVCAR t3\n       ON t3.MCA_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
-        "  LEFT JOIN HUBCIT_INFPED t4\n       ON t4.INF_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
-        "  LEFT JOIN LOGNFE t5\n       ON t5.NFE_NUMDOC = t0.FGO_NUMFAT AND t0.FGO_NUMFAT <> ''",
-        "  LEFT JOIN ADTCLI t6\n       ON t6.ADT_CODCLI = t0.FGO_CODCLI AND t0.FGO_CODCLI <> ''",
+        "  LEFT JOIN CADITE t2\n       ON t2.ITE_CODITE = t1.FDO_CODITE AND t1.FDO_CODITE <> ''",
+        "  LEFT JOIN EXTGOR t3\n       ON t3.FGO_SEQFGO = t0.AUTOINCREM AND t0.AUTOINCREM <> ''",
+        "  LEFT JOIN MOVCAR t4\n       ON t4.MCA_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
+        "  LEFT JOIN HUBCIT_INFPED t5\n       ON t5.INF_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
+        "  LEFT JOIN LOGNFE t6\n       ON t6.NFE_NUMDOC = t0.FGO_NUMFAT AND t0.FGO_NUMFAT <> ''",
+        "  LEFT JOIN ADTCLI t7\n       ON t7.ADT_CODCLI = t0.FGO_CODCLI AND t0.FGO_CODCLI <> ''",
         " WHERE t0.AUTOINCREM = '00100000000000001001';",
       ].join("\n"),
     );
+  });
+
+  it("a partir de um item não sobe de volta para as relações do pedido", () => {
+    const d = parsearConsulta('"FDO_SEQGER"\t"FDO_CODITE"\n"00100000000000001001"\t"00004"');
+    const sql = sqlJoin(d, 0, "FATDOR")!;
+    expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>FATGOR"]);
+    expect(sql).toContain(" WHERE t0.FDO_CODITE = '00004';");
   });
 
   it("sem perfil ou sem chave não sugere", () => {

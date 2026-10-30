@@ -22,7 +22,8 @@ function colunaChave(p: Perfil): string | undefined {
 const literal = (v: string) => `'${v.replace(/'/g, "''")}'`;
 
 /**
- * JOIN de um registro com todas as tabelas relacionadas no perfil.
+ * JOIN de um registro com todas as tabelas relacionadas no perfil e, um nível
+ * abaixo, com as relações declaradas nessas tabelas (ex.: cadastro dos itens).
  * Retorna null quando não há relações ou o registro não tem chave.
  */
 export function sqlJoin(dados: ResultadoParse, registro: number, perfilId: string | null): string | null {
@@ -39,14 +40,26 @@ export function sqlJoin(dados: ResultadoParse, registro: number, perfilId: strin
 
   const selects = [`'' AS \`${PREFIXO_MARCADOR}${perfil.id}\`, t0.*`];
   const joins: string[] = [];
-  ligacoes.forEach((l, k) => {
-    const a = `t${k + 1}`;
-    const destino = buscarPerfil(l.perfilDestino);
-    selects.push(`'' AS \`${PREFIXO_MARCADOR}${l.perfilDestino}\`, ${a}.*`);
+  const incluidos = new Set([perfil.id, ...ligacoes.map((l) => l.perfilDestino)]);
+  const juntar = (destinoId: string, colunaDestino: string, origem: string, colunaOrigem: string) => {
+    const a = `t${joins.length + 1}`;
+    selects.push(`'' AS \`${PREFIXO_MARCADOR}${destinoId}\`, ${a}.*`);
     // a condição "<> ''" evita ligar registros pela chave vazia (ex.: pedido sem NUMPOK)
     joins.push(
-      `LEFT JOIN ${tabelaDe(destino, l.perfilDestino)} ${a}\n       ON ${a}.${l.colunaDestino} = t0.${l.colunaOrigem} AND t0.${l.colunaOrigem} <> ''`,
+      `LEFT JOIN ${tabelaDe(buscarPerfil(destinoId), destinoId)} ${a}\n       ON ${a}.${colunaDestino} = ${origem}.${colunaOrigem} AND ${origem}.${colunaOrigem} <> ''`,
     );
+    return a;
+  };
+  ligacoes.forEach((l) => {
+    const a = juntar(l.perfilDestino, l.colunaDestino, "t0", l.colunaOrigem);
+    // desce um nível pelas relações declaradas na tabela ligada (ex.: FATGOR → FATDOR → CADITE);
+    // só quando a ligação também desce, para não subir de volta e puxar tudo do pai
+    if (!perfil.relacoes?.some((r) => r.perfil === l.perfilDestino)) return;
+    for (const r of buscarPerfil(l.perfilDestino)?.relacoes ?? []) {
+      if (incluidos.has(r.perfil)) continue;
+      incluidos.add(r.perfil);
+      juntar(r.perfil, r.colunaDestino, a, r.colunaOrigem);
+    }
   });
 
   return [
