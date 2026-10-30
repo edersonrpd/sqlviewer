@@ -28,13 +28,13 @@ export function EntradaConsulta({
   };
 
   return (
-    <div className="mx-auto flex h-full max-w-5xl flex-col gap-5 overflow-y-auto p-4 sm:p-8">
+    <div className="mx-auto flex h-full max-w-5xl flex-col gap-5 overflow-y-auto p-4 sm:p-8 [@media(max-height:900px)]:gap-3 [@media(max-height:900px)]:py-4">
       <div className="flex animate-subir flex-col gap-2.5">
         <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
           <IconeCadeado className="h-3.5 w-3.5" />
           100% no navegador — nada é enviado nem salvo
         </span>
-        <h2 className="bg-gradient-to-r from-zinc-900 via-indigo-700 to-cyan-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl dark:from-white dark:via-indigo-200 dark:to-cyan-300">
+        <h2 className="bg-gradient-to-r from-zinc-900 via-indigo-700 to-cyan-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl [@media(max-height:900px)]:text-2xl dark:from-white dark:via-indigo-200 dark:to-cyan-300">
           Nova consulta
         </h2>
         <p className="max-w-3xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -48,7 +48,7 @@ export function EntradaConsulta({
       <MontarConsulta />
 
       {/* moldura com borda luminosa girando */}
-      <div className="relative flex min-h-72 flex-1 animate-subir overflow-hidden rounded-2xl p-[1.5px] [animation-delay:80ms]">
+      <div className="relative flex min-h-72 flex-1 [@media(max-height:900px)]:min-h-56 animate-subir overflow-hidden rounded-2xl p-[1.5px] [animation-delay:80ms]">
         <div
           aria-hidden
           className={`absolute top-1/2 left-1/2 aspect-square w-[200%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-500 ${

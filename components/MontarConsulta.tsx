@@ -11,6 +11,8 @@ export function MontarConsulta() {
   const [id, setId] = useState(BUSCAS_RAPIDAS[0].id);
   const [texto, setTexto] = useState("");
   const [comJoin, setComJoin] = useState(true);
+  // a prévia começa fechada para não empurrar a área de colar em telas menores
+  const [verSql, setVerSql] = useState(false);
   const [aviso, setAviso] = useAviso();
 
   const busca = BUSCAS_RAPIDAS.find((b) => b.id === id) ?? BUSCAS_RAPIDAS[0];
@@ -19,12 +21,11 @@ export function MontarConsulta() {
   const sql = montarConsulta(busca, valores, podeJoin && comJoin);
 
   return (
-    <section className="painel animate-subir p-4">
+    <section className="painel animate-subir px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold">Montar consulta</h3>
-        <span className="text-xs text-zinc-500">digite o número, copie o SQL, rode no MySQL e cole o resultado abaixo</span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-semibold whitespace-nowrap" title="Digite o número, copie o SQL, rode no MySQL e cole o resultado abaixo">
+          Montar consulta
+        </h3>
         <select className="campo" value={id} onChange={(e) => setId(e.target.value)} aria-label="Tipo de busca">
           {BUSCAS_RAPIDAS.map((b) => (
             <option key={b.id} value={b.id}>
@@ -36,7 +37,7 @@ export function MontarConsulta() {
           className="campo min-w-56 flex-1 font-mono"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder={`${busca.exemplo} (vários: separe por vírgula ou espaço)`}
+          placeholder={`${busca.exemplo} (vários: separe por vírgula)`}
           aria-label="Valores"
         />
         {podeJoin && (
@@ -53,12 +54,17 @@ export function MontarConsulta() {
         >
           <IconeCopiar className="h-4 w-4" /> Copiar SQL
         </button>
+        {sql && (
+          <button className="text-xs text-blue-600 hover:underline dark:text-blue-400" onClick={() => setVerSql(!verSql)}>
+            {verSql ? "Ocultar SQL" : "Ver SQL"}
+          </button>
+        )}
+        {valores.length > 1 && <span className="text-xs text-zinc-500">{valores.length} valores</span>}
         {aviso && <span className="text-xs text-emerald-600">{aviso}</span>}
       </div>
-      {sql && (
-        <pre className="mt-3 max-h-48 overflow-auto rounded-lg bg-zinc-100 p-3 font-mono text-xs leading-relaxed dark:bg-zinc-950">{sql}</pre>
+      {sql && verSql && (
+        <pre className="mt-2 max-h-32 overflow-auto rounded-lg bg-zinc-100 p-2.5 font-mono text-xs leading-relaxed dark:bg-zinc-950">{sql}</pre>
       )}
-      {valores.length > 1 && <p className="mt-1.5 text-xs text-zinc-500">{valores.length} valores</p>}
     </section>
   );
 }
