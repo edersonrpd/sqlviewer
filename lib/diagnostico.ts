@@ -1,7 +1,7 @@
 import type { Aba } from "./estado";
 import { formatarData } from "./formatacao";
 import { buscarPerfil, chaveRelacao, linhasLigadas } from "./perfis";
-import { relacionadosDoRegistro } from "./relacionados";
+import { extrasLigacao, relacionadosDoRegistro } from "./relacionados";
 import { calcularSaldo } from "./tela";
 import type { ResultadoParse } from "./tipos";
 
@@ -156,7 +156,7 @@ export function diagnosticar(aba: Aba, registro: number, abas: Aba[]): Diagnosti
       const rel = relacionados.find((r) => abas.find((a) => a.id === r.abaId)?.perfilId === perfil);
       if (!rel) return null;
       const destino = abas.find((a) => a.id === rel.abaId)!;
-      return { dados: destino.dados, linhas: linhasLigadas(rel.chave, destino.dados.linhas, rel.colunaDestino) };
+      return { dados: destino.dados, linhas: linhasLigadas(rel.chave, destino.dados.linhas, rel.colunaDestino, extrasLigacao(rel.extras)) };
     },
     valorEm: (r, i, col) => {
       const j = r.dados.colunas.findIndex((c) => c.nome === col);

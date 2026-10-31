@@ -1,5 +1,10 @@
 import type { Aba } from "./estado";
-import { buscarPerfil, chaveRelacao, ligacoesDoPerfil, linhasLigadas } from "./perfis";
+import { buscarPerfil, chaveRelacao, ligacoesDoPerfil, linhasLigadas, type ChaveExtra } from "./perfis";
+
+/** Extras de um Relacionado no formato de `linhasLigadas`. */
+export function extrasLigacao(extras: Relacionado["extras"]): ChaveExtra[] {
+  return extras.map((e) => ({ j: e.coluna, valor: e.chave }));
+}
 
 export type Relacionado = {
   rotulo: string;
@@ -10,6 +15,8 @@ export type Relacionado = {
   colunaDestinoNome: string;
   /** chave normalizada (raw com trim); null quando o registro não tem chave */
   chave: string | null;
+  /** demais colunas da chave composta, na aba destino, com o valor deste registro */
+  extras: { coluna: number; nome: string; chave: string | null }[];
   quantidade: number;
 };
 
@@ -28,6 +35,12 @@ export function relacionadosDoRegistro(aba: Aba, registro: number, abas: Aba[]):
       const jDestino = destino.dados.colunas.findIndex((c) => c.nome === lig.colunaDestino);
       if (jDestino < 0) continue;
       const valor = aba.dados.linhas[registro]?.[jOrigem] ?? null;
+      // partes da chave composta presentes nos dois resultados (as ausentes não restringem)
+      const extras = lig.extras.flatMap((e) => {
+        const jo = aba.dados.colunas.findIndex((c) => c.nome === e.origem);
+        const jd = destino.dados.colunas.findIndex((c) => c.nome === e.destino);
+        return jo < 0 || jd < 0 ? [] : [{ coluna: jd, nome: e.destino, chave: chaveRelacao(aba.dados.linhas[registro]?.[jo] ?? null) }];
+      });
       res.push({
         rotulo: destinos.length > 1 ? `${lig.rotulo} — ${destino.nome}` : lig.rotulo,
         abaId: destino.id,
@@ -35,7 +48,8 @@ export function relacionadosDoRegistro(aba: Aba, registro: number, abas: Aba[]):
         colunaDestino: jDestino,
         colunaDestinoNome: lig.colunaDestino,
         chave: chaveRelacao(valor),
-        quantidade: linhasLigadas(valor, destino.dados.linhas, jDestino).length,
+        extras,
+        quantidade: linhasLigadas(valor, destino.dados.linhas, jDestino, extrasLigacao(extras)).length,
       });
     }
   }
@@ -52,6 +66,8 @@ export type RelacaoPendente = {
   colunaOrigem: string;
   /** null quando a coluna de origem está vazia/NULL (ex.: pedido sem fatura) */
   chave: string | null;
+  /** demais colunas da chave composta (nome no destino) com o valor deste registro */
+  extras: { coluna: string; chave: string | null }[];
 };
 
 /** Relações declaradas no perfil cuja aba ainda não foi aberta (para sugerir a consulta). */
@@ -71,6 +87,10 @@ export function relacoesPendentes(aba: Aba, registro: number, abas: Aba[]): Rela
       colunaDestino: lig.colunaDestino,
       colunaOrigem: lig.colunaOrigem,
       chave,
+      extras: lig.extras.flatMap((e) => {
+        const jo = aba.dados.colunas.findIndex((c) => c.nome === e.origem);
+        return jo < 0 ? [] : [{ coluna: e.destino, chave: chaveRelacao(aba.dados.linhas[registro]?.[jo] ?? null) }];
+      }),
     });
   }
   return res;

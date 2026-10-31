@@ -206,6 +206,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
               onRemover={() => atualizar({ relacoes: aba.relacoes.filter((_, x) => x !== k) })}
             >
               {dados.colunas[r.coluna].nome} = {r.valor}
+              {(r.extras ?? []).map((e) => ` · ${dados.colunas[e.coluna].nome} = ${e.valor ?? "NULL"}`).join("")}
             </Chip>
           ))}
           {filtrosValores.map(([j, aceitos]) => (
@@ -343,7 +344,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           onNavegar={(registro) => atualizar({ registro })}
           onFechar={() => atualizar({ registro: null })}
           onAbrirTela={() => atualizar({ visao: "tela", registroTela: aba.registro, registro: null })}
-          onAbrirRelacao={(destino, coluna, valor, rotulo) => dispatch({ tipo: "abrirRelacao", destino, coluna, valor, rotulo })}
+          onAbrirRelacao={(destino, coluna, valor, rotulo, extras) => dispatch({ tipo: "abrirRelacao", destino, coluna, valor, rotulo, extras })}
         />
       )}
     </div>

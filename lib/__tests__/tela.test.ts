@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { colunaDestaque } from "../destaque";
 import { estadoInicial, reducer } from "../estado";
+import { filtrarOrdenar } from "../filtragem";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil } from "../perfis";
 import { cadastrosPendentes, relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
@@ -198,26 +199,50 @@ describe("ADTCLI (adiantamentos do cliente)", () => {
     expect(montarTela(adtcli, 1, p).indicadores[0]).toMatchObject({ campo: { texto: "Débito" }, cor: "vermelho" });
   });
 
-  it("FATGOR mostra o cliente no cabeçalho e sugere o SELECT da ADTCLI", () => {
+  it("FATGOR mostra o cliente no cabeçalho e sugere o SELECT dos adiantamentos do pedido", () => {
     const t = montarTela(fgo, 0, fatgor);
     expect(t.subtitulo.find((c) => c.nome === "FGO_CODCLI")).toMatchObject({ rotulo: "Cliente", texto: "00000345" });
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const p = relacoesPendentes(s.abas[0], 0, s.abas).find((r) => r.perfilDestino === "ADTCLI")!;
-    expect(sqlRelacionado(p.tabela, p.colunaDestino, p.chave!)).toBe("SELECT * FROM ADTCLI WHERE ADT_CODCLI = '00000345';");
+    expect(sqlRelacionado(p.tabela, p.colunaDestino, p.chave!, p.extras)).toBe(
+      "SELECT * FROM ADTCLI WHERE ADT_NUMDOC = '000001000001' AND ADT_ESPDOC = 'PD' AND ADT_CODEMP = '001';",
+    );
   });
 
-  it("com a aba aberta, liga pelo código do cliente e calcula o saldo", () => {
-    const ped = parsearConsulta(
-      readFileSync(join(__dirname, "../../fixtures/exemplo-fgo.txt"), "utf-8").replace('"00000345"', '"00033402"'),
-    );
+  // pedido 000001109506 (empresa 001) e um adiantamento de outro pedido do mesmo cliente
+  const fgoTexto = readFileSync(join(__dirname, "../../fixtures/exemplo-fgo.txt"), "utf-8");
+  const outroPedido = readFileSync(join(__dirname, "../../fixtures/exemplo-adtcli.txt"), "utf-8")
+    .trimEnd()
+    .split("\n")
+    .slice(-1)[0]
+    .replace('"000001109506"', '"000000048706"')
+    .replace('"299175"', '"299999"');
+  const adtComOutro = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-adtcli.txt"), "utf-8").trimEnd() + "\n" + outroPedido + "\n");
+
+  it("com a aba aberta, liga só os lançamentos do pedido (documento, espécie e empresa) e calcula o saldo", () => {
+    const ped = parsearConsulta(fgoTexto.replace('"000001000001"', '"000001109506"'));
+    let s = reducer(estadoInicial, { tipo: "criar", dados: ped });
+    s = reducer(s, { tipo: "criar", dados: adtComOutro });
+    expect(adtComOutro.linhas).toHaveLength(3);
+    const [rel] = relacionadosDoRegistro(s.abas[0], 0, s.abas);
+    expect(rel).toMatchObject({ rotulo: "Adiantamentos do pedido", quantidade: 2, chave: "000001109506" });
+    expect(rel.extras.map((e) => [e.nome, e.chave])).toEqual([
+      ["ADT_ESPDOC", "PD"],
+      ["ADT_CODEMP", "001"],
+    ]);
+    // "Abrir na aba": o filtro também leva a chave composta
+    const aberto = reducer(s, { tipo: "abrirRelacao", destino: rel.abaId, coluna: rel.colunaDestino, valor: rel.chave!, rotulo: rel.rotulo, extras: rel.extras.map((e) => ({ coluna: e.coluna, valor: e.chave })) });
+    const abaAdt = aberto.abas[1];
+    expect(filtrarOrdenar(abaAdt.dados, { busca: "", filtros: {}, relacoes: abaAdt.relacoes, ordenacao: [], visiveis: [] })).toEqual([0, 1]);
+    expect(relacionadosDoRegistro(s.abas[1], 0, s.abas)).toEqual([expect.objectContaining({ rotulo: "Pedido", quantidade: 1 })]);
+  });
+
+  it("mesmo documento em outra empresa não é ligado", () => {
+    const ped = parsearConsulta(fgoTexto.replace('"000001000001"', '"000001109506"').replace(/\n"([^"]*)"\t"001"/, '\n"$1"\t"002"'));
+    expect(ped.linhas[0][ped.colunas.findIndex((c) => c.nome === "FGO_CODEMP")]).toBe("002");
     let s = reducer(estadoInicial, { tipo: "criar", dados: ped });
     s = reducer(s, { tipo: "criar", dados: adtcli });
-    expect(relacionadosDoRegistro(s.abas[0], 0, s.abas)).toEqual([
-      expect.objectContaining({ rotulo: "Adiantamentos do cliente", quantidade: 2, chave: "00033402" }),
-    ]);
-    expect(relacionadosDoRegistro(s.abas[1], 0, s.abas)).toEqual([
-      expect.objectContaining({ rotulo: "Pedidos do cliente", quantidade: 1 }),
-    ]);
+    expect(relacionadosDoRegistro(s.abas[0], 0, s.abas)[0].quantidade).toBe(0);
     expect(calcularSaldo(adtcli, [0, 1], buscarPerfil("ADTCLI")!.saldo!)).toEqual({ creditos: 231.63, debitos: 231.63, saldo: 0 });
     expect(calcularSaldo(adtcli, [0], buscarPerfil("ADTCLI")!.saldo!)).toEqual({ creditos: 231.63, debitos: 0, saldo: 231.63 });
   });

@@ -65,7 +65,7 @@ export type Acao =
   | { tipo: "renomear"; id: string; nome: string }
   | { tipo: "atualizar"; id: string; patch: Partial<Omit<Aba, "id" | "dados">> }
   | { tipo: "trocarPerfil"; id: string; perfilId: string | null }
-  | { tipo: "abrirRelacao"; destino: string; coluna: number; valor: string; rotulo: string }
+  | { tipo: "abrirRelacao"; destino: string; coluna: number; valor: string; rotulo: string; extras?: FiltroRelacao["extras"] }
   /** abas de uma sessão salva em arquivo, acrescentadas às abertas */
   | { tipo: "abrirSessao"; abas: Aba[]; ativa: string | null };
 
@@ -219,7 +219,7 @@ export function reducer(estado: Estado, acao: Acao): Estado {
     case "abrirRelacao": {
       const s = atualizarAba(estado, acao.destino, (a) => ({
         ...a,
-        relacoes: [{ coluna: acao.coluna, valor: acao.valor, rotulo: acao.rotulo }],
+        relacoes: [{ coluna: acao.coluna, valor: acao.valor, rotulo: acao.rotulo, extras: acao.extras }],
         visao: a.visao === "graficos" ? "tabela" : a.visao,
         registro: null,
         registroTela: null,

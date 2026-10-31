@@ -30,7 +30,8 @@ describe("sqlJoin", () => {
         "  LEFT JOIN MOVCAR t4\n       ON t4.MCA_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
         "  LEFT JOIN HUBCIT_INFPED t5\n       ON t5.INF_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
         "  LEFT JOIN LOGNFE t6\n       ON t6.NFE_NUMDOC = t0.FGO_NUMFAT AND t0.FGO_NUMFAT <> ''",
-        "  LEFT JOIN ADTCLI t7\n       ON t7.ADT_CODCLI = t0.FGO_CODCLI AND t0.FGO_CODCLI <> ''",
+        // adiantamentos só do pedido: nº do documento + espécie + empresa
+        "  LEFT JOIN ADTCLI t7\n       ON t7.ADT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t7.ADT_ESPDOC = t0.FGO_ESPDOC\n      AND t7.ADT_CODEMP = t0.FGO_CODEMP",
         " WHERE t0.AUTOINCREM = '00100000000000001001';",
       ].join("\n"),
     );
@@ -87,7 +88,7 @@ describe("separarPorMarcadores", () => {
     expect(rel.map((r) => [r.rotulo, r.quantidade])).toEqual([
       ["Itens do pedido", 2],
       ["Extensão do pedido", 0],
-      ["Adiantamentos do cliente", 0],
+      ["Adiantamentos do pedido", 0],
     ]);
   });
 
