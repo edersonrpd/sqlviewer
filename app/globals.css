@@ -38,6 +38,18 @@
   --animate-pulsar: pulsar 1.8s ease-out infinite;
   --animate-girar: girar 6s linear infinite;
   --animate-aparecer: aparecer 0.2s ease-out both;
+  --animate-entrar-linha: entrar-linha 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+  @keyframes entrar-linha {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
   @keyframes aparecer {
     from {
@@ -149,6 +161,14 @@ body {
   background: rgb(99 102 241 / 0.3);
 }
 
+input[type="checkbox"] {
+  accent-color: var(--color-blue-500);
+  cursor: pointer;
+}
+.dark input[type="checkbox"] {
+  accent-color: var(--color-blue-400);
+}
+
 @layer components {
   /* valor NULL: itálico e esmaecido, em todo lugar */
   .valor-null {
@@ -165,13 +185,17 @@ body {
     animation: brilho 3.2s linear infinite;
   }
   .btn-destaque {
-    @apply inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-800 shadow-sm transition duration-200 hover:-translate-y-px hover:shadow-[0_0_20px_-6px_rgb(99_102_241/0.7)] disabled:pointer-events-none disabled:opacity-50 dark:border-blue-400/50 dark:bg-blue-500/20 dark:text-blue-100;
+    @apply inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-800 shadow-sm transition duration-200 hover:-translate-y-px hover:shadow-[0_0_20px_-6px_rgb(99_102_241/0.7)] disabled:pointer-events-none disabled:opacity-50 dark:border-blue-400/50 dark:bg-blue-500/20 dark:text-blue-100 dark:shadow-[0_0_20px_-6px_rgb(99_102_241/0.8)];
   }
   .btn-icone {
     @apply inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100;
   }
   .campo {
     @apply rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm transition outline-none placeholder:text-zinc-400 focus:border-blue-500 focus:shadow-[0_0_0_4px_rgb(99_102_241/0.18),0_0_24px_-4px_rgb(99_102_241/0.45)] dark:border-white/10 dark:bg-zinc-900/70 dark:placeholder:text-zinc-500 dark:focus:border-blue-400;
+  }
+  /* atalho de teclado exibido dentro de campos (ex.: "/" na busca) */
+  .tecla {
+    @apply rounded-[5px] border border-zinc-300 px-1.5 font-mono text-[11px] font-medium text-zinc-500 dark:border-white/15 dark:text-zinc-400;
   }
   .painel {
     @apply rounded-xl border border-zinc-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-zinc-900/70;
