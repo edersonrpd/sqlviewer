@@ -27,54 +27,75 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
         : "Genérica";
   const qtdAvisos = dados.avisos.length + (deteccao.tipo === "combinada" ? 1 : 0);
 
-  return (
-    <section className="vidro relative z-10 animate-[aparecer_0.3s_ease-out_both] border-b border-zinc-200 px-3 py-2 text-sm dark:border-white/10">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <button className="inline-flex items-center gap-1 font-medium" onClick={() => setAberto(!aberto)} aria-expanded={aberto}>
-          <IconeSeta className={`h-4 w-4 transition ${aberto ? "" : "-rotate-90"}`} />
-          Resumo
-        </button>
-        <span className="tabular-nums">
-          <strong>{dados.linhas.length.toLocaleString("pt-BR")}</strong> linhas ·{" "}
-          <strong>{dados.colunas.length.toLocaleString("pt-BR")}</strong> colunas
-        </span>
+  const cartao =
+    "rounded-[14px] border border-zinc-900/[0.08] bg-gradient-to-b from-white/90 to-white/60 px-4 py-3 backdrop-blur-md dark:border-white/[0.08] dark:from-white/[0.05] dark:to-white/[0.015] [@media(max-height:760px)]:py-2";
+  const valorCartao = "mt-1 font-mono text-2xl leading-tight font-semibold tabular-nums [@media(max-height:760px)]:mt-0 [@media(max-height:760px)]:text-lg";
 
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+  return (
+    <section className="relative z-10 animate-[aparecer_0.3s_ease-out_both] px-3 pt-4 text-sm sm:px-5 [@media(max-height:760px)]:pt-2">
+      <div className="flex flex-wrap gap-3 [@media(max-height:760px)]:gap-2">
+        <div className={`${cartao} flex-[1_1_150px] animate-subir`}>
+          <div className="text-xs text-zinc-500 dark:text-[#8b92a5]">Linhas</div>
+          <div className={valorCartao}>{dados.linhas.length.toLocaleString("pt-BR")}</div>
+        </div>
+        <button
+          className={`${cartao} flex-[1_1_150px] animate-subir text-left transition duration-200 [animation-delay:60ms] hover:-translate-y-px hover:border-zinc-900/15 dark:hover:border-white/20`}
+          onClick={() => setAberto(!aberto)}
+          aria-expanded={aberto}
+          title="Ver os tipos detectados"
+        >
+          <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-[#8b92a5]">
+            Colunas
+            <IconeSeta className={`h-3.5 w-3.5 transition ${aberto ? "" : "-rotate-90"}`} />
+          </div>
+          <div className={valorCartao}>{dados.colunas.length.toLocaleString("pt-BR")}</div>
+        </button>
+
+        <div
+          className={`flex flex-[2_1_320px] animate-subir flex-wrap items-center gap-3 rounded-[14px] border px-4 py-3 [animation-delay:120ms] [@media(max-height:760px)]:py-2 ${
             perfil
-              ? "border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300"
-              : "border border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+              ? "border-emerald-300/70 bg-gradient-to-b from-emerald-50 to-emerald-50/40 dark:border-emerald-400/25 dark:from-emerald-400/10 dark:to-emerald-400/[0.02]"
+              : "border-zinc-900/[0.08] bg-white/70 dark:border-white/[0.08] dark:bg-white/[0.03]"
           }`}
           title={perfil && detectadoId !== perfil.id ? "Perfil escolhido manualmente" : "Perfil detectado pelas colunas"}
         >
-          {badge}
-        </span>
-
-        <label className="inline-flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
-          Perfil:
-          <select className="campo py-0.5 text-xs" value={aba.perfilId ?? ""} onChange={(e) => onTrocarPerfil(e.target.value || null)}>
-            <option value="">Genérica</option>
-            {PERFIS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.id} – {p.nome}
-                {p.id === detectadoId ? " (detectado)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+          <div className="min-w-0">
+            <div className={`text-xs ${perfil ? "text-emerald-700 dark:text-emerald-300" : "text-zinc-500 dark:text-[#8b92a5]"}`}>
+              {perfil ? (detectadoId === perfil.id ? "Perfil detectado" : "Perfil escolhido") : "Perfil"}
+            </div>
+            <div className="mt-1 truncate text-base font-semibold [@media(max-height:760px)]:mt-0">{badge}</div>
+          </div>
+          <label className="ml-auto inline-flex items-center gap-2 text-xs text-zinc-600 dark:text-[#9aa1b2]">
+            Perfil
+            <select
+              className="campo h-8 py-0 text-xs dark:bg-[#0a0c14]/80"
+              value={aba.perfilId ?? ""}
+              onChange={(e) => onTrocarPerfil(e.target.value || null)}
+            >
+              <option value="">Genérica</option>
+              {PERFIS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.id} – {p.nome}
+                  {p.id === detectadoId ? " (detectado)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         {qtdAvisos > 0 && (
           <button
-            className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 transition hover:-translate-y-px dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300"
-            onClick={() => setAberto(true)}
+            className="inline-flex flex-[0_1_auto] animate-subir items-center gap-2 rounded-[14px] border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] font-medium text-amber-800 transition duration-200 [animation-delay:180ms] hover:-translate-y-px dark:border-amber-400/30 dark:bg-amber-400/[0.08] dark:text-amber-300 [@media(max-height:760px)]:py-2"
+            onClick={() => setAberto(!aberto)}
+            aria-expanded={aberto}
           >
-            <IconeAlerta className="h-3.5 w-3.5" /> {qtdAvisos} aviso(s)
+            <IconeAlerta className="h-4 w-4" /> {qtdAvisos} aviso(s)
           </button>
         )}
       </div>
 
       {aberto && (
-        <div className="mt-2 space-y-2">
+        <div className="mt-3 animate-subir space-y-2">
           <div className="flex flex-wrap gap-1.5">
             <span className="text-xs text-zinc-500">Tipos detectados:</span>
             {ORDEM_TIPOS.filter((t) => porTipo.has(t)).map((t) => (

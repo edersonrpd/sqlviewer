@@ -8,9 +8,13 @@ import { baixarArquivo, copiarTexto, useAviso } from "./util";
 
 type Base = { dados: ResultadoParse; linhas: number[]; colunas: number[] };
 
+/** "Exportar" com menu: CSV ou Excel (linhas filtradas, colunas visíveis). */
 export function BotoesExportar({ dados, linhas, colunas, nomeBase }: Base & { nomeBase: string }) {
   const [gerando, setGerando] = useState(false);
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const vazio = colunas.length === 0;
+  useFecharAoClicarFora(aberto, ref, () => setAberto(false));
 
   const exportarCSV = () => {
     baixarArquivo(gerarCSV(dados, linhas, colunas), nomeArquivo(nomeBase, "csv"), "text/csv;charset=utf-8");
@@ -41,15 +45,57 @@ export function BotoesExportar({ dados, linhas, colunas, nomeBase }: Base & { no
   };
 
   return (
-    <>
-      <button className="btn" onClick={exportarCSV} disabled={vazio} title="CSV com ; e UTF-8 (abre no Excel pt-BR), valores originais">
-        <IconeDownload /> CSV
+    <div className="relative" ref={ref}>
+      <button
+        className="btn"
+        disabled={vazio || gerando}
+        title={`${linhas.length.toLocaleString("pt-BR")} linha(s) filtradas, colunas visíveis`}
+        onClick={() => setAberto(!aberto)}
+        aria-haspopup="menu"
+        aria-expanded={aberto}
+      >
+        <IconeDownload /> {gerando ? "Gerando…" : "Exportar"}
+        <IconeSeta className="h-3.5 w-3.5" />
       </button>
-      <button className="btn" onClick={exportarExcel} disabled={vazio || gerando} title="Planilha .xlsx; códigos gravados como texto">
-        <IconeDownload /> {gerando ? "Gerando…" : "Excel"}
-      </button>
-    </>
+      {aberto && (
+        <div role="menu" className="painel absolute right-0 z-50 mt-1 w-72 animate-surgir p-1 shadow-lg">
+          <button
+            role="menuitem"
+            className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            onClick={() => {
+              setAberto(false);
+              exportarCSV();
+            }}
+          >
+            <span className="block text-sm font-medium">CSV</span>
+            <span className="block text-xs text-zinc-500">Separado por ; e UTF-8 (abre no Excel pt-BR), valores originais</span>
+          </button>
+          <button
+            role="menuitem"
+            className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            onClick={() => {
+              setAberto(false);
+              void exportarExcel();
+            }}
+          >
+            <span className="block text-sm font-medium">Excel</span>
+            <span className="block text-xs text-zinc-500">Planilha .xlsx; códigos gravados como texto</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
+}
+
+function useFecharAoClicarFora(aberto: boolean, ref: React.RefObject<HTMLElement | null>, fechar: () => void) {
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) fechar();
+    };
+    document.addEventListener("mousedown", fora);
+    return () => document.removeEventListener("mousedown", fora);
+  }, [aberto, ref, fechar]);
 }
 
 /** Copia registros em "Lista" (COLUNA: valor) ou "Tabulado" (para colar no Excel). */
@@ -59,19 +105,13 @@ export function BotaoCopiarChamado({
   colunas,
   rotulo,
   semLinhas,
-}: Base & { rotulo: string; semLinhas: string }) {
+  destaque,
+}: Base & { rotulo: string; semLinhas: string; /** botão principal da barra (índigo, com brilho) */ destaque?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [aviso, setAviso] = useAviso();
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!aberto) return;
-    const fora = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setAberto(false);
-    };
-    document.addEventListener("mousedown", fora);
-    return () => document.removeEventListener("mousedown", fora);
-  }, [aberto]);
+  useFecharAoClicarFora(aberto, ref, () => setAberto(false));
 
   const copiar = async (formato: "lista" | "tabulado") => {
     setAberto(false);
@@ -85,7 +125,7 @@ export function BotaoCopiarChamado({
   return (
     <div className="relative" ref={ref}>
       <button
-        className="btn"
+        className={destaque ? "btn-destaque" : "btn"}
         disabled={desabilitado}
         title={desabilitado ? semLinhas : `${linhas.length} registro(s), colunas visíveis`}
         onClick={() => setAberto(!aberto)}
@@ -93,11 +133,11 @@ export function BotaoCopiarChamado({
         aria-expanded={aberto}
       >
         <IconeCopiar /> {rotulo}
-        {linhas.length > 0 && <span className="text-xs text-zinc-500 tabular-nums">({linhas.length})</span>}
+        {linhas.length > 0 && <span className={`text-xs tabular-nums ${destaque ? "opacity-70" : "text-zinc-500"}`}>({linhas.length})</span>}
         <IconeSeta className="h-3.5 w-3.5" />
       </button>
       {aberto && (
-        <div role="menu" className="painel absolute right-0 z-50 mt-1 w-72 p-1 shadow-lg">
+        <div role="menu" className="painel absolute right-0 z-50 mt-1 w-72 animate-surgir p-1 shadow-lg">
           <button role="menuitem" className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => copiar("lista")}>
             <span className="block text-sm font-medium">Lista</span>
             <span className="block text-xs text-zinc-500">COLUNA: valor, um campo por linha</span>

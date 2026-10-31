@@ -7,24 +7,33 @@ import { colunaDestaque } from "@/lib/destaque";
 import type { Aba } from "@/lib/estado";
 import { NOMES_TIPOS } from "@/lib/formatacao";
 import { buscarPerfil } from "@/lib/perfis";
+import type { TipoColuna } from "@/lib/tipos";
 import { alinhamento, Celula } from "./Celula";
+import { IconeDireita } from "./Icones";
 import { useDebounce } from "./util";
 
-const ALTURA_LINHA = 30;
+const ALTURA_LINHA = 40;
 const ALTURA_CABECALHO = 62;
-const LARGURA_SELECAO = 36;
+const LARGURA_SELECAO = 44;
 const ID_SELECAO = "__selecao";
-const bordaCelula = "border-r border-b border-zinc-200 dark:border-zinc-800";
-const sombraFixa = "shadow-[2px_0_0_0_rgba(0,0,0,0.08)]";
-// barra índigo à esquerda da linha marcada, somada à sombra da última coluna fixa
+const bordaCelula = "border-b border-zinc-900/[0.06] dark:border-white/5";
+const bordaCabecalho = "border-b border-zinc-900/[0.08] dark:border-white/[0.08]";
+const sombraFixa = "shadow-[1px_0_0_0_rgb(18_19_26/0.08)] dark:shadow-[1px_0_0_0_rgb(255_255_255/0.08)]";
+// barra índigo à esquerda da linha marcada, somada à divisória da última coluna fixa
 const sombraLinha = (barra: boolean, ultimaFixa: boolean) =>
   barra
     ? ultimaFixa
-      ? "shadow-[inset_3px_0_0_var(--color-blue-500),2px_0_0_0_rgba(0,0,0,0.08)]"
-      : "shadow-[inset_3px_0_0_var(--color-blue-500)]"
+      ? "shadow-[inset_3px_0_0_var(--color-blue-500),1px_0_0_0_rgb(18_19_26/0.08)] dark:shadow-[inset_3px_0_0_var(--color-blue-400),1px_0_0_0_rgb(255_255_255/0.08)]"
+      : "shadow-[inset_3px_0_0_var(--color-blue-500)] dark:shadow-[inset_3px_0_0_var(--color-blue-400)]"
     : ultimaFixa
       ? sombraFixa
       : "";
+// códigos, números e datas em fonte monoespaçada, como no grid do cliente SQL
+const TIPOS_MONO = new Set<TipoColuna>(["inteiro", "decimal", "data", "datahora", "hora"]);
+
+/** Linhas do topo que entram em cascata (as demais aparecem direto, para não atrasar a rolagem). */
+const LINHAS_ANIMADAS = 20;
+let contadorGeracao = 0;
 
 type Props = {
   aba: Aba;
@@ -49,8 +58,12 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
     return d ? String(d.j) : null;
   }, [dados.colunas, aba.perfilId]);
   const fundoCabecalho = (id: string) =>
-    id === idDestaque ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" : "bg-zinc-100 dark:bg-zinc-900";
+    `bg-[#f8f9fc] dark:bg-[#13151d] ${id === idDestaque ? "text-cyan-700 dark:text-cyan-300" : ""}`;
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Cada novo conjunto de linhas (abrir, filtrar, ordenar) ganha uma "geração": as linhas
+  // são recriadas e as do topo sobem em cascata. Rolagem posterior não anima.
+  const geracao = useMemo(() => ({ id: ++contadorGeracao, ate: Date.now() + 1200 }), [indices]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const definicoes = useMemo<ColumnDef<number>[]>(
     () => [
@@ -166,16 +179,19 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
     }
     const j = Number(c.id);
     const col = dados.colunas[j];
-    const sentido = ordenacao?.coluna === j ? (ordenacao.desc ? "▼" : "▲") : "";
+    const ordenada = ordenacao?.coluna === j;
+    const sentido = ordenada ? (ordenacao.desc ? "↓" : "↑") : "";
     return (
-      <div className="flex h-full flex-col justify-center gap-1 px-1.5">
+      <div className="flex h-full flex-col justify-center gap-1.5 px-2">
         <button
-          className="flex min-w-0 items-center gap-1 text-left font-mono text-xs font-semibold"
+          className={`flex min-w-0 items-center gap-1 text-left font-mono text-[11px] font-semibold tracking-[0.04em] transition-colors ${
+            ordenada ? "text-blue-700 dark:text-blue-300" : c.id === idDestaque ? "" : "text-zinc-500 hover:text-zinc-800 dark:text-[#8b92a5] dark:hover:text-zinc-200"
+          }`}
           title={`${col.nome} · ${NOMES_TIPOS[col.tipo]} — clique para ordenar`}
           onClick={() => ordenar(j)}
         >
           <span className="truncate">{col.nome}</span>
-          <span className="shrink-0 animate-surgir text-[10px] text-blue-600 dark:text-blue-400">{sentido}</span>
+          <span key={sentido} className="shrink-0 animate-surgir text-xs">{sentido}</span>
         </button>
         <FiltroColuna
           valor={aba.filtros[j] ?? ""}
@@ -193,11 +209,13 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
 
 
   return (
-    <div ref={scrollRef} className="absolute inset-0 overflow-auto text-sm" role="grid" aria-rowcount={indices.length + 1}>
+    // cartão de vidro em volta da tabela
+    <div className="absolute inset-x-3 top-0 bottom-3 isolate overflow-hidden rounded-2xl border border-zinc-900/[0.08] bg-white shadow-[0_24px_60px_-30px_rgb(30_27_75/0.35)] sm:inset-x-5 sm:bottom-5 dark:border-white/[0.09] dark:bg-[#0c0e16] dark:shadow-[0_30px_80px_-30px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.05)]">
+    <div ref={scrollRef} className="absolute inset-0 overflow-auto text-[13px]" role="grid" aria-rowcount={indices.length + 1}>
       <div style={{ width: larguraTotal, minWidth: "100%" }}>
         {/* cabeçalho fixo */}
         <div
-          className="sticky top-0 z-20 flex bg-zinc-100 dark:bg-zinc-900"
+          className="sticky top-0 z-20 flex bg-[#f8f9fc] dark:bg-[#13151d]"
           style={{ height: ALTURA_CABECALHO, width: larguraTotal }}
           role="row"
         >
@@ -206,7 +224,7 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
               key={c.id}
               role="columnheader"
               style={estiloFixa(c)}
-              className={`sticky z-30 shrink-0 ${fundoCabecalho(c.id)} ${bordaCelula} ${
+              className={`sticky z-30 shrink-0 ${fundoCabecalho(c.id)} ${bordaCabecalho} ${
                 k === esquerda.length - 1 ? sombraFixa : ""
               }`}
             >
@@ -217,11 +235,12 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
           {itensColuna.map((vc) => {
             const c = centro[vc.index];
             return (
-              <div key={c.id} role="columnheader" style={{ width: c.getSize() }} className={`shrink-0 ${fundoCabecalho(c.id)} ${bordaCelula}`}>
+              <div key={c.id} role="columnheader" style={{ width: c.getSize() }} className={`shrink-0 ${fundoCabecalho(c.id)} ${bordaCabecalho}`}>
                 {cabecalho(c)}
               </div>
             );
           })}
+          <div className={`min-w-0 flex-1 ${bordaCabecalho}`} />
         </div>
 
         {/* linhas */}
@@ -231,10 +250,10 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
             if (i === undefined) return null;
             return (
               <LinhaTabela
-                key={i}
+                key={`${geracao.id}-${i}`}
                 i={i}
                 topo={vr.start - ALTURA_CABECALHO}
-                par={vr.index % 2 === 0}
+                atraso={vr.index < LINHAS_ANIMADAS && Date.now() < geracao.ate ? vr.index * 0.04 : null}
                 marcada={selecionadas.has(i)}
                 aberta={registro === i}
                 dados={dados}
@@ -253,11 +272,12 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
           })}
         </div>
         {indices.length === 0 && (
-          <p className="sticky left-0 p-6 text-sm text-zinc-500" style={{ width: "min(100%, 40rem)" }}>
+          <p className="sticky left-0 animate-subir p-6 text-sm text-zinc-500" style={{ width: "min(100%, 40rem)" }}>
             Nenhuma linha corresponde aos filtros atuais.
           </p>
         )}
       </div>
+    </div>
     </div>
   );
 }
@@ -265,7 +285,8 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar }: Pr
 type PropsLinha = {
   i: number;
   topo: number;
-  par: boolean;
+  /** atraso (s) da animação de entrada; null = sem animação */
+  atraso: number | null;
   marcada: boolean;
   aberta: boolean;
   dados: Aba["dados"];
@@ -283,30 +304,48 @@ type PropsLinha = {
 
 const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
   const { i, dados } = p;
+  // fundos opacos (as colunas fixas cobrem as demais ao rolar), equivalentes ao índigo translúcido do design
   const fundo = p.aberta
-    ? "bg-blue-100 dark:bg-blue-950"
+    ? "bg-[#e6e9ff] dark:bg-[#1c1f3d]"
     : p.marcada
-      ? "bg-blue-50 dark:bg-[#141633]"
-      : p.par
-        ? "bg-white dark:bg-zinc-950"
-        : "bg-zinc-50 dark:bg-zinc-900";
-  const classeCelula = `flex shrink-0 items-center transition-colors duration-150 ${fundo} group-hover:bg-blue-50 dark:group-hover:bg-[#161a2e] ${bordaCelula}`;
-  const classeDestaque = `flex shrink-0 items-center bg-amber-50 font-mono font-semibold text-amber-900 group-hover:bg-amber-100 dark:bg-amber-950/50 dark:group-hover:bg-amber-900/60 dark:text-amber-200 ${bordaCelula}`;
-  const classe = (c: Column<number>) => (c.id === p.idDestaque ? classeDestaque : classeCelula);
+      ? "bg-[#f1f2ff] dark:bg-[#15172c]"
+      : "bg-white dark:bg-[#0c0e16]";
+  const classe = `flex shrink-0 items-center text-zinc-700 transition-colors duration-150 ${fundo} group-hover:bg-[#eef0ff] dark:text-zinc-300 dark:group-hover:bg-[#191c33] ${bordaCelula}`;
 
+  // primeira coluna de dados (identificador) em cor mais forte
+  const k0 = (c: Column<number>) => c.id === p.esquerda[1]?.id;
   const conteudo = (c: Column<number>) => {
     if (c.id === ID_SELECAO) {
       return (
         <label className="flex h-full w-full cursor-pointer items-center justify-center" onClick={(e) => e.stopPropagation()}>
-          <input type="checkbox" aria-label="Selecionar linha" checked={p.marcada} onChange={() => p.onAlternar(i)} />
+          <input type="checkbox" className="h-[15px] w-[15px]" aria-label="Selecionar linha" checked={p.marcada} onChange={() => p.onAlternar(i)} />
         </label>
       );
     }
     const j = Number(c.id);
     const col = dados.colunas[j];
     const v = dados.linhas[i][j];
+    if (c.id === p.idDestaque) {
+      // coluna-chave (ex.: NUMPOK) como etiqueta ciano
+      return (
+        <div className="min-w-0 flex-1 truncate px-2" title={v === null ? "NULL" : v}>
+          {v ? (
+            <span className="rounded-md bg-cyan-100 px-2 py-0.5 font-mono text-xs font-medium text-cyan-800 dark:bg-cyan-400/[0.12] dark:text-cyan-300">
+              <Celula valor={v} tipo={col.tipo} />
+            </span>
+          ) : (
+            <Celula valor={v} tipo={col.tipo} />
+          )}
+        </div>
+      );
+    }
     return (
-      <div className={`min-w-0 flex-1 truncate px-2 ${alinhamento(col.tipo)}`} title={v === null ? "NULL" : v}>
+      <div
+        className={`min-w-0 flex-1 truncate px-3 ${alinhamento(col.tipo)} ${TIPOS_MONO.has(col.tipo) ? "font-mono" : ""} ${
+          k0(c) ? "text-zinc-900 dark:text-zinc-100" : ""
+        }`}
+        title={v === null ? "NULL" : v}
+      >
         <Celula valor={v} tipo={col.tipo} />
       </div>
     );
@@ -317,7 +356,7 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
     const c = p.centro[k];
     if (!c) continue;
     centro.push(
-      <div key={c.id} role="gridcell" style={{ width: c.getSize() }} className={classe(c)}>
+      <div key={c.id} role="gridcell" style={{ width: c.getSize() }} className={classe}>
         {conteudo(c)}
       </div>,
     );
@@ -328,21 +367,43 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
       role="row"
       aria-selected={p.marcada}
       onClick={() => p.onAbrir(i)}
-      className="group absolute top-0 left-0 flex cursor-pointer"
+      className="group absolute top-0 left-0 flex min-w-full cursor-pointer"
       style={{ height: ALTURA_LINHA, width: p.larguraTotal, transform: `translateY(${p.topo}px)` }}
     >
-      {p.esquerda.map((c, k) => (
-        <div
-          key={c.id}
-          role="gridcell"
-          style={{ width: c.getSize(), left: p.offsets.get(c.id) }}
-          className={`sticky z-10 ${classe(c)} ${sombraLinha(k === 0 && (p.marcada || p.aberta), k === p.esquerda.length - 1)}`}
-        >
-          {conteudo(c)}
+      {/* a animação fica num filho: o transform da linha é usado pelo posicionamento virtual */}
+      <div
+        className={`flex flex-1 ${p.atraso !== null ? "animate-entrar-linha" : ""}`}
+        style={p.atraso !== null ? { animationDelay: `${p.atraso}s` } : undefined}
+      >
+        {p.esquerda.map((c, k) => (
+          <div
+            key={c.id}
+            role="gridcell"
+            style={{ width: c.getSize(), left: p.offsets.get(c.id) }}
+            className={`sticky z-10 ${classe} ${sombraLinha(k === 0 && (p.marcada || p.aberta), k === p.esquerda.length - 1)}`}
+          >
+            {conteudo(c)}
+          </div>
+        ))}
+        <div style={{ width: p.espacoEsquerda }} className="shrink-0" />
+        {centro}
+        <div className={`min-w-0 flex-1 ${classe}`} />
+        {/* "abrir ficha": aparece ao passar o mouse, preso à borda direita */}
+        <div className="sticky right-0 z-10 w-0 shrink-0">
+          <button
+            tabIndex={-1}
+            aria-label="Abrir ficha do registro"
+            title="Abrir ficha"
+            className="absolute top-1/2 right-2.5 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg border border-zinc-900/10 bg-white text-blue-700 opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 dark:border-white/15 dark:bg-[#1a1d2e] dark:text-blue-200"
+            onClick={(e) => {
+              e.stopPropagation();
+              p.onAbrir(i);
+            }}
+          >
+            <IconeDireita className="h-3.5 w-3.5" />
+          </button>
         </div>
-      ))}
-      <div style={{ width: p.espacoEsquerda }} className="shrink-0" />
-      {centro}
+      </div>
     </div>
   );
 });

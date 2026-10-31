@@ -68,56 +68,70 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
 
   const visiveisCount = aba.visiveis.filter(Boolean).length;
 
+  // "/" leva à busca (como no design), exceto quando já se está digitando em algum campo
+  const campoBusca = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const teclas = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && (alvo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(alvo.tagName))) return;
+      e.preventDefault();
+      campoBusca.current?.focus();
+      campoBusca.current?.select();
+    };
+    window.addEventListener("keydown", teclas);
+    return () => window.removeEventListener("keydown", teclas);
+  }, []);
+
   return (
     <div className="flex h-full flex-col">
       <ResumoConsulta aba={aba} onTrocarPerfil={(perfilId) => dispatch({ tipo: "trocarPerfil", id: aba.id, perfilId })} />
 
-      <div className="vidro relative z-10 flex flex-wrap items-center gap-2 border-b border-zinc-200 px-3 py-2 dark:border-white/10">
-        <div className="inline-flex rounded-xl border border-zinc-300 bg-white/60 p-1 dark:border-white/10 dark:bg-white/5" role="tablist">
-          {(["tela", "tabela", "graficos"] as const).map((v) => (
-            <button
-              key={v}
-              role="tab"
-              aria-selected={aba.visao === v}
-              onClick={() => atualizar({ visao: v })}
-              className={`rounded-lg px-4 py-1 text-sm font-semibold transition duration-300 ${
-                aba.visao === v
-                  ? "bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-[0_4px_18px_-4px_rgb(99_102_241/0.9)]"
-                  : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-100"
-              }`}
-            >
-              {v === "tela" ? "Tela" : v === "tabela" ? "Tabela" : "Gráficos"}
-            </button>
-          ))}
-        </div>
+      <div className="relative z-10 flex flex-wrap items-center gap-2.5 px-3 py-3 sm:px-5 [@media(max-height:760px)]:py-2">
+        <SeletorVisao visao={aba.visao} onTrocar={(visao) => atualizar({ visao })} />
 
-        <label className="relative">
+        <label className="flex h-10 w-72 max-w-full items-center gap-2 rounded-xl border border-zinc-900/[0.12] bg-white px-3 transition duration-200 focus-within:border-blue-500 focus-within:shadow-[0_0_0_4px_rgb(99_102_241/0.18),0_0_24px_-4px_rgb(99_102_241/0.45)] dark:border-white/[0.12] dark:bg-[#0a0c14]/70 dark:focus-within:border-blue-400/70">
           <span className="sr-only">Buscar em todas as colunas visíveis</span>
-          <IconeBusca className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <IconeBusca className="h-4 w-4 shrink-0 text-zinc-500 dark:text-[#8b92a5]" />
           <input
+            ref={campoBusca}
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar nas colunas visíveis"
-            className="campo w-64 pl-8"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
           />
+          {busca ? (
+            <button className="btn-icone h-5 w-5" aria-label="Limpar busca" onClick={() => setBusca("")}>
+              <IconeX className="h-3 w-3" />
+            </button>
+          ) : (
+            <kbd className="tecla" title="Atalho: /">
+              /
+            </kbd>
+          )}
         </label>
 
-        <span className="text-sm text-zinc-600 tabular-nums dark:text-zinc-400" aria-live="polite">
-          <strong className="text-zinc-900 dark:text-zinc-100">{indices.length.toLocaleString("pt-BR")}</strong> de{" "}
+        <span className="text-[13px] text-zinc-600 tabular-nums dark:text-zinc-400" aria-live="polite">
+          <strong className="font-mono text-zinc-900 dark:text-zinc-100">{indices.length.toLocaleString("pt-BR")}</strong> de{" "}
           {dados.linhas.length.toLocaleString("pt-BR")} linhas
         </span>
 
         {aba.selecionadas.size > 0 && (
-          <span className="inline-flex animate-surgir items-center gap-1 rounded-full border border-blue-300 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-200">
+          <span className="inline-flex h-7 animate-surgir items-center gap-1.5 rounded-full border border-blue-300 bg-blue-50 pr-1.5 pl-3 text-xs font-medium text-blue-700 dark:border-blue-400/40 dark:bg-blue-500/[0.18] dark:text-blue-200">
             {aba.selecionadas.size} selecionada(s)
             {selecionadasVisiveis.length !== aba.selecionadas.size && ` (${selecionadasVisiveis.length} no filtro)`}
-            <button className="ml-0.5 hover:text-blue-900" title="Limpar seleção" onClick={() => atualizar({ selecionadas: new Set() })}>
-              <IconeX className="h-3 w-3" />
+            <button
+              className="grid h-5 w-5 place-items-center rounded-full bg-blue-100 transition hover:bg-blue-200 dark:bg-white/[0.08] dark:hover:bg-white/15"
+              title="Limpar seleção"
+              aria-label="Limpar seleção"
+              onClick={() => atualizar({ selecionadas: new Set() })}
+            >
+              <IconeX className="h-2.5 w-2.5" />
             </button>
           </span>
         )}
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2 [&_.btn]:h-10 [&_.btn]:rounded-[10px] [&_.btn]:px-3.5 [&_.btn-destaque]:h-10 [&_.btn-destaque]:rounded-[10px] [&_.btn-destaque]:px-4">
           <button
             className="btn"
             disabled={selecionadasVisiveis.length !== 2}
@@ -135,6 +149,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           </button>
           <BotoesExportar dados={dados} linhas={indices} colunas={exibidas} nomeBase={aba.nome} />
           <BotaoCopiarChamado
+            destaque
             dados={dados}
             linhas={selecionadasVisiveis}
             colunas={exibidas}
@@ -145,8 +160,8 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
       </div>
 
       {temFiltros && (
-        <div className="vidro relative z-10 flex flex-wrap items-center gap-1.5 border-b border-zinc-200 px-3 py-1.5 text-xs dark:border-white/10">
-          <span className="text-zinc-500">Filtros:</span>
+        <div className="relative z-10 flex flex-wrap items-center gap-1.5 px-3 pb-3 text-xs sm:px-5">
+          <span className="text-zinc-500 dark:text-[#8b92a5]">Filtros</span>
           {aba.relacoes.map((r, k) => (
             <Chip
               key={`r${k}`}
@@ -186,7 +201,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
       )}
 
       {colunasAchadas.length > 0 && (
-        <div className="vidro relative z-10 flex flex-wrap items-center gap-1.5 border-b border-zinc-200 px-3 py-1.5 text-xs dark:border-white/10">
+        <div className="relative z-10 flex flex-wrap items-center gap-1.5 px-3 pb-3 text-xs sm:px-5">
           <span className="text-zinc-500">Colunas com “{aba.busca.trim()}” no nome:</span>
           {colunasAchadas.map((j) => (
             <button
@@ -261,16 +276,57 @@ function Chip({
   return (
     <span
       title={titulo}
-      className={`inline-flex max-w-96 animate-surgir items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono ${
+      className={`inline-flex max-w-96 animate-surgir items-center gap-1.5 rounded-full border py-1 pr-1.5 pl-2.5 font-mono ${
         destaque
-          ? "border-violet-300 bg-violet-100 text-violet-800 dark:border-violet-400/40 dark:bg-violet-500/15 dark:text-violet-200"
-          : "border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+          ? "border-violet-300 bg-violet-100 text-violet-800 dark:border-violet-400/[0.35] dark:bg-violet-400/[0.14] dark:text-violet-200"
+          : "border-zinc-200 bg-white text-zinc-700 dark:border-white/[0.12] dark:bg-white/[0.06] dark:text-zinc-300"
       }`}
     >
       <span className="truncate">{children}</span>
-      <button onClick={onRemover} aria-label="Remover filtro" className="opacity-60 hover:opacity-100">
-        <IconeX className="h-3 w-3" />
+      <button
+        onClick={onRemover}
+        aria-label="Remover filtro"
+        className="grid h-[18px] w-[18px] place-items-center rounded-full opacity-70 transition hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10"
+      >
+        <IconeX className="h-2.5 w-2.5" />
       </button>
     </span>
+  );
+}
+
+const VISOES = [
+  { id: "tela", rotulo: "Tela" },
+  { id: "tabela", rotulo: "Tabela" },
+  { id: "graficos", rotulo: "Gráficos" },
+] as const;
+
+/** Tela / Tabela / Gráficos com um indicador que desliza (com leve "mola") até a visão escolhida. */
+function SeletorVisao({ visao, onTrocar }: { visao: Aba["visao"]; onTrocar: (v: Aba["visao"]) => void }) {
+  const pos = Math.max(0, VISOES.findIndex((v) => v.id === visao));
+  return (
+    <div
+      role="tablist"
+      aria-label="Visão"
+      className="relative grid grid-cols-[repeat(3,96px)] rounded-xl border border-zinc-900/10 bg-white/70 p-1 dark:border-white/10 dark:bg-white/[0.03]"
+    >
+      <span
+        aria-hidden
+        className="absolute top-1 left-1 h-[calc(100%-8px)] w-24 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_4px_18px_-4px_rgb(99_102_241/0.9)] transition-transform duration-[350ms] ease-[cubic-bezier(.3,1.4,.5,1)]"
+        style={{ transform: `translateX(${pos * 96}px)` }}
+      />
+      {VISOES.map((v) => (
+        <button
+          key={v.id}
+          role="tab"
+          aria-selected={visao === v.id}
+          onClick={() => onTrocar(v.id)}
+          className={`relative h-[34px] text-[13px] font-semibold transition-colors duration-200 ${
+            visao === v.id ? "text-white" : "text-zinc-600 hover:text-zinc-900 dark:text-[#9aa1b2] dark:hover:text-zinc-100"
+          }`}
+        >
+          {v.rotulo}
+        </button>
+      ))}
+    </div>
   );
 }
