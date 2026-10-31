@@ -67,6 +67,11 @@ export type Relacao = {
   colunaOrigem: string;
   /** coluna do perfil de destino */
   colunaDestino: string;
+  /**
+   * Outras colunas que também precisam ser iguais (chave composta), ex.: o
+   * adiantamento do pedido é o do mesmo nº de documento, espécie e empresa.
+   */
+  extras?: { origem: string; destino: string }[];
   /** texto exibido na ficha do registro */
   rotulo: string;
 };
@@ -527,7 +532,17 @@ export const PERFIS: Perfil[] = [
       { perfil: "MOVCAR", colunaOrigem: "FGO_NUMPOK", colunaDestino: "MCA_NUMPOK", rotulo: "Movimentação de cartões" },
       { perfil: "HUBCIT_INFPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "INF_NUMPOK", rotulo: "Dados do pedido no HUB" },
       { perfil: "LOGNFE", colunaOrigem: "FGO_NUMFAT", colunaDestino: "NFE_NUMDOC", rotulo: "Log da NF-e" },
-      { perfil: "ADTCLI", colunaOrigem: "FGO_CODCLI", colunaDestino: "ADT_CODCLI", rotulo: "Adiantamentos do cliente" },
+      // só os lançamentos deste pedido (crédito e o débito da emissão), não o extrato inteiro do cliente
+      {
+        perfil: "ADTCLI",
+        colunaOrigem: "FGO_NUMDOC",
+        colunaDestino: "ADT_NUMDOC",
+        extras: [
+          { origem: "FGO_ESPDOC", destino: "ADT_ESPDOC" },
+          { origem: "FGO_CODEMP", destino: "ADT_CODEMP" },
+        ],
+        rotulo: "Adiantamentos do pedido",
+      },
     ],
     // chaves estrangeiras da FATGOR no banco
     cadastros: [
@@ -677,7 +692,7 @@ export const PERFIS: Perfil[] = [
     colunaTitulo: "ADT_SEQCON",
     chave: "AUTOINCREM",
     graficoSugerido: { modo: "soma", categoria: "ADT_TIPLAN", valor: "ADT_VALLAN" },
-    rotulosInversos: { FATGOR: "Pedidos do cliente" },
+    rotulosInversos: { FATGOR: "Pedido" },
     totais: [],
     saldo: { valor: "ADT_VALLAN", tipo: "ADT_TIPLAN", credito: ["C"], debito: ["D"] },
     tela: {

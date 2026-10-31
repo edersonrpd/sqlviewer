@@ -77,14 +77,23 @@ describe("ligacoesDoPerfil", () => {
 
   it("a relação vale no sentido inverso", () => {
     expect(ligacoesDoPerfil("FATDOR")).toEqual([
-      { perfilDestino: "CADITE", colunaOrigem: "FDO_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Cadastro do item" },
-      { perfilDestino: "FATGOR", colunaOrigem: "FDO_SEQGER", colunaDestino: "AUTOINCREM", rotulo: "Pedido (cabeçalho)" },
+      { perfilDestino: "CADITE", colunaOrigem: "FDO_CODITE", colunaDestino: "ITE_CODITE", extras: [], rotulo: "Cadastro do item" },
+      { perfilDestino: "FATGOR", colunaOrigem: "FDO_SEQGER", colunaDestino: "AUTOINCREM", extras: [], rotulo: "Pedido (cabeçalho)" },
+    ]);
+  });
+
+  it("chave composta: o inverso troca origem e destino também nos extras", () => {
+    const adt = ligacoesDoPerfil("ADTCLI").find((l) => l.perfilDestino === "FATGOR")!;
+    expect(adt).toMatchObject({ colunaOrigem: "ADT_NUMDOC", colunaDestino: "FGO_NUMDOC", rotulo: "Pedido" });
+    expect(adt.extras).toEqual([
+      { origem: "ADT_ESPDOC", destino: "FGO_ESPDOC" },
+      { origem: "ADT_CODEMP", destino: "FGO_CODEMP" },
     ]);
   });
 
   it("CADITE enxerga os itens de pedido pelo código do item", () => {
     expect(ligacoesDoPerfil("CADITE")).toEqual([
-      { perfilDestino: "FATDOR", colunaOrigem: "ITE_CODITE", colunaDestino: "FDO_CODITE", rotulo: "Pedidos com o item" },
+      { perfilDestino: "FATDOR", colunaOrigem: "ITE_CODITE", colunaDestino: "FDO_CODITE", extras: [], rotulo: "Pedidos com o item" },
     ]);
   });
 });

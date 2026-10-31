@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { colunaDestaque } from "@/lib/destaque";
 import type { Aba } from "@/lib/estado";
 import { buscarPerfil } from "@/lib/perfis";
+import type { FiltroRelacao } from "@/lib/filtragem";
 import { relacionadosDoRegistro } from "@/lib/relacionados";
 import { Celula } from "./Celula";
 import { IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeOlhoFechado, IconeX } from "./Icones";
@@ -20,7 +21,7 @@ type Props = {
   onNavegar: (registro: number) => void;
   onFechar: () => void;
   onAbrirTela: () => void;
-  onAbrirRelacao: (destino: string, coluna: number, valor: string, rotulo: string) => void;
+  onAbrirRelacao: (destino: string, coluna: number, valor: string, rotulo: string, extras?: FiltroRelacao["extras"]) => void;
 };
 
 export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, onFechar, onAbrirTela, onAbrirRelacao }: Props) {
@@ -140,7 +141,7 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
                     <li key={`${r.abaId}-${r.colunaDestino}-${r.rotulo}`}>
                       <button
                         disabled={vazio}
-                        onClick={() => onAbrirRelacao(r.abaId, r.colunaDestino, r.chave!, r.rotulo)}
+                        onClick={() => onAbrirRelacao(r.abaId, r.colunaDestino, r.chave!, r.rotulo, r.extras.map((e) => ({ coluna: e.coluna, valor: e.chave })))}
                         title={vazio ? "Nenhum registro ligado nesta aba" : `Abrir a aba "${r.abaNome}" filtrando ${r.colunaDestinoNome} = ${r.chave}`}
                         className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm ${
                           vazio

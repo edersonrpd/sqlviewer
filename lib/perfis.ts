@@ -46,6 +46,8 @@ export type LigacaoPerfil = {
   perfilDestino: string;
   colunaOrigem: string;
   colunaDestino: string;
+  /** demais colunas da chave composta (já no sentido desta ligação) */
+  extras: { origem: string; destino: string }[];
   rotulo: string;
 };
 
@@ -57,7 +59,7 @@ export function ligacoesDoPerfil(perfilId: string, perfis: Perfil[] = PERFIS): L
   const atual = buscarPerfil(perfilId, perfis);
   const ligacoes: LigacaoPerfil[] = [];
   for (const r of atual?.relacoes ?? []) {
-    ligacoes.push({ perfilDestino: r.perfil, colunaOrigem: r.colunaOrigem, colunaDestino: r.colunaDestino, rotulo: r.rotulo });
+    ligacoes.push({ perfilDestino: r.perfil, colunaOrigem: r.colunaOrigem, colunaDestino: r.colunaDestino, extras: r.extras ?? [], rotulo: r.rotulo });
   }
   for (const p of perfis) {
     if (p.id === perfilId) continue;
@@ -67,6 +69,7 @@ export function ligacoesDoPerfil(perfilId: string, perfis: Perfil[] = PERFIS): L
         perfilDestino: p.id,
         colunaOrigem: r.colunaDestino,
         colunaDestino: r.colunaOrigem,
+        extras: (r.extras ?? []).map((e) => ({ origem: e.destino, destino: e.origem })),
         rotulo: atual?.rotulosInversos?.[p.id] ?? p.nome,
       });
     }
@@ -74,11 +77,21 @@ export function ligacoesDoPerfil(perfilId: string, perfis: Perfil[] = PERFIS): L
   return ligacoes;
 }
 
-/** Índices das linhas de `destino` cuja coluna `jDestino` tem a mesma chave que `valor`. */
-export function linhasLigadas(valor: Valor, destino: Valor[][], jDestino: number): number[] {
+/** Parte adicional de uma chave composta: coluna no destino e valor esperado. */
+export type ChaveExtra = { j: number; valor: Valor };
+
+/**
+ * Índices das linhas de `destino` cuja coluna `jDestino` tem a mesma chave que `valor`
+ * (e, numa chave composta, as mesmas chaves nas colunas `extras`).
+ */
+export function linhasLigadas(valor: Valor, destino: Valor[][], jDestino: number, extras: readonly ChaveExtra[] = []): number[] {
   const k = chaveRelacao(valor);
   if (k === null) return [];
+  const ks = extras.map((e) => ({ j: e.j, k: chaveRelacao(e.valor) }));
   const res: number[] = [];
-  for (let i = 0; i < destino.length; i++) if (chaveRelacao(destino[i][jDestino]) === k) res.push(i);
+  for (let i = 0; i < destino.length; i++) {
+    const l = destino[i];
+    if (chaveRelacao(l[jDestino]) === k && ks.every((e) => chaveRelacao(l[e.j]) === e.k)) res.push(i);
+  }
   return res;
 }

@@ -2,7 +2,13 @@ import { formatarValor, paraNumero } from "./formatacao";
 import { chaveRelacao } from "./perfis";
 import type { ResultadoParse, Valor } from "./tipos";
 
-export type FiltroRelacao = { coluna: number; valor: string; rotulo: string };
+export type FiltroRelacao = {
+  coluna: number;
+  valor: string;
+  rotulo: string;
+  /** demais colunas de uma chave composta (null = vazio/NULL) */
+  extras?: { coluna: number; valor: string | null }[];
+};
 export type ChaveOrdenacao = { coluna: number; desc: boolean };
 export type Ordenacao = ChaveOrdenacao | null;
 
@@ -104,7 +110,11 @@ export function filtrarOrdenar(dados: ResultadoParse, c: Criterios): number[] {
   let indices: number[] = Array.from({ length: n }, (_, i) => i);
 
   for (const r of c.relacoes) {
-    indices = indices.filter((i) => chaveRelacao(dados.linhas[i][r.coluna]) === r.valor);
+    const extras = r.extras ?? [];
+    indices = indices.filter((i) => {
+      const l = dados.linhas[i];
+      return chaveRelacao(l[r.coluna]) === r.valor && extras.every((e) => chaveRelacao(l[e.coluna]) === e.valor);
+    });
   }
 
   for (const [jStr, texto] of Object.entries(c.filtros)) {

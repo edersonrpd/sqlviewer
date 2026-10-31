@@ -11,6 +11,7 @@ import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
 import { sqlJoin } from "@/lib/join";
 import {
   cadastrosPendentes,
+  extrasLigacao,
   relacionadosDoRegistro,
   relacoesPendentes,
   type CadastroPendente,
@@ -193,7 +194,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
               rel={r}
               abas={abas}
               onAbrir={(linha) => {
-                dispatch({ tipo: "abrirRelacao", destino: r.abaId, coluna: r.colunaDestino, valor: r.chave!, rotulo: r.rotulo });
+                dispatch({ tipo: "abrirRelacao", destino: r.abaId, coluna: r.colunaDestino, valor: r.chave!, rotulo: r.rotulo, extras: r.extras.map((e) => ({ coluna: e.coluna, valor: e.chave })) });
                 if (linha !== undefined) dispatch({ tipo: "atualizar", id: r.abaId, patch: { registroTela: linha } });
               }}
             />
@@ -395,8 +396,8 @@ const MAX_LINHAS_BLOCO = 200;
 function BlocoRelacionado({ rel, abas, onAbrir }: { rel: Relacionado; abas: Aba[]; onAbrir: (linha?: number) => void }) {
   const destino = abas.find((a) => a.id === rel.abaId);
   const linhas = useMemo(
-    () => (destino && rel.chave !== null ? linhasLigadas(rel.chave, destino.dados.linhas, rel.colunaDestino) : []),
-    [destino, rel.chave, rel.colunaDestino],
+    () => (destino && rel.chave !== null ? linhasLigadas(rel.chave, destino.dados.linhas, rel.colunaDestino, extrasLigacao(rel.extras)) : []),
+    [destino, rel.chave, rel.colunaDestino, rel.extras],
   );
   const colunas = useMemo(() => (destino ? colunasExibidas(destino) : []), [destino]);
   if (!destino) return null;
@@ -421,7 +422,8 @@ function BlocoRelacionado({ rel, abas, onAbrir }: { rel: Relacionado; abas: Aba[
           {linhas.length}
         </span>
         <span className="font-mono text-[10px] text-zinc-400">
-          {rel.colunaDestinoNome} = {rel.chave ?? "NULL"} · aba {destino.nome}
+          {rel.colunaDestinoNome} = {rel.chave ?? "NULL"}
+          {rel.extras.map((e) => ` · ${e.nome} = ${e.chave ?? "NULL"}`).join("")} · aba {destino.nome}
         </span>
         {linhas.length > 0 && (
           <button className="ml-auto text-xs text-blue-600 hover:underline dark:text-blue-400" onClick={() => onAbrir()}>
@@ -562,7 +564,7 @@ function BlocoPendentes({
               </li>
             );
           }
-          const sql = sqlRelacionado(p.tabela, p.colunaDestino, chave);
+          const sql = sqlRelacionado(p.tabela, p.colunaDestino, chave, p.extras);
           return (
             <li key={`${p.perfilDestino}-${p.colunaOrigem}`} className="flex flex-wrap items-center gap-2 text-sm">
               <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400">{p.rotulo}</span>

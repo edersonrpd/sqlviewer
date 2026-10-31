@@ -54,30 +54,40 @@ export function sqlJoinPor(
 ): string | null {
   const perfil = buscarPerfil(perfilId);
   if (!perfil || valores.length === 0) return null;
-  const ligacoes = ligacoesDoPerfil(perfil.id).filter((l) => existe(l.colunaOrigem));
+  const ligacoes = ligacoesDoPerfil(perfil.id)
+    .filter((l) => existe(l.colunaOrigem))
+    .map((l) => ({ ...l, extras: l.extras.filter((e) => existe(e.origem)) }));
   if (ligacoes.length === 0) return null;
 
   const selects = [`'' AS \`${PREFIXO_MARCADOR}${perfil.id}\`, t0.*`];
   const joins: string[] = [];
   const incluidos = new Set([perfil.id, ...ligacoes.map((l) => l.perfilDestino)]);
-  const juntar = (destinoId: string, colunaDestino: string, origem: string, colunaOrigem: string) => {
+  const juntar = (
+    destinoId: string,
+    colunaDestino: string,
+    origem: string,
+    colunaOrigem: string,
+    extras: { origem: string; destino: string }[] = [],
+  ) => {
     const a = `t${joins.length + 1}`;
     selects.push(`'' AS \`${PREFIXO_MARCADOR}${destinoId}\`, ${a}.*`);
-    // a condição "<> ''" evita ligar registros pela chave vazia (ex.: pedido sem NUMPOK)
+    // a condição "<> ''" evita ligar registros pela chave vazia (ex.: pedido sem NUMPOK);
+    // numa chave composta, as demais colunas também precisam ser iguais
+    const mais = extras.map((e) => `\n      AND ${a}.${e.destino} = ${origem}.${e.origem}`).join("");
     joins.push(
-      `LEFT JOIN ${tabelaDe(buscarPerfil(destinoId), destinoId)} ${a}\n       ON ${a}.${colunaDestino} = ${origem}.${colunaOrigem} AND ${origem}.${colunaOrigem} <> ''`,
+      `LEFT JOIN ${tabelaDe(buscarPerfil(destinoId), destinoId)} ${a}\n       ON ${a}.${colunaDestino} = ${origem}.${colunaOrigem} AND ${origem}.${colunaOrigem} <> ''${mais}`,
     );
     return a;
   };
   ligacoes.forEach((l) => {
-    const a = juntar(l.perfilDestino, l.colunaDestino, "t0", l.colunaOrigem);
+    const a = juntar(l.perfilDestino, l.colunaDestino, "t0", l.colunaOrigem, l.extras);
     // desce um nível pelas relações declaradas na tabela ligada (ex.: FATGOR → FATDOR → CADITE);
     // só quando a ligação também desce, para não subir de volta e puxar tudo do pai
     if (!perfil.relacoes?.some((r) => r.perfil === l.perfilDestino)) return;
     for (const r of buscarPerfil(l.perfilDestino)?.relacoes ?? []) {
       if (incluidos.has(r.perfil)) continue;
       incluidos.add(r.perfil);
-      juntar(r.perfil, r.colunaDestino, a, r.colunaOrigem);
+      juntar(r.perfil, r.colunaDestino, a, r.colunaOrigem, r.extras);
     }
   });
 
