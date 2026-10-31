@@ -208,7 +208,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
               key={s.titulo}
               secao={s}
               mostrarVazios={mostrarVazios}
-              inicialAberta={s.titulo !== "Outros campos"}
+              inicialAberta={!s.recolhida && s.titulo !== "Outros campos"}
               onCopiar={copiarValor}
             />
           ))}
