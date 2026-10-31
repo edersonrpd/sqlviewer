@@ -38,6 +38,8 @@ export type Aba = {
   registro: number | null;
   /** linha exibida na visão Tela (null = primeira do filtro) */
   registroTela: number | null;
+  /** aba de procedure colada (texto do CREATE PROCEDURE): mostra as regras em vez de uma tabela */
+  procedure?: string;
 };
 
 export type Estado = {
@@ -56,6 +58,8 @@ export type Acao =
   | { tipo: "criar"; dados: ResultadoParse }
   /** várias abas de uma vez (ex.: resultado de JOIN separado); ativa a primeira */
   | { tipo: "criarVarias"; dados: ResultadoParse[] }
+  /** procedure colada: aba com as regras dela */
+  | { tipo: "criarProcedure"; texto: string; nome: string }
   | { tipo: "fechar"; id: string }
   /** desfaz o último fechamento */
   | { tipo: "reabrir" }
@@ -161,6 +165,16 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         ativa: id,
         contadores: { ...estado.contadores, [chave]: k },
         proximoId: estado.proximoId + 1,
+      };
+    }
+    case "criarProcedure": {
+      const vazio: ResultadoParse = { colunas: [], linhas: [], avisos: [] };
+      const s = reducer(estado, { tipo: "criar", dados: vazio });
+      const id = s.ativa!;
+      // a aba "Consulta N" vira a aba da procedure, com o nome dela
+      return {
+        ...atualizarAba(s, id, (a) => ({ ...a, nome: acao.nome, procedure: acao.texto })),
+        contadores: estado.contadores,
       };
     }
     case "criarVarias": {

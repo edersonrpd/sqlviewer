@@ -5,7 +5,9 @@ import { estadoInicial, reducer, type Acao } from "@/lib/estado";
 import { separarPorMarcadores } from "@/lib/join";
 import { parsearConsulta } from "@/lib/parser";
 import { lerSessao, nomeArquivoSessao, serializarSessao } from "@/lib/sessao";
+import { analisarProcedure, pareceProcedure } from "@/lib/procedure";
 import { AbaConsulta } from "./AbaConsulta";
+import { AbaProcedure } from "./AbaProcedure";
 import { EntradaConsulta } from "./EntradaConsulta";
 import { IconeBanco, IconeLua, IconeMais, IconePasta, IconeSalvar, IconeSol, IconeX } from "./Icones";
 import { baixarArquivo, useAviso } from "./util";
@@ -26,6 +28,11 @@ export function SqlViewerApp() {
   }, [temAbas]);
 
   const visualizar = useCallback((texto: string): string | null => {
+    // procedure (CREATE PROCEDURE …): abre a leitura das regras em vez de uma tabela
+    if (pareceProcedure(texto)) {
+      dispatch({ tipo: "criarProcedure", texto, nome: analisarProcedure(texto).nome });
+      return null;
+    }
     const dados = parsearConsulta(texto);
     if (dados.colunas.length === 0) return "Nada para visualizar: cole o resultado da consulta com a linha de cabeçalho.";
     // resultado do JOIN sugerido (com marcadores >>TABELA): uma aba por tabela
@@ -59,7 +66,9 @@ export function SqlViewerApp() {
       </header>
 
       <main className="min-h-0 flex-1">
-        {ativa ? (
+        {ativa?.procedure !== undefined ? (
+          <AbaProcedure key={ativa.id} aba={ativa} abas={estado.abas} dispatch={dispatch} />
+        ) : ativa ? (
           <AbaConsulta key={ativa.id} aba={ativa} abas={estado.abas} dispatch={dispatch} />
         ) : (
           <EntradaConsulta
