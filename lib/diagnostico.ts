@@ -1,5 +1,6 @@
 import type { Aba } from "./estado";
 import { formatarData } from "./formatacao";
+import { resumirLog } from "./logs";
 import { buscarPerfil, chaveRelacao, linhasLigadas } from "./perfis";
 import { extrasLigacao, relacionadosDoRegistro } from "./relacionados";
 import { calcularSaldo } from "./tela";
@@ -81,6 +82,31 @@ const REGRAS: Record<string, Regra[]> = {
         nivel: "alerta",
         titulo: `NF-e ${numfat} sem autorização registrada`,
         detalhe: `Status: ${c.valorEm(r, i, "NFE_STATUS") ?? "—"} · Retorno: ${c.valorEm(r, i, "NFE_OBSERV") ?? "—"}`,
+      };
+    },
+
+    // fila do faturamento automático: só informa o que está gravado na FATAUT.
+    // As regras de entrada estão na procedure de cada cliente, então não são verificadas aqui.
+    (c) => {
+      const r = c.relacionado("FATAUT");
+      if (!r) return null;
+      if (r.linhas.length === 0)
+        return { nivel: "info", titulo: "Pedido não está na FATAUT", detalhe: "Se o cliente usa faturamento automático, confira as regras na procedure dele." };
+      const i = r.linhas[0];
+      const dta = c.valorEm(r, i, "FAT_DTAINS");
+      const numfat = c.valorEm(r, i, "FAT_NUMFAT");
+      // última mensagem do robô (ex.: "Data ainda não permitida para faturamento…") e quantas vezes repetiu
+      const log = resumirLog(c.valorEm(r, i, "FAT_LOGMSG"));
+      const ultima = log.ultima ? log.mensagens.find((m) => m.texto === log.ultima!.texto)! : null;
+      const partes = [
+        numfat ? `Fatura ${numfat}` : "Ainda sem fatura pela fila",
+        ultima ? `Último log ${log.ultima!.quando}: ${ultima.texto}${ultima.qtd > 1 ? ` (${ultima.qtd}×)` : ""}` : null,
+        r.linhas.length > 1 ? `${r.linhas.length} registros na FATAUT para este pedido` : null,
+      ];
+      return {
+        nivel: "info",
+        titulo: `Inserido na FATAUT${dta ? ` em ${formatarData(dta)} ${dta.slice(11)}`.trimEnd() : ""}`,
+        detalhe: partes.filter(Boolean).join(" · "),
       };
     },
 

@@ -70,7 +70,7 @@ describe("apoio", () => {
   it("relações pendentes quando a aba relacionada não está aberta", () => {
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const p = relacoesPendentes(s.abas[0], 2, s.abas);
-    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE", "ADTCLI"]);
+    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE", "ADTCLI", "FATAUT"]);
     // sem NUMPOK e sem fatura: a relação aparece, mas sem chave para consultar
     expect(p.filter((r) => r.chave === null).map((r) => r.colunaOrigem)).toEqual(["FGO_NUMPOK", "FGO_NUMPOK", "FGO_NUMFAT"]);
     expect(p[0]).toMatchObject({ tabela: "FATDOR", colunaDestino: "FDO_SEQGER", chave: "00100000000000004001" });

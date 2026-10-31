@@ -1,4 +1,5 @@
 import type { CampoTela, CorStatus, Perfil } from "@/config/perfis";
+import { textoResumoLog } from "./logs";
 import { colunaDestaque } from "./destaque";
 import { formatarValor } from "./formatacao";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
@@ -64,6 +65,8 @@ export function montarCampo(dados: ResultadoParse, linha: Valor[], j: number, de
     else if (def?.formato === "percentual" && raw !== "" && Number.isFinite(n)) texto = `${pct.format(n)}%`;
     // chave de acesso de NF-e (44 dígitos) em blocos de 4, como no DANFE
     else if (def?.formato === "chaveAcesso") texto = raw.replace(/(\d{4})(?=\d)/g, "$1 ");
+    // log do robô: mensagens repetidas agrupadas (o original completo continua no "copiar")
+    else if (def?.formato === "log") texto = textoResumoLog(raw) ?? formatarValor(raw, col.tipo);
     else texto = formatarValor(raw, col.tipo);
   }
   if (def?.hora) {
