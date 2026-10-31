@@ -474,11 +474,20 @@ const TELA_CADITE: Tela = {
 };
 
 /** Buscas da tela "Nova consulta": monta o SELECT (ou o JOIN) a partir de um número. */
-export type BuscaRapida = { id: string; rotulo: string; perfil: string; coluna: string; exemplo: string };
+export type BuscaRapida = {
+  id: string;
+  rotulo: string;
+  perfil: string;
+  coluna: string;
+  exemplo: string;
+  /** acrescenta o prefixo do marketplace ao número digitado (SHML… → MLB_SHML…), ver lib/marketplace.ts */
+  prefixarMarketplace?: boolean;
+};
 
+// a primeira é a opção inicial do "Montar consulta"
 export const BUSCAS_RAPIDAS: BuscaRapida[] = [
+  { id: "numpok", rotulo: "Pedido – NUMPOK", perfil: "FATGOR", coluna: "FGO_NUMPOK", exemplo: "SHML48393430410", prefixarMarketplace: true },
   { id: "pedido", rotulo: "Pedido – nº documento", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001" },
-  { id: "numpok", rotulo: "Pedido – NUMPOK", perfil: "FATGOR", coluna: "FGO_NUMPOK", exemplo: "2000123456789" },
   { id: "nf", rotulo: "Pedido – nº da NF (fatura)", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684" },
   { id: "autoincrem", rotulo: "Pedido – AUTOINCREM", perfil: "FATGOR", coluna: "AUTOINCREM", exemplo: "00100000000000001001" },
   { id: "nfe", rotulo: "NF-e – nº documento (LOGNFE)", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684" },

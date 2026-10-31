@@ -10,6 +10,7 @@ import { buscarPerfil } from "@/lib/perfis";
 import type { TipoColuna } from "@/lib/tipos";
 import { alinhamento, Celula } from "./Celula";
 import { IconeDireita } from "./Icones";
+import { SeloMarketplace } from "./SeloMarketplace";
 import { useDebounce } from "./util";
 
 const ALTURA_LINHA = 40;
@@ -328,9 +329,10 @@ const LinhaTabela = memo(function LinhaTabela(p: PropsLinha) {
     if (c.id === p.idDestaque) {
       // coluna-chave (ex.: NUMPOK) como etiqueta ciano
       return (
-        <div className="min-w-0 flex-1 truncate px-2" title={v === null ? "NULL" : v}>
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 truncate px-2" title={v === null ? "NULL" : v}>
+          <SeloMarketplace valor={v} compacto />
           {v ? (
-            <span className="rounded-md bg-cyan-100 px-2 py-0.5 font-mono text-xs font-medium text-cyan-800 dark:bg-cyan-400/[0.12] dark:text-cyan-300">
+            <span className="truncate rounded-md bg-cyan-100 px-2 py-0.5 font-mono text-xs font-medium text-cyan-800 dark:bg-cyan-400/[0.12] dark:text-cyan-300">
               <Celula valor={v} tipo={col.tipo} />
             </span>
           ) : (

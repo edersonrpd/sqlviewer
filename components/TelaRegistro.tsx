@@ -28,6 +28,7 @@ import {
 } from "@/lib/tela";
 import { alinhamento, Celula } from "./Celula";
 import { IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeMais, IconeSeta } from "./Icones";
+import { SeloMarketplace } from "./SeloMarketplace";
 import { ESTILO_NIVEL, PainelDiagnostico } from "./PainelDiagnostico";
 import { BotaoCopiarChamado } from "./Saidas";
 import { copiarTexto, useAviso } from "./util";
@@ -275,7 +276,12 @@ function BlocoChave({ campo: c, onCopiar }: { campo: CampoMontado; onCopiar: (ro
       title={c.nome}
     >
       <p className="flex items-center justify-between gap-3 text-xs font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">
-        {c.rotulo}
+        <span className="inline-flex items-center gap-2">
+          {c.rotulo}
+          <span className="tracking-normal normal-case">
+            <SeloMarketplace valor={c.raw} />
+          </span>
+        </span>
         <span className="font-mono text-[10px] font-normal tracking-normal text-zinc-400 normal-case">{c.nome}</span>
       </p>
       <div className="mt-0.5 flex items-center gap-2">
@@ -676,7 +682,12 @@ function ListaRegistros({
                   })()}
                 </span>
                 <span className="truncate text-xs text-zinc-500">{r.detalhe}</span>
-                {r.chave && <span className="truncate font-mono text-xs font-semibold text-amber-700 dark:text-amber-400">{r.chave}</span>}
+                {r.chave && (
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate font-mono text-xs font-semibold text-amber-700 dark:text-amber-400">{r.chave}</span>
+                    <SeloMarketplace valor={r.valorChave} compacto />
+                  </span>
+                )}
               </button>
             );
           })}

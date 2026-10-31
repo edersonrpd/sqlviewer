@@ -59,7 +59,7 @@ describe("montarTela genérica", () => {
 
 describe("apoio", () => {
   it("resumo da lista de registros", () => {
-    expect(resumoRegistro(fgo, 0, fatgor)).toEqual({ titulo: "000001000001", detalhe: "001 · R$\u00a026,64", chave: "NUMPOK: —" });
+    expect(resumoRegistro(fgo, 0, fatgor)).toEqual({ titulo: "000001000001", detalhe: "001 · R$\u00a026,64", chave: "NUMPOK: —", valorChave: "" });
   });
 
   it("SQL sugerido escapa aspas", () => {
