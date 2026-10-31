@@ -38,6 +38,8 @@ export type Aba = {
   registro: number | null;
   /** linha exibida na visão Tela (null = primeira do filtro) */
   registroTela: number | null;
+  /** aba de procedure colada (texto do CREATE PROCEDURE): mostra as regras em vez de uma tabela */
+  procedure?: string;
 };
 
 export type Estado = {
@@ -46,8 +48,16 @@ export type Estado = {
   ativa: string | null;
   contadores: Record<string, number>;
   proximoId: number;
-  /** última aba fechada, guardada para "Desfazer" */
-  fechada: { aba: Aba; posicao: number } | null;
+  /** último fechamento (uma aba ou todas), guardado para "Desfazer" */
+  fechada: Fechamento | null;
+};
+
+export type Fechamento = {
+  abas: { aba: Aba; posicao: number }[];
+  /** aba ativa antes de fechar (volta a ser a ativa no "Desfazer") */
+  ativa: string | null;
+  /** numeração dos nomes antes de "fechar todas" (Consulta 3, FATGOR 2…) */
+  contadores?: Record<string, number>;
 };
 
 export const estadoInicial: Estado = { abas: [], ativa: null, contadores: {}, proximoId: 1, fechada: null };
@@ -56,7 +66,11 @@ export type Acao =
   | { tipo: "criar"; dados: ResultadoParse }
   /** várias abas de uma vez (ex.: resultado de JOIN separado); ativa a primeira */
   | { tipo: "criarVarias"; dados: ResultadoParse[] }
+  /** procedure colada: aba com as regras dela */
+  | { tipo: "criarProcedure"; texto: string; nome: string }
   | { tipo: "fechar"; id: string }
+  /** fecha todas as abas de uma vez (com "Desfazer") */
+  | { tipo: "fecharTodas" }
   /** desfaz o último fechamento */
   | { tipo: "reabrir" }
   /** esquece a aba fechada (o "Desfazer" expirou) */
@@ -163,6 +177,16 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         proximoId: estado.proximoId + 1,
       };
     }
+    case "criarProcedure": {
+      const vazio: ResultadoParse = { colunas: [], linhas: [], avisos: [] };
+      const s = reducer(estado, { tipo: "criar", dados: vazio });
+      const id = s.ativa!;
+      // a aba "Consulta N" vira a aba da procedure, com o nome dela
+      return {
+        ...atualizarAba(s, id, (a) => ({ ...a, nome: acao.nome, procedure: acao.texto })),
+        contadores: estado.contadores,
+      };
+    }
     case "criarVarias": {
       if (acao.dados.length === 0) return estado;
       const primeiro = `aba-${estado.proximoId}`;
@@ -175,14 +199,28 @@ export function reducer(estado: Estado, acao: Acao): Estado {
       const abas = estado.abas.filter((a) => a.id !== acao.id);
       let ativa = estado.ativa;
       if (ativa === acao.id) ativa = abas.length ? abas[Math.min(pos, abas.length - 1)].id : null;
-      return { ...estado, abas, ativa, fechada: { aba: estado.abas[pos], posicao: pos } };
+      return { ...estado, abas, ativa, fechada: { abas: [{ aba: estado.abas[pos], posicao: pos }], ativa: acao.id } };
+    }
+    case "fecharTodas": {
+      if (estado.abas.length === 0) return estado;
+      return {
+        ...estado,
+        abas: [],
+        ativa: null,
+        // a numeração recomeça (a próxima consulta volta a ser "Consulta 1")
+        contadores: {},
+        fechada: { abas: estado.abas.map((aba, posicao) => ({ aba, posicao })), ativa: estado.ativa, contadores: estado.contadores },
+      };
     }
     case "reabrir": {
       const f = estado.fechada;
       if (!f) return estado;
       const abas = [...estado.abas];
-      abas.splice(Math.min(f.posicao, abas.length), 0, f.aba);
-      return { ...estado, abas, ativa: f.aba.id, fechada: null };
+      for (const { aba, posicao } of f.abas) abas.splice(Math.min(posicao, abas.length), 0, aba);
+      const ativa = f.ativa && abas.some((a) => a.id === f.ativa) ? f.ativa : f.abas[0].aba.id;
+      // reabrindo depois de "fechar todas": a numeração continua de onde estava
+      const contadores = f.contadores ? { ...f.contadores, ...estado.contadores } : estado.contadores;
+      return { ...estado, abas, ativa, contadores, fechada: null };
     }
     case "descartarFechada":
       return estado.fechada ? { ...estado, fechada: null } : estado;

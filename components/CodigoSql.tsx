@@ -14,7 +14,7 @@ const CORES: Partial<Record<TipoToken, string>> = {
 export function CodigoSql({ sql, className, formatar = true }: { sql: string; className?: string; formatar?: boolean }) {
   const tokens = useMemo(() => tokenizarSql(formatar ? formatarSql(sql) : sql), [sql, formatar]);
   return (
-    <pre className={`font-mono text-xs leading-relaxed whitespace-pre-wrap break-words ${className ?? ""}`}>
+    <pre className={`font-mono text-xs leading-relaxed whitespace-pre-wrap break-words [font-variant-ligatures:none] ${className ?? ""}`}>
       <Tokens tokens={tokens} />
     </pre>
   );
@@ -24,7 +24,7 @@ export function CodigoSql({ sql, className, formatar = true }: { sql: string; cl
 export function SqlEmLinha({ sql, className }: { sql: string; className?: string }) {
   const tokens = useMemo(() => tokenizarSql(sql), [sql]);
   return (
-    <code className={`font-mono text-xs ${className ?? ""}`} title={sql}>
+    <code className={`font-mono text-xs [font-variant-ligatures:none] ${className ?? ""}`} title={sql}>
       <Tokens tokens={tokens} />
     </code>
   );

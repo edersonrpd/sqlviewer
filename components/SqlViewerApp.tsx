@@ -5,7 +5,9 @@ import { estadoInicial, reducer, type Acao } from "@/lib/estado";
 import { separarPorMarcadores } from "@/lib/join";
 import { parsearConsulta } from "@/lib/parser";
 import { lerSessao, nomeArquivoSessao, serializarSessao } from "@/lib/sessao";
+import { analisarProcedure, pareceProcedure } from "@/lib/procedure";
 import { AbaConsulta } from "./AbaConsulta";
+import { AbaProcedure } from "./AbaProcedure";
 import { EntradaConsulta } from "./EntradaConsulta";
 import { IconeBanco, IconeLua, IconeMais, IconePasta, IconeSalvar, IconeSol, IconeX } from "./Icones";
 import { baixarArquivo, useAviso } from "./util";
@@ -26,6 +28,11 @@ export function SqlViewerApp() {
   }, [temAbas]);
 
   const visualizar = useCallback((texto: string): string | null => {
+    // procedure (CREATE PROCEDURE …): abre a leitura das regras em vez de uma tabela
+    if (pareceProcedure(texto)) {
+      dispatch({ tipo: "criarProcedure", texto, nome: analisarProcedure(texto).nome });
+      return null;
+    }
     const dados = parsearConsulta(texto);
     if (dados.colunas.length === 0) return "Nada para visualizar: cole o resultado da consulta com a linha de cabeçalho.";
     // resultado do JOIN sugerido (com marcadores >>TABELA): uma aba por tabela
@@ -59,7 +66,9 @@ export function SqlViewerApp() {
       </header>
 
       <main className="min-h-0 flex-1">
-        {ativa ? (
+        {ativa?.procedure !== undefined ? (
+          <AbaProcedure key={ativa.id} aba={ativa} abas={estado.abas} dispatch={dispatch} />
+        ) : ativa ? (
           <AbaConsulta key={ativa.id} aba={ativa} abas={estado.abas} dispatch={dispatch} />
         ) : (
           <EntradaConsulta
@@ -71,8 +80,18 @@ export function SqlViewerApp() {
 
       {estado.fechada && (
         <AvisoDesfazer
-          key={estado.fechada.aba.id}
-          nome={estado.fechada.aba.nome}
+          key={estado.fechada.abas.map((f) => f.aba.id).join(",")}
+          texto={
+            estado.fechada.abas.length === 1 ? (
+              <>
+                Aba <strong>{estado.fechada.abas[0].aba.nome}</strong> fechada
+              </>
+            ) : (
+              <>
+                <strong>{estado.fechada.abas.length} abas</strong> fechadas
+              </>
+            )
+          }
           onDesfazer={reabrir}
           onExpirar={descartarFechada}
         />
@@ -84,7 +103,7 @@ export function SqlViewerApp() {
 const SEGUNDOS_DESFAZER = 10;
 
 /** "Aba X fechada · Desfazer": fechar é imediato e o engano tem volta (Ctrl+Shift+Z também desfaz). */
-function AvisoDesfazer({ nome, onDesfazer, onExpirar }: { nome: string; onDesfazer: () => void; onExpirar: () => void }) {
+function AvisoDesfazer({ texto, onDesfazer, onExpirar }: { texto: React.ReactNode; onDesfazer: () => void; onExpirar: () => void }) {
   useEffect(() => {
     const t = setTimeout(onExpirar, SEGUNDOS_DESFAZER * 1000);
     const teclas = (e: KeyboardEvent) => {
@@ -105,9 +124,7 @@ function AvisoDesfazer({ nome, onDesfazer, onExpirar }: { nome: string; onDesfaz
       role="status"
       className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-zinc-900 py-2 pr-2 pl-4 text-sm text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
     >
-      <span>
-        Aba <strong>{nome}</strong> fechada
-      </span>
+      <span>{texto}</span>
       <button
         className="rounded-md px-2 py-1 font-semibold text-blue-300 hover:bg-white/10 dark:text-blue-700 dark:hover:bg-black/10"
         onClick={onDesfazer}
@@ -198,6 +215,16 @@ function BarraAbas({ estado, dispatch }: { estado: typeof estadoInicial; dispatc
       >
         <IconeMais /> Nova consulta
       </button>
+      {/* com várias abas, fecha todas de uma vez (dá para desfazer) */}
+      {estado.abas.length > 1 && (
+        <button
+          className="ml-auto inline-flex shrink-0 animate-surgir items-center gap-1 rounded-lg border border-transparent px-2.5 py-1 text-sm font-medium text-zinc-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-zinc-400 dark:hover:border-red-400/30 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+          title="Fechar todas as abas (dá para desfazer em seguida)"
+          onClick={() => dispatch({ tipo: "fecharTodas" })}
+        >
+          <IconeX className="h-3.5 w-3.5" /> Fechar todas ({estado.abas.length})
+        </button>
+      )}
     </nav>
   );
 }
