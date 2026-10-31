@@ -5,6 +5,7 @@ import { diagnosticar, nivelGeral } from "../diagnostico";
 import { estadoInicial, reducer, type Estado } from "../estado";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil } from "../perfis";
+import { resumirLog, textoResumoLog } from "../logs";
 import { montarTela } from "../tela";
 
 const texto = (f: string) => readFileSync(join(__dirname, "../../fixtures", f), "utf-8");
@@ -98,5 +99,69 @@ describe("motivo da baixa no cabeçalho", () => {
     expect(montarTela(d, 0, p).indicadores.map((i) => i.campo.nome)).toEqual(["FGO_LIBERA", "FGO_LIBCOM"]);
     const ind = montarTela(d, 2, p).indicadores.find((i) => i.campo.nome === "FGO_MOTBAI")!;
     expect(ind).toMatchObject({ cor: "amarelo", campo: { largo: true, texto: "DADOS BAIXA: 14/10/2024 - 09:51:23 OPE: 001 - DEBORA" } });
+  });
+});
+
+describe("FATAUT (fila do faturamento automático)", () => {
+  const fataut = (...linhas: string[]) =>
+    ['"AUTOINCREM"\t"FAT_NUMDOC"\t"FAT_ESPDOC"\t"FAT_EMPDOC"\t"FAT_DTAINS"\t"FAT_FDOGER"', ...linhas].join("\n");
+  const fgo = L.map((l) => l.join("\t")).join("\n");
+
+  it("é detectada e ligada ao pedido por documento, espécie e empresa", () => {
+    const s = abrir(fgo, fataut('"00300000000000001001"\t"000001000001"\t"PD"\t"001"\t"2026-10-31 10:45:00"\t"00100000000000001001"'));
+    expect(s.abas[1].perfilId).toBe("FATAUT");
+    expect(titulos(s, 0)).toContain("info: Inserido na FATAUT em 31/10/2026 10:45:00");
+    // mesmo documento de outra empresa não conta
+    const outra = abrir(fgo, fataut('"00300000000000001001"\t"000001000001"\t"PD"\t"003"\t"2026-10-31 10:45:00"\t"x"'));
+    expect(titulos(outra, 0)).toContain("info: Pedido não está na FATAUT");
+  });
+
+  it("sem a aba FATAUT aberta não vira pendência (nem todo cliente usa faturamento automático)", () => {
+    const d = diagnosticar(abrir(fgo).abas[0], 0, abrir(fgo).abas);
+    expect(d.pendentes).not.toContain(expect.stringContaining("FATAUT"));
+    expect(d.achados.some((a) => a.titulo.includes("FATAUT"))).toBe(false);
+  });
+});
+
+describe("FATAUT com o log do robô (exemplo real)", () => {
+  const fataut = parsearConsulta(texto("exemplo-fataut.txt"));
+
+  it("lê o log de várias linhas e agrupa as mensagens repetidas", () => {
+    expect(fataut.avisos).toEqual([]);
+    const log = resumirLog(fataut.linhas[0][5]);
+    expect(log.entradas).toHaveLength(5);
+    expect(log.mensagens).toEqual([
+      {
+        texto: 'Data ainda não permitida para faturamento, conforme campo "EXTGOR.FGO_DTCOAG" = 03/11/2026.',
+        qtd: 5,
+        primeira: "31/10/2026 12:28:53",
+        ultima: "31/10/2026 12:37:07",
+      },
+    ]);
+    expect(textoResumoLog("sem entradas")).toBeNull();
+  });
+
+  it("na Tela da FATAUT o log aparece resumido", () => {
+    const t = montarTela(fataut, 0, buscarPerfil("FATAUT"));
+    expect(t.titulo).toBe("Fila automática – pedido 000000970818");
+    const campo = t.secoes[0].campos[0];
+    expect(campo.texto).toBe(
+      '5 registro(s) no log · último em 31/10/2026 12:37:07\n• 5× Data ainda não permitida para faturamento, conforme campo "EXTGOR.FGO_DTCOAG" = 03/11/2026. (de 31/10/2026 12:28:53 a 31/10/2026 12:37:07)',
+    );
+  });
+
+  it("no diagnóstico do pedido: inserção, fatura e última mensagem do robô", () => {
+    const fgo = montar((l) => {
+      l[1][col("FGO_NUMDOC")] = '"000000970818"';
+      l[1][col("FGO_CODEMP")] = '"003"';
+    });
+    let s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    s = reducer(s, { tipo: "criar", dados: fataut });
+    const a = diagnosticar(s.abas[0], 0, s.abas).achados.find((x) => x.titulo.includes("FATAUT"))!;
+    expect(a).toEqual({
+      nivel: "info",
+      titulo: "Inserido na FATAUT em 31/10/2026 10:42:16",
+      detalhe: 'Ainda sem fatura pela fila · Último log 31/10/2026 12:37:07: Data ainda não permitida para faturamento, conforme campo "EXTGOR.FGO_DTCOAG" = 03/11/2026. (5×)',
+    });
   });
 });

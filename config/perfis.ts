@@ -8,7 +8,8 @@
  */
 
 /** Como o valor aparece na Tela. Sem formato, segue o tipo detectado da coluna. */
-export type FormatoCampo = "moeda" | "percentual" | "chaveAcesso";
+/** "log": texto com várias entradas "dd/mm/aaaa hh:mm:ss - mensagem" resumido (mensagens iguais agrupadas). */
+export type FormatoCampo = "moeda" | "percentual" | "chaveAcesso" | "log";
 
 export type CorStatus = "verde" | "amarelo" | "vermelho" | "azul" | "cinza";
 
@@ -495,6 +496,7 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   { id: "pedido", rotulo: "Pedido – nº documento", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001" },
   { id: "nf", rotulo: "Pedido – nº da NF (fatura)", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684" },
   { id: "autoincrem", rotulo: "Pedido – AUTOINCREM", perfil: "FATGOR", coluna: "AUTOINCREM", exemplo: "00100000000000001001" },
+  { id: "fataut", rotulo: "Faturamento automático – nº documento (FATAUT)", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818" },
   { id: "nfe", rotulo: "NF-e – nº documento (LOGNFE)", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684" },
   { id: "item", rotulo: "Item – código (CADITE)", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
   { id: "itebar", rotulo: "Item – código de barras", perfil: "CADITE", coluna: "ITE_CODBAR", exemplo: "7891252071268" },
@@ -543,6 +545,17 @@ export const PERFIS: Perfil[] = [
         ],
         rotulo: "Adiantamentos do pedido",
       },
+      // fila do faturamento automático: a procedure do cliente insere o pedido aqui (só consulta)
+      {
+        perfil: "FATAUT",
+        colunaOrigem: "FGO_NUMDOC",
+        colunaDestino: "FAT_NUMDOC",
+        extras: [
+          { origem: "FGO_ESPDOC", destino: "FAT_ESPDOC" },
+          { origem: "FGO_CODEMP", destino: "FAT_EMPDOC" },
+        ],
+        rotulo: "Faturamento automático (FATAUT)",
+      },
     ],
     // chaves estrangeiras da FATGOR no banco
     cadastros: [
@@ -590,6 +603,67 @@ export const PERFIS: Perfil[] = [
     graficoSugerido: { modo: "soma", categoria: "FDO_CODITE", valor: "FDO_TOTITE" },
     tela: TELA_FATDOR,
     rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
+  },
+  {
+    // Fila de faturamento automático. Quem insere é uma procedure (ex.: esp_InserePedidosFATAUT)
+    // com regras próprias de cada cliente; aqui só se consulta o que foi gravado.
+    id: "FATAUT",
+    nome: "Faturamento automático",
+    assinatura: ["FAT_NUMDOC", "FAT_EMPDOC", "FAT_DTAINS"],
+    colunasPadrao: [
+      "FAT_NUMDOC", "FAT_ESPDOC", "FAT_EMPDOC", "FAT_DTAINS", "FAT_LOGDTA", "FAT_NUMFAT", "FAT_SERFAT",
+      "FAT_EMPFAT", "FAT_TIPFAT", "FAT_RETNFE", "FAT_LOGMSG", "FAT_FDOGER",
+    ],
+    colunasFixas: ["FAT_NUMDOC"],
+    chave: "AUTOINCREM",
+    colunaTitulo: "FAT_NUMDOC",
+    rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
+    tela: {
+      titulo: "Fila automática – pedido",
+      subtitulo: [
+        { coluna: "FAT_ESPDOC", rotulo: "Espécie" },
+        { coluna: "FAT_EMPDOC", rotulo: "Empresa" },
+        { coluna: "FAT_DTAINS", rotulo: "Inserido em" },
+        { coluna: "FAT_LOGDTA", rotulo: "Último log" },
+      ],
+      secoes: [
+        {
+          titulo: "Log do robô",
+          campos: [{ coluna: "FAT_LOGMSG", rotulo: "Mensagens (iguais agrupadas)", formato: "log", largo: true }],
+        },
+        {
+          titulo: "Faturamento",
+          campos: [
+            { coluna: "FAT_NUMFAT", rotulo: "Nº da fatura" },
+            { coluna: "FAT_SERFAT", rotulo: "Série" },
+            { coluna: "FAT_EMPFAT", rotulo: "Empresa da fatura" },
+            { coluna: "FAT_TIPFAT", rotulo: "Tipo de faturamento" },
+            { coluna: "FAT_CLIFAT", rotulo: "Cliente da fatura" },
+            { coluna: "FAT_RETNFE", rotulo: "Retorno da NF-e", largo: true },
+            { coluna: "FAT_DTLBEX", rotulo: "Liberação de expedição" },
+            { coluna: "FAT_SMART_", rotulo: "Smart" },
+          ],
+        },
+        {
+          titulo: "Etiqueta",
+          campos: [
+            { coluna: "FAT_ETIMKP", rotulo: "Etiqueta do marketplace" },
+            { coluna: "FAT_ETIDTA", rotulo: "Data da etiqueta" },
+            { coluna: "FAT_ETIPAT", rotulo: "Caminho da etiqueta", largo: true },
+            { coluna: "FAT_ETIINC", rotulo: "Etiqueta incluída" },
+          ],
+        },
+        {
+          titulo: "Ligações",
+          campos: [
+            { coluna: "FAT_NUMDOC", rotulo: "Nº documento" },
+            { coluna: "FAT_FDOGER", rotulo: "Pedido (AUTOINCREM da FATGOR)" },
+            { coluna: "FAT_SEQGER", rotulo: "Sequência" },
+            { coluna: "AUTOINCREM", rotulo: "AUTOINCREM" },
+          ],
+        },
+      ],
+    },
   },
   {
     id: "EXTGOR",

@@ -72,7 +72,7 @@ describe("chaves de relação", () => {
 
 describe("ligacoesDoPerfil", () => {
   it("FATGOR enxerga as relações que declarou", () => {
-    expect(ligacoesDoPerfil("FATGOR").map((l) => l.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE", "ADTCLI"]);
+    expect(ligacoesDoPerfil("FATGOR").map((l) => l.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE", "ADTCLI", "FATAUT"]);
   });
 
   it("a relação vale no sentido inverso", () => {

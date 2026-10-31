@@ -1,0 +1,18 @@
+"AUTOINCREM"	"FAT_NUMDOC"	"FAT_ESPDOC"	"FAT_EMPDOC"	"FAT_LOGDTA"	"FAT_LOGMSG"	"FAT_NUMFAT"	"FAT_TIPFAT"	"FAT_EMPFAT"	"FAT_ETIMKP"	"FAT_ETIDTA"	"FAT_ETIPAT"	"FAT_CLIFAT"	"FAT_SERFAT"	"FAT_DTAINS"	"FAT_RETNFE"	"FAT_DTLBEX"	"FAT_SEQGER"	"FAT_FDOGER"	"FAT_SMART_"	"FAT_ETIINC"
+"03200000000510619003"	"000000970818"	"PD"	"003"	"2026-10-31 12:37:07"	"...
+
+----------------------------------------------------------------------------------------------------
+31/10/2026 12:28:53 - Data ainda não permitida para faturamento, conforme campo ""EXTGOR.FGO_DTCOAG"" = 03/11/2026.
+
+----------------------------------------------------------------------------------------------------
+31/10/2026 12:29:05 - Data ainda não permitida para faturamento, conforme campo ""EXTGOR.FGO_DTCOAG"" = 03/11/2026.
+
+----------------------------------------------------------------------------------------------------
+31/10/2026 12:29:05 - Data ainda não permitida para faturamento, conforme campo ""EXTGOR.FGO_DTCOAG"" = 03/11/2026.
+
+----------------------------------------------------------------------------------------------------
+31/10/2026 12:36:52 - Data ainda não permitida para faturamento, conforme campo ""EXTGOR.FGO_DTCOAG"" = 03/11/2026.
+
+----------------------------------------------------------------------------------------------------
+31/10/2026 12:37:07 - Data ainda não permitida para faturamento, conforme campo ""EXTGOR.FGO_DTCOAG"" = 03/11/2026.
+"	\N	\N	\N	\N	\N	\N	\N	\N	"2026-10-31 10:42:16"	\N	\N	\N	"03200000002004890003"	"N"	\N
