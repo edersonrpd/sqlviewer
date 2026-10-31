@@ -76,7 +76,7 @@ describe("fechar e desfazer", () => {
     s = reducer(s, { tipo: "ativar", id });
     s = reducer(s, { tipo: "fechar", id });
     expect(s.abas.map((a) => a.nome)).toEqual(["FATDOR"]);
-    expect(s.fechada?.aba.nome).toBe("FATGOR");
+    expect(s.fechada?.abas.map((f) => f.aba.nome)).toEqual(["FATGOR"]);
     s = reducer(s, { tipo: "reabrir" });
     expect(s.abas.map((a) => a.nome)).toEqual(["FATGOR", "FATDOR"]);
     expect(s.ativa).toBe(id);
@@ -91,5 +91,29 @@ describe("fechar e desfazer", () => {
     expect(s.fechada).not.toBeNull();
     s = reducer(s, { tipo: "descartarFechada" });
     expect(reducer(s, { tipo: "reabrir" })).toBe(s);
+  });
+
+  it("fechar todas: limpa as abas, recomeça a numeração e o Desfazer devolve tudo como estava", () => {
+    let s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
+    s = reducer(s, { tipo: "criar", dados: itens });
+    s = reducer(s, { tipo: "criar", dados: fgo });
+    s = reducer(s, { tipo: "atualizar", id: s.abas[1].id, patch: { busca: "x" } });
+    s = reducer(s, { tipo: "ativar", id: s.abas[1].id });
+    const antes = s;
+    s = reducer(s, { tipo: "fecharTodas" });
+    expect(s.abas).toEqual([]);
+    expect(s.ativa).toBeNull();
+    expect(s.fechada?.abas).toHaveLength(3);
+    // nova consulta depois de limpar: numeração do zero
+    expect(reducer(s, { tipo: "criar", dados: fgo }).abas[0].nome).toBe("FATGOR");
+
+    s = reducer(s, { tipo: "reabrir" });
+    expect(s.abas.map((a) => a.nome)).toEqual(["FATGOR", "FATDOR", "FATGOR 2"]);
+    expect(s.abas.map((a) => a.id)).toEqual(antes.abas.map((a) => a.id));
+    expect(s.ativa).toBe(antes.abas[1].id);
+    expect(s.abas[1].busca).toBe("x");
+    expect(reducer(s, { tipo: "criar", dados: fgo }).abas[3].nome).toBe("FATGOR 3");
+    // sem abas não há o que fechar
+    expect(reducer(estadoInicial, { tipo: "fecharTodas" })).toBe(estadoInicial);
   });
 });
