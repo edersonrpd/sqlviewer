@@ -1,5 +1,6 @@
 import { PERFIS, type Perfil } from "@/config/perfis";
-import type { FiltroRelacao, Ordenacao } from "./filtragem";
+import { identificarMarketplace } from "./marketplace";
+import type { ChaveOrdenacao, FiltroRelacao } from "./filtragem";
 import { formatarValor } from "./formatacao";
 import { sugerirGrafico, type ConfigGrafico } from "./graficos";
 import { colunaDestaque } from "./destaque";
@@ -23,8 +24,13 @@ export type Aba = {
   larguras: number[];
   busca: string;
   filtros: Record<number, string>;
+  /** filtro por valores (menu do cabeçalho): coluna → chaves aceitas, ver `chaveValor` */
+  filtrosValores: Record<number, string[]>;
   relacoes: FiltroRelacao[];
-  ordenacao: Ordenacao;
+  /** critérios de ordenação, em ordem de prioridade (vazio = ordem original) */
+  ordenacao: ChaveOrdenacao[];
+  /** tabela transposta: colunas viram linhas e cada registro vira uma coluna */
+  transposta: boolean;
   selecionadas: ReadonlySet<number>;
   grafico: ConfigGrafico;
   visao: Visao;
@@ -89,12 +95,16 @@ function calcularLarguras(dados: ResultadoParse): number[] {
   const amostra = dados.linhas.slice(0, 300);
   return dados.colunas.map((c, j) => {
     let max = c.nome.length + 3;
+    let temMarketplace = false;
     for (const l of amostra) {
       const v = l[j];
       const len = v === null ? 4 : formatarValor(v, c.tipo).length;
       if (len > max) max = len;
+      if (!temMarketplace && /NUMPOK$/.test(c.nome) && identificarMarketplace(v)) temMarketplace = true;
     }
-    return Math.round(Math.min(360, Math.max(72, max * 8.4 + 24)));
+    // NUMPOK de marketplace ganha espaço para o selo (Mercado Livre, Shopee…) ao lado do número
+    const extra = temMarketplace ? 100 : 0;
+    return Math.round(Math.min(360 + extra, Math.max(72, max * 8.4 + 24) + extra));
   });
 }
 
@@ -134,8 +144,10 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         larguras: calcularLarguras(dados),
         busca: "",
         filtros: {},
+        filtrosValores: {},
         relacoes: [],
-        ordenacao: null,
+        ordenacao: [],
+        transposta: false,
         selecionadas: new Set(),
         grafico: sugerirGrafico(dados, perfil),
         // perfis com layout de tela abrem como formulário; os demais como tabela

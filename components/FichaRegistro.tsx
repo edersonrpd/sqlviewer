@@ -7,6 +7,7 @@ import { buscarPerfil } from "@/lib/perfis";
 import { relacionadosDoRegistro } from "@/lib/relacionados";
 import { Celula } from "./Celula";
 import { IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeOlhoFechado, IconeX } from "./Icones";
+import { SeloMarketplace } from "./SeloMarketplace";
 import { BotaoCopiarChamado } from "./Saidas";
 import { copiarTexto, useAviso } from "./util";
 
@@ -82,6 +83,7 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
               {destaque && (
                 <p className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-sm dark:border-amber-700 dark:bg-amber-950/50" title={destaque.nome}>
                   <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">{destaque.rotulo}</span>
+                  <SeloMarketplace valor={valorDestaque} compacto />
                   {valorDestaque === null ? (
                     <span className="valor-null">NULL</span>
                   ) : valorDestaque.trim() === "" ? (
@@ -121,7 +123,7 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
               <button className="btn" onClick={onAbrirTela} title="Ver este registro como tela de ERP">
                 Abrir como tela
               </button>
-              <BotaoCopiarChamado dados={dados} linhas={[registro]} colunas={colunasExibidas} rotulo="Copiar para chamado" semLinhas="Nenhuma coluna visível" />
+              <BotaoCopiarChamado dados={dados} tabela={perfil?.tabela} linhas={[registro]} colunas={colunasExibidas} rotulo="Copiar para chamado" semLinhas="Nenhuma coluna visível" />
             </div>
           </div>
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar campo" className="campo w-full" aria-label="Buscar campo na ficha" />

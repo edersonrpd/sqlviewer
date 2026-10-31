@@ -162,7 +162,7 @@ export function resumoRegistro(
   dados: ResultadoParse,
   registro: number,
   perfil?: Perfil,
-): { titulo: string; detalhe: string; chave: string | null } {
+): { titulo: string; detalhe: string; chave: string | null; valorChave: string | null } {
   const linha = dados.linhas[registro];
   const porNome = new Map(dados.colunas.map((c, j) => [c.nome, j]));
   const jT = perfil?.colunaTitulo ? porNome.get(perfil.colunaTitulo) : undefined;
@@ -183,7 +183,12 @@ export function resumoRegistro(
   }
   const d = colunaDestaque(dados.colunas, perfil);
   const v = d ? linha[d.j] : null;
-  return { titulo, detalhe: partes.join(" · "), chave: d ? `${d.rotulo}: ${v === null ? "NULL" : v.trim() || "—"}` : null };
+  return {
+    titulo,
+    detalhe: partes.join(" · "),
+    chave: d ? `${d.rotulo}: ${v === null ? "NULL" : v.trim() || "—"}` : null,
+    valorChave: v,
+  };
 }
 
 /** SQL sugerido para buscar os registros relacionados que ainda não foram colados. */

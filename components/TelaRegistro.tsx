@@ -28,6 +28,8 @@ import {
 } from "@/lib/tela";
 import { alinhamento, Celula } from "./Celula";
 import { IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeMais, IconeSeta } from "./Icones";
+import { CodigoSql, SqlEmLinha } from "./CodigoSql";
+import { SeloMarketplace } from "./SeloMarketplace";
 import { ESTILO_NIVEL, PainelDiagnostico } from "./PainelDiagnostico";
 import { BotaoCopiarChamado } from "./Saidas";
 import { copiarTexto, useAviso } from "./util";
@@ -149,6 +151,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                   </label>
                   <BotaoCopiarChamado
                     dados={dados}
+                    tabela={perfil?.tabela}
                     linhas={[registro]}
                     colunas={exibidas}
                     rotulo="Copiar"
@@ -275,7 +278,12 @@ function BlocoChave({ campo: c, onCopiar }: { campo: CampoMontado; onCopiar: (ro
       title={c.nome}
     >
       <p className="flex items-center justify-between gap-3 text-xs font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">
-        {c.rotulo}
+        <span className="inline-flex items-center gap-2">
+          {c.rotulo}
+          <span className="tracking-normal normal-case">
+            <SeloMarketplace valor={c.raw} />
+          </span>
+        </span>
         <span className="font-mono text-[10px] font-normal tracking-normal text-zinc-400 normal-case">{c.nome}</span>
       </p>
       <div className="mt-0.5 flex items-center gap-2">
@@ -536,7 +544,7 @@ function BlocoPendentes({
             </button>
           </div>
           {verJoin && (
-            <pre className="mt-2 max-h-72 overflow-auto rounded bg-white p-2 font-mono text-xs leading-relaxed dark:bg-zinc-950">{join}</pre>
+            <CodigoSql sql={join} className="mt-2 max-h-72 overflow-auto rounded bg-white p-2 dark:bg-zinc-950" />
           )}
         </div>
       )}
@@ -558,9 +566,7 @@ function BlocoPendentes({
           return (
             <li key={`${p.perfilDestino}-${p.colunaOrigem}`} className="flex flex-wrap items-center gap-2 text-sm">
               <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400">{p.rotulo}</span>
-              <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-800" title={sql}>
-                {sql}
-              </code>
+              <SqlEmLinha sql={sql} className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 dark:bg-zinc-800" />
               <button
                 className="btn-icone"
                 title="Copiar SQL"
@@ -589,9 +595,7 @@ function BlocoPendentes({
                     <span className="w-48 shrink-0 text-zinc-600 dark:text-zinc-400" title={c.papeis.map((p, k) => `${p} (${c.colunas[k]})`).join("\n")}>
                       {c.rotulo}
                     </span>
-                    <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-800" title={sql}>
-                      {sql}
-                    </code>
+                    <SqlEmLinha sql={sql} className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1 dark:bg-zinc-800" />
                     <button
                       className="btn-icone"
                       title="Copiar SQL"
@@ -676,7 +680,12 @@ function ListaRegistros({
                   })()}
                 </span>
                 <span className="truncate text-xs text-zinc-500">{r.detalhe}</span>
-                {r.chave && <span className="truncate font-mono text-xs font-semibold text-amber-700 dark:text-amber-400">{r.chave}</span>}
+                {r.chave && (
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate font-mono text-xs font-semibold text-amber-700 dark:text-amber-400">{r.chave}</span>
+                    <SeloMarketplace valor={r.valorChave} compacto />
+                  </span>
+                )}
               </button>
             );
           })}

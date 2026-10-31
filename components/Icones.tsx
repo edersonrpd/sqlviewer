@@ -29,3 +29,6 @@ export const IconeCadeado = svg(<><rect x="4" y="11" width="16" height="10" rx="
 export const IconeSalvar = svg(<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></>);
 export const IconePasta = svg(<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />);
 export const IconeComparar = svg(<path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4" />);
+export const IconeFunil = svg(<path d="M3 4h18l-7 8.5V19l-4 2v-8.5L3 4Z" />);
+export const IconeTranspor = svg(<><path d="M4 4h7v7H4zM13 13h7v7h-7z" /><path d="M15 4h3a2 2 0 0 1 2 2v3M9 20H6a2 2 0 0 1-2-2v-3" /></>);
+export const IconePainel = svg(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></>);

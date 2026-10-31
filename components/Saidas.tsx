@@ -1,15 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { celulasPlanilha, gerarCSV, gerarLista, gerarTabulado, nomeArquivo } from "@/lib/exportar";
+import { celulasPlanilha, FORMATOS_COPIA, gerarCSV, gerarFormato, nomeArquivo, type FormatoCopia } from "@/lib/exportar";
 import type { ResultadoParse } from "@/lib/tipos";
 import { IconeCopiar, IconeDownload, IconeSeta } from "./Icones";
 import { baixarArquivo, copiarTexto, useAviso } from "./util";
 
-type Base = { dados: ResultadoParse; linhas: number[]; colunas: number[] };
+type Base = { dados: ResultadoParse; linhas: number[]; colunas: number[]; /** nome da tabela para o SQL INSERT */ tabela?: string };
+
+// downloads além de CSV e Excel
+const ARQUIVOS: { formato: FormatoCopia; rotulo: string; descricao: string; extensao: string; tipo: string }[] = [
+  { formato: "json", rotulo: "JSON", descricao: "Lista de objetos { COLUNA: valor }", extensao: "json", tipo: "application/json" },
+  { formato: "markdown", rotulo: "Markdown", descricao: "Tabela .md para wikis e GitHub", extensao: "md", tipo: "text/markdown;charset=utf-8" },
+  { formato: "insert", rotulo: "SQL INSERT", descricao: "Um INSERT por linha, valores originais", extensao: "sql", tipo: "application/sql;charset=utf-8" },
+  { formato: "texto", rotulo: "Texto alinhado", descricao: "Como o cliente mysql no terminal", extensao: "txt", tipo: "text/plain;charset=utf-8" },
+];
 
 /** "Exportar" com menu: CSV ou Excel (linhas filtradas, colunas visíveis). */
-export function BotoesExportar({ dados, linhas, colunas, nomeBase }: Base & { nomeBase: string }) {
+export function BotoesExportar({ dados, linhas, colunas, nomeBase, tabela = "TABELA" }: Base & { nomeBase: string }) {
   const [gerando, setGerando] = useState(false);
   const [aberto, setAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -81,6 +89,20 @@ export function BotoesExportar({ dados, linhas, colunas, nomeBase }: Base & { no
             <span className="block text-sm font-medium">Excel</span>
             <span className="block text-xs text-zinc-500">Planilha .xlsx; códigos gravados como texto</span>
           </button>
+          {ARQUIVOS.map((a) => (
+            <button
+              key={a.formato}
+              role="menuitem"
+              className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              onClick={() => {
+                setAberto(false);
+                baixarArquivo(gerarFormato(a.formato, dados, linhas, colunas, tabela), nomeArquivo(nomeBase, a.extensao), a.tipo);
+              }}
+            >
+              <span className="block text-sm font-medium">{a.rotulo}</span>
+              <span className="block text-xs text-zinc-500">{a.descricao}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -106,6 +128,7 @@ export function BotaoCopiarChamado({
   rotulo,
   semLinhas,
   destaque,
+  tabela = "TABELA",
 }: Base & { rotulo: string; semLinhas: string; /** botão principal da barra (índigo, com brilho) */ destaque?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [aviso, setAviso] = useAviso();
@@ -113,10 +136,9 @@ export function BotaoCopiarChamado({
 
   useFecharAoClicarFora(aberto, ref, () => setAberto(false));
 
-  const copiar = async (formato: "lista" | "tabulado") => {
+  const copiar = async (formato: FormatoCopia) => {
     setAberto(false);
-    const texto = formato === "lista" ? gerarLista(dados, linhas, colunas) : gerarTabulado(dados, linhas, colunas);
-    const ok = await copiarTexto(texto);
+    const ok = await copiarTexto(gerarFormato(formato, dados, linhas, colunas, tabela));
     setAviso(ok ? `Copiado: ${linhas.length} registro(s)` : "Não foi possível copiar");
   };
 
@@ -137,15 +159,14 @@ export function BotaoCopiarChamado({
         <IconeSeta className="h-3.5 w-3.5" />
       </button>
       {aberto && (
-        <div role="menu" className="painel absolute right-0 z-50 mt-1 w-72 animate-surgir p-1 shadow-lg">
-          <button role="menuitem" className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => copiar("lista")}>
-            <span className="block text-sm font-medium">Lista</span>
-            <span className="block text-xs text-zinc-500">COLUNA: valor, um campo por linha</span>
-          </button>
-          <button role="menuitem" className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => copiar("tabulado")}>
-            <span className="block text-sm font-medium">Tabulado</span>
-            <span className="block text-xs text-zinc-500">Cabeçalho + linhas separadas por TAB, para colar no Excel</span>
-          </button>
+        <div role="menu" className="painel absolute right-0 z-50 mt-1 max-h-[70vh] w-72 animate-surgir overflow-auto p-1 shadow-lg">
+          {/* "Lista" primeiro: é o formato mais usado em chamados */}
+          {[...FORMATOS_COPIA.filter((f) => f.id === "lista"), ...FORMATOS_COPIA.filter((f) => f.id !== "lista")].map((f) => (
+            <button key={f.id} role="menuitem" className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => copiar(f.id)}>
+              <span className="block text-sm font-medium">{f.rotulo}</span>
+              <span className="block text-xs text-zinc-500">{f.descricao}</span>
+            </button>
+          ))}
         </div>
       )}
       {aviso && (

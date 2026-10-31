@@ -2,17 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
-import { colunasPorNome, filtrarOrdenar } from "@/lib/filtragem";
+import { CHAVE_NULL, colunasPorNome, filtrarOrdenar } from "@/lib/filtragem";
+import { gerarTabulado } from "@/lib/exportar";
+import { buscarPerfil } from "@/lib/perfis";
+import { limitarSelecao, retangulo, type Selecao } from "@/lib/selecao";
+import { BarraSelecao } from "./BarraSelecao";
 import { ComparacaoRegistros } from "./ComparacaoRegistros";
 import { BotaoCopiarChamado, BotoesExportar } from "./Saidas";
 import { FichaRegistro } from "./FichaRegistro";
 import { Graficos } from "./Graficos";
-import { IconeBusca, IconeColunas, IconeComparar, IconeX } from "./Icones";
+import { IconeBusca, IconeColunas, IconeComparar, IconeTranspor, IconeX } from "./Icones";
 import { ResumoConsulta } from "./ResumoConsulta";
 import { SeletorColunas } from "./SeletorColunas";
+import { TabelaTransposta } from "./TabelaTransposta";
 import { TabelaVirtual } from "./TabelaVirtual";
 import { TelaRegistro } from "./TelaRegistro";
-import { useDebounce } from "./util";
+import { VisualizadorValor } from "./VisualizadorValor";
+import { copiarTexto, useAviso, useDebounce } from "./util";
 
 export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; dispatch: React.Dispatch<Acao> }) {
   const { dados } = aba;
@@ -39,10 +45,27 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
         filtros: aba.filtros,
         relacoes: aba.relacoes,
         ordenacao: aba.ordenacao,
+        valores: aba.filtrosValores,
         visiveis: exibidas,
       }),
-    [dados, aba.busca, aba.filtros, aba.relacoes, aba.ordenacao, exibidas],
+    [dados, aba.busca, aba.filtros, aba.filtrosValores, aba.relacoes, aba.ordenacao, exibidas],
   );
+
+  // seleção de células da tabela (como numa planilha) e painel de valor
+  const [selecaoBruta, setSelecao] = useState<Selecao | null>(null);
+  const selecao = useMemo(() => limitarSelecao(selecaoBruta, indices.length, exibidas.length), [selecaoBruta, indices.length, exibidas.length]);
+  const ret = useMemo(() => (selecao ? retangulo(selecao) : null), [selecao]);
+  const [verValor, setVerValor] = useState(false);
+  const [aviso, setAviso] = useAviso(2500);
+  const tabelaSql = buscarPerfil(aba.perfilId)?.tabela ?? aba.nome.replace(/\W+/g, "_");
+  const copiarSelecao = useCallback(async () => {
+    if (!ret) return;
+    const linhas = indices.slice(ret.r0, ret.r1 + 1);
+    const cols = exibidas.slice(ret.c0, ret.c1 + 1);
+    // uma célula: só o valor; intervalo: TAB entre colunas, sem cabeçalho (cola direto no Excel)
+    const ok = await copiarTexto(gerarTabulado(dados, linhas, cols, false));
+    setAviso(ok ? `Copiado: ${linhas.length} linha(s) × ${cols.length} coluna(s)` : "Não foi possível copiar");
+  }, [ret, indices, exibidas, dados, setAviso]);
 
   // linhas selecionadas que passam pelos filtros, na ordem atual
   const selecionadasVisiveis = useMemo(
@@ -60,11 +83,13 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
   };
 
   const filtrosColuna = Object.entries(aba.filtros).filter(([, t]) => t.trim());
-  const temFiltros = aba.busca.trim() !== "" || filtrosColuna.length > 0 || aba.relacoes.length > 0;
+  const filtrosValores = Object.entries(aba.filtrosValores);
+  const temFiltros = aba.busca.trim() !== "" || filtrosColuna.length > 0 || filtrosValores.length > 0 || aba.relacoes.length > 0;
   const limparFiltros = () => {
     setBusca("");
-    atualizar({ busca: "", filtros: {}, relacoes: [] });
+    atualizar({ busca: "", filtros: {}, filtrosValores: {}, relacoes: [] });
   };
+  const rotuloValor = (chave: string) => (chave === CHAVE_NULL ? "NULL" : chave === "" ? "(vazio)" : chave);
 
   const visiveisCount = aba.visiveis.filter(Boolean).length;
 
@@ -132,6 +157,16 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
         )}
 
         <div className="ml-auto flex flex-wrap items-center gap-2 [&_.btn]:h-10 [&_.btn]:rounded-[10px] [&_.btn]:px-3.5 [&_.btn-destaque]:h-10 [&_.btn-destaque]:rounded-[10px] [&_.btn-destaque]:px-4">
+          {aba.visao === "tabela" && (
+            <button
+              className={`btn ${aba.transposta ? "border-blue-400! bg-blue-50! text-blue-800! dark:border-blue-400/50! dark:bg-blue-500/20! dark:text-blue-100!" : ""}`}
+              aria-pressed={aba.transposta}
+              title="Transpor: colunas viram linhas e cada registro vira uma coluna (bom para comparar poucos registros)"
+              onClick={() => atualizar({ transposta: !aba.transposta })}
+            >
+              <IconeTranspor /> Transpor
+            </button>
+          )}
           <button
             className="btn"
             disabled={selecionadasVisiveis.length !== 2}
@@ -147,9 +182,10 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
               {visiveisCount} de {dados.colunas.length}
             </span>
           </button>
-          <BotoesExportar dados={dados} linhas={indices} colunas={exibidas} nomeBase={aba.nome} />
+          <BotoesExportar dados={dados} linhas={indices} colunas={exibidas} nomeBase={aba.nome} tabela={tabelaSql} />
           <BotaoCopiarChamado
             destaque
+            tabela={tabelaSql}
             dados={dados}
             linhas={selecionadasVisiveis}
             colunas={exibidas}
@@ -170,6 +206,19 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
               onRemover={() => atualizar({ relacoes: aba.relacoes.filter((_, x) => x !== k) })}
             >
               {dados.colunas[r.coluna].nome} = {r.valor}
+            </Chip>
+          ))}
+          {filtrosValores.map(([j, aceitos]) => (
+            <Chip
+              key={`v${j}`}
+              titulo={aceitos.map(rotuloValor).join(", ")}
+              onRemover={() => {
+                const f = { ...aba.filtrosValores };
+                delete f[Number(j)];
+                atualizar({ filtrosValores: f });
+              }}
+            >
+              {dados.colunas[Number(j)].nome} ∈ {aceitos.length <= 2 ? aceitos.map(rotuloValor).join(", ") : `${rotuloValor(aceitos[0])} +${aceitos.length - 1}`}
             </Chip>
           ))}
           {filtrosColuna.map(([j, t]) => (
@@ -229,13 +278,52 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
               </button>
             </div>
           ) : (
-            <TabelaVirtual
-              aba={aba}
-              colunas={exibidas}
-              qtdFixas={qtdFixas}
-              indices={indices}
-              atualizar={atualizar}
-            />
+            // cartão de vidro: tabela (ou transposta) + painel de valor + barra da seleção
+            <div className="absolute inset-x-3 top-0 bottom-3 isolate flex flex-col overflow-hidden rounded-2xl border border-zinc-900/[0.08] bg-white shadow-[0_24px_60px_-30px_rgb(30_27_75/0.35)] sm:inset-x-5 sm:bottom-5 dark:border-white/[0.09] dark:bg-[#0c0e16] dark:shadow-[0_30px_80px_-30px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.05)]">
+              <div className="flex min-h-0 flex-1">
+                <div className="relative min-w-0 flex-1">
+                  {aba.transposta ? (
+                    <TabelaTransposta aba={aba} colunas={exibidas} indices={indices} onAbrir={(registro) => atualizar({ registro })} />
+                  ) : (
+                    <TabelaVirtual
+                      aba={aba}
+                      colunas={exibidas}
+                      qtdFixas={qtdFixas}
+                      indices={indices}
+                      atualizar={atualizar}
+                      selecao={selecao}
+                      onSelecao={setSelecao}
+                      onCopiar={copiarSelecao}
+                    />
+                  )}
+                </div>
+                {verValor && !aba.transposta && (
+                  <VisualizadorValor
+                    dados={dados}
+                    linha={selecao ? (indices[selecao.foco.r] ?? null) : null}
+                    coluna={selecao ? (exibidas[selecao.foco.c] ?? null) : null}
+                    onFechar={() => setVerValor(false)}
+                  />
+                )}
+              </div>
+              {!aba.transposta && (
+                <BarraSelecao
+                  dados={dados}
+                  indices={indices}
+                  colunas={exibidas}
+                  ret={ret}
+                  tabela={tabelaSql}
+                  verValor={verValor}
+                  onVerValor={() => setVerValor(!verValor)}
+                  onAviso={setAviso}
+                />
+              )}
+              {aviso && (
+                <span role="status" className="pointer-events-none absolute bottom-11 left-1/2 z-40 -translate-x-1/2 animate-surgir rounded-lg bg-zinc-900 px-3 py-1.5 text-xs whitespace-nowrap text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">
+                  {aviso}
+                </span>
+              )}
+            </div>
           )
         ) : (
           <Graficos aba={aba} indices={indices} atualizar={atualizar} />
