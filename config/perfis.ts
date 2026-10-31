@@ -32,7 +32,14 @@ export type StatusTela = {
   valores?: Record<string, { texto: string; cor: CorStatus }>;
 };
 
-export type SecaoTela = { titulo: string; campos: CampoTela[] };
+export type SecaoTela = {
+  titulo: string;
+  campos: CampoTela[];
+  /** começa fechada; abre com um clique (ex.: textos longos como o log do robô) */
+  recolhida?: boolean;
+  /** vai para depois de todas as outras seções, inclusive "Outros campos" */
+  noFim?: boolean;
+};
 
 /**
  * Indicador de destaque intermediário (menor que o `destaque` do perfil, maior
@@ -628,10 +635,6 @@ export const PERFIS: Perfil[] = [
       ],
       secoes: [
         {
-          titulo: "Log do robô",
-          campos: [{ coluna: "FAT_LOGMSG", rotulo: "Mensagens (iguais agrupadas)", formato: "log", largo: true }],
-        },
-        {
           titulo: "Faturamento",
           campos: [
             { coluna: "FAT_NUMFAT", rotulo: "Nº da fatura" },
@@ -661,6 +664,13 @@ export const PERFIS: Perfil[] = [
             { coluna: "FAT_SEQGER", rotulo: "Sequência" },
             { coluna: "AUTOINCREM", rotulo: "AUTOINCREM" },
           ],
+        },
+        // log longo: por último e fechado (clique para ver)
+        {
+          titulo: "Log do robô",
+          campos: [{ coluna: "FAT_LOGMSG", rotulo: "Mensagens (iguais agrupadas)", formato: "log", largo: true }],
+          recolhida: true,
+          noFim: true,
         },
       ],
     },

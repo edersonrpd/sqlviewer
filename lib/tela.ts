@@ -23,7 +23,7 @@ export type CampoMontado = {
 
 export type StatusMontado = { rotulo: string; nome: string; texto: string; cor: CorStatus };
 export type IndicadorMontado = { campo: CampoMontado; detalhes: CampoMontado[]; cor: CorStatus };
-export type SecaoMontada = { titulo: string; campos: CampoMontado[] };
+export type SecaoMontada = { titulo: string; campos: CampoMontado[]; recolhida?: boolean };
 
 export type TelaMontada = {
   titulo: string;
@@ -130,8 +130,16 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
     return [{ campo, detalhes: resolver(ind.detalhes, false), cor }];
   });
   const destaques = resolver(tela?.destaques, false);
+  const montarSecao = (s: NonNullable<typeof tela>["secoes"][number]): SecaoMontada => ({
+    titulo: s.titulo,
+    campos: resolver(s.campos, true),
+    ...(s.recolhida ? { recolhida: true } : {}),
+  });
+  // seções marcadas "noFim" (ex.: log do robô) ficam depois de tudo, inclusive de "Outros campos"
+  const noFim = (tela?.secoes ?? []).filter((s) => s.noFim).map(montarSecao).filter((s) => s.campos.length > 0);
   let secoes: SecaoMontada[] = (tela?.secoes ?? [])
-    .map((s) => ({ titulo: s.titulo, campos: resolver(s.campos, true) }))
+    .filter((s) => !s.noFim)
+    .map(montarSecao)
     .filter((s) => s.campos.length > 0);
 
   const restantes = dados.colunas.map((_, j) => j).filter((j) => !usadas.has(j));
@@ -140,6 +148,7 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   } else {
     secoes = agruparPorTipo(dados, linha, restantes);
   }
+  secoes.push(...noFim);
   const d = colunaDestaque(dados.colunas, perfil);
   const chave = d ? montarCampo(dados, linha, d.j, { rotulo: d.rotulo }) : null;
   return { titulo, chave, indicadores, subtitulo, status, destaques, secoes };

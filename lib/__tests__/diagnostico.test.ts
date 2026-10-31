@@ -144,7 +144,11 @@ describe("FATAUT com o log do robô (exemplo real)", () => {
   it("na Tela da FATAUT o log aparece resumido", () => {
     const t = montarTela(fataut, 0, buscarPerfil("FATAUT"));
     expect(t.titulo).toBe("Fila automática – pedido 000000970818");
-    const campo = t.secoes[0].campos[0];
+    // log por último e fechado (abre com um clique), depois de "Outros campos"
+    expect(t.secoes.map((x) => x.titulo)).toEqual(["Faturamento", "Etiqueta", "Ligações", "Outros campos", "Log do robô"].filter((n) => t.secoes.some((x) => x.titulo === n)));
+    expect(t.secoes.at(-1)).toMatchObject({ titulo: "Log do robô", recolhida: true });
+    expect(t.secoes.filter((x) => x.titulo !== "Log do robô").every((x) => !x.recolhida)).toBe(true);
+    const campo = t.secoes.at(-1)!.campos[0];
     expect(campo.texto).toBe(
       '5 registro(s) no log · último em 31/10/2026 12:37:07\n• 5× Data ainda não permitida para faturamento, conforme campo "EXTGOR.FGO_DTCOAG" = 03/11/2026. (de 31/10/2026 12:28:53 a 31/10/2026 12:37:07)',
     );
