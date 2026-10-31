@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { BUSCAS_RAPIDAS } from "@/config/perfis";
 import { identificarMarketplace, normalizarNumpok } from "@/lib/marketplace";
 import { montarConsulta, separarValores, temJoin } from "@/lib/montar";
+import { CodigoSql } from "./CodigoSql";
 import { IconeCopiar } from "./Icones";
 import { SeloMarketplace } from "./SeloMarketplace";
 import { copiarTexto, useAviso } from "./util";
@@ -86,7 +87,7 @@ export function MontarConsulta() {
         </ul>
       )}
       {sql && verSql && (
-        <pre className="mt-2 max-h-32 overflow-auto rounded-lg bg-zinc-100 p-2.5 font-mono text-xs leading-relaxed dark:bg-zinc-950">{sql}</pre>
+        <CodigoSql sql={sql} className="mt-2 max-h-40 overflow-auto rounded-lg bg-zinc-100 p-2.5 dark:bg-zinc-950" />
       )}
     </section>
   );

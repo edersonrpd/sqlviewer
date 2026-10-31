@@ -1,5 +1,6 @@
 import { PERFIS } from "@/config/perfis";
 import type { Aba, Estado } from "./estado";
+import { listaOrdenacao } from "./filtragem";
 import { buscarPerfil, detectarPerfil } from "./perfis";
 
 /**
@@ -43,6 +44,10 @@ export function lerSessao(texto: string): SessaoLida {
     const deteccao = detectarPerfil(a.dados.colunas.map((c) => c.nome), PERFIS);
     return {
       ...a,
+      // sessões salvas antes destes campos existirem
+      ordenacao: listaOrdenacao(a.ordenacao as Aba["ordenacao"] | null),
+      filtrosValores: a.filtrosValores ?? {},
+      transposta: a.transposta ?? false,
       perfilId: buscarPerfil(a.perfilId) ? a.perfilId : null,
       deteccao,
       selecionadas: new Set(a.selecionadas ?? []),

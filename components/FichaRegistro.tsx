@@ -123,7 +123,7 @@ export function FichaRegistro({ aba, abas, indices, colunasExibidas, onNavegar, 
               <button className="btn" onClick={onAbrirTela} title="Ver este registro como tela de ERP">
                 Abrir como tela
               </button>
-              <BotaoCopiarChamado dados={dados} linhas={[registro]} colunas={colunasExibidas} rotulo="Copiar para chamado" semLinhas="Nenhuma coluna visível" />
+              <BotaoCopiarChamado dados={dados} tabela={perfil?.tabela} linhas={[registro]} colunas={colunasExibidas} rotulo="Copiar para chamado" semLinhas="Nenhuma coluna visível" />
             </div>
           </div>
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar campo" className="campo w-full" aria-label="Buscar campo na ficha" />

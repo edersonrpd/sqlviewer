@@ -1,6 +1,6 @@
 import { PERFIS, type Perfil } from "@/config/perfis";
 import { identificarMarketplace } from "./marketplace";
-import type { FiltroRelacao, Ordenacao } from "./filtragem";
+import type { ChaveOrdenacao, FiltroRelacao } from "./filtragem";
 import { formatarValor } from "./formatacao";
 import { sugerirGrafico, type ConfigGrafico } from "./graficos";
 import { colunaDestaque } from "./destaque";
@@ -24,8 +24,13 @@ export type Aba = {
   larguras: number[];
   busca: string;
   filtros: Record<number, string>;
+  /** filtro por valores (menu do cabeçalho): coluna → chaves aceitas, ver `chaveValor` */
+  filtrosValores: Record<number, string[]>;
   relacoes: FiltroRelacao[];
-  ordenacao: Ordenacao;
+  /** critérios de ordenação, em ordem de prioridade (vazio = ordem original) */
+  ordenacao: ChaveOrdenacao[];
+  /** tabela transposta: colunas viram linhas e cada registro vira uma coluna */
+  transposta: boolean;
   selecionadas: ReadonlySet<number>;
   grafico: ConfigGrafico;
   visao: Visao;
@@ -139,8 +144,10 @@ export function reducer(estado: Estado, acao: Acao): Estado {
         larguras: calcularLarguras(dados),
         busca: "",
         filtros: {},
+        filtrosValores: {},
         relacoes: [],
-        ordenacao: null,
+        ordenacao: [],
+        transposta: false,
         selecionadas: new Set(),
         grafico: sugerirGrafico(dados, perfil),
         // perfis com layout de tela abrem como formulário; os demais como tabela
