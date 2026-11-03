@@ -124,6 +124,8 @@ export type Perfil = {
   rotulosInversos?: Record<string, string>;
   /** nome da tabela no banco, usado no SQL sugerido (padrão: o id) */
   tabela?: string;
+  /** banco onde a tabela fica, quando não é o do ERP (ex.: "HUB"); o Montar consulta avisa onde rodar */
+  banco?: string;
   /** colunas somadas no rodapé quando esta tabela aparece como grade em outra Tela
       (padrão: todas as colunas decimais) */
   totais?: string[];
@@ -1071,6 +1073,7 @@ export const PERFIS: Perfil[] = [
     id: "HUB_PEDIDOS",
     nome: "HUBCitel – Pedido",
     tabela: "pedidos",
+    banco: "HUB",
     assinatura: ["id_hub", "order_id", "valor_total_liquido_receber"],
     colunasPadrao: [
       "order_id", "dominio", "status", "situacao", "data_pedido", "origem_pedido", "canal",
@@ -1098,6 +1101,7 @@ export const PERFIS: Perfil[] = [
     id: "HUB_ITENS_PEDIDOS",
     nome: "HUBCitel – Itens do pedido",
     tabela: "itens_pedidos",
+    banco: "HUB",
     assinatura: ["order_id", "codigo_item", "anuncio_id"],
     colunasPadrao: [
       "order_id", "codigo_item", "nome", "quantidade", "valor_unitario", "taxa_venda",

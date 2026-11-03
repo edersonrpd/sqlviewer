@@ -34,6 +34,14 @@ describe("HUBCitel – Pedido", () => {
     );
   });
 
+  it("as tabelas do HUB ficam em outro banco e não se ligam às do ERP", () => {
+    expect(buscarPerfil("HUB_PEDIDOS")?.banco).toBe("HUB");
+    expect(buscarPerfil("HUB_ITENS_PEDIDOS")?.banco).toBe("HUB");
+    const sql = montarConsulta(buscaRapida("hubpedido")!, ["SHML1"], true)!;
+    expect(sql.match(/>>\w+/g)).toEqual([">>HUB_PEDIDOS", ">>HUB_ITENS_PEDIDOS"]);
+    expect(buscarPerfil("FATGOR")?.banco).toBeUndefined();
+  });
+
   it("remove só prefixos conhecidos", () => {
     expect(removerPrefixoMarketplace(" mlb_shml1 ")).toBe("SHML1");
     expect(removerPrefixoMarketplace("SHML1")).toBe("SHML1");

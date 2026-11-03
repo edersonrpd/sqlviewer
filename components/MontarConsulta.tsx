@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { BUSCAS_RAPIDAS } from "@/config/perfis";
 import { identificarMarketplace } from "@/lib/marketplace";
 import { conversaoDaBusca, montarConsulta, separarValores, temJoin } from "@/lib/montar";
+import { buscarPerfil } from "@/lib/perfis";
 import { CodigoSql } from "./CodigoSql";
 import { IconeCopiar } from "./Icones";
 import { SeloMarketplace } from "./SeloMarketplace";
@@ -19,6 +20,8 @@ export function MontarConsulta() {
   const [aviso, setAviso] = useAviso();
 
   const busca = BUSCAS_RAPIDAS.find((b) => b.id === id) ?? BUSCAS_RAPIDAS[0];
+  // tabelas de outro banco (ex.: HUB): o SQL não roda no banco do ERP
+  const banco = buscarPerfil(busca.perfil)?.banco;
   const podeJoin = useMemo(() => temJoin(busca), [busca]);
   const valores = useMemo(() => separarValores(texto), [texto]);
   const sql = montarConsulta(busca, valores, podeJoin && comJoin);
@@ -69,6 +72,14 @@ export function MontarConsulta() {
           </button>
         )}
         {valores.length > 1 && <span className="text-xs text-zinc-500">{valores.length} valores</span>}
+        {banco && (
+          <span
+            className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300"
+            title={`Estas tabelas ficam no banco do ${banco}, não no do ERP: rode o SQL conectado ao banco do ${banco}`}
+          >
+            Rodar no banco do {banco}
+          </span>
+        )}
         {aviso && <span className="text-xs text-emerald-600">{aviso}</span>}
       </div>
       {convertidos.length > 0 && (
