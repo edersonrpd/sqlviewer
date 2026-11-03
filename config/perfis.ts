@@ -697,6 +697,11 @@ export type BuscaRapida = {
   filtroExtra?: { coluna: string; rotulo: string; exemplo: string };
   /** no JOIN, colunas da tabela ligada repetidas na aba da principal (para filtrar/ordenar ali) */
   copiarColunas?: { perfil: string; colunas: { coluna: string; alias?: string }[] }[];
+  /**
+   * no JOIN, usa só estas ligações (no lugar das relações do perfil), ex.: produto
+   * com a marca, sem trazer os pedidos do item
+   */
+  joins?: Relacao[];
 };
 
 // a primeira é a opção inicial do "Montar consulta"
@@ -707,7 +712,17 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   { id: "autoincrem", rotulo: "Pedido – AUTOINCREM", perfil: "FATGOR", coluna: "AUTOINCREM", exemplo: "00100000000000001001" },
   { id: "fataut", rotulo: "Faturamento automático – nº documento (FATAUT)", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818" },
   { id: "nfe", rotulo: "NF-e – nº documento (LOGNFE)", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684" },
-  { id: "item", rotulo: "Item – código (CADITE)", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
+  // pedidos em que o item aparece (CADITE → FATDOR)
+  { id: "item", rotulo: "Pedido – Produto (CADITE)", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
+  // cadastro do produto com as tabelas de cadastro ligadas (marca…)
+  {
+    id: "produto",
+    rotulo: "Produto (CADITE)",
+    perfil: "CADITE",
+    coluna: "ITE_CODITE",
+    exemplo: "00004",
+    joins: [{ perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" }],
+  },
   { id: "itebar", rotulo: "Item – código de barras", perfil: "CADITE", coluna: "ITE_CODBAR", exemplo: "7891252071268" },
   { id: "itefab", rotulo: "Item – código do fabricante", perfil: "CADITE", coluna: "ITE_CODFAB", exemplo: "7126" },
   // HUBCitel: o order_id fica sem o prefixo do marketplace (MLB_SHML… → SHML…)
@@ -1117,7 +1132,17 @@ export const PERFIS: Perfil[] = [
     chave: "ITE_CODITE",
     graficoSugerido: { modo: "contagem", categoria: "ITE_CODGRU" },
     rotulosInversos: { FATDOR: "Pedidos com o item" },
+    cadastros: [{ coluna: "ITE_CODMAR", tabela: "CADMAR", colunaTabela: "MAR_CODMAR", rotulo: "Marca" }],
     tela: TELA_CADITE,
+  },
+  {
+    id: "CADMAR",
+    nome: "Cadastro de marcas",
+    assinatura: ["MAR_CODMAR", "MAR_DESMAR"],
+    colunasPadrao: ["MAR_CODMAR", "MAR_DESMAR", "MAR_CODEMP", "MAR_CODGRU", "MAR_FATCUS", "MAR_ATIVA_", "MAR_CODVEL", "MAR_ULTALT"],
+    colunasFixas: ["MAR_CODMAR", "MAR_DESMAR"],
+    colunaTitulo: "MAR_CODMAR",
+    chave: "MAR_CODMAR",
   },
   {
     // HUBCitel (banco do HUB, não do ERP): cabeçalho do pedido, pelo order_id sem prefixo
