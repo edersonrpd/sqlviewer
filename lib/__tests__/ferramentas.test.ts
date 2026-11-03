@@ -84,7 +84,7 @@ describe("montar consulta", () => {
     expect(sql.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR"]);
     expect(sql).toContain("LEFT JOIN CADMAR t1\n       ON t1.MAR_CODMAR = t0.ITE_CODMAR AND t0.ITE_CODMAR <> ''");
     expect(sql.endsWith(" WHERE t0.ITE_CODITE = '00004';")).toBe(true);
-    expect(montarConsulta(busca("item"), ["00004"], true)!.match(/>>\w+/g)).toEqual([">>CADITE", ">>FATDOR"]);
+    expect(montarConsulta(busca("item"), ["00004"], true)!.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR", ">>FATDOR"]);
   });
 
   it("toda busca aponta para um perfil existente", () => {

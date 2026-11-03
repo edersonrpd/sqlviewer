@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { estadoInicial, reducer } from "../estado";
 import { separarPorMarcadores, sqlJoin } from "../join";
 import { parsearConsulta } from "../parser";
-import { relacionadosDoRegistro } from "../relacionados";
+import { relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
 
 const ler = (f: string) => readFileSync(join(__dirname, "../../fixtures", f), "utf-8").trim().split("\n").map((l) => l.split("\t"));
 const fgo = ler("exemplo-fgo.txt");
@@ -43,7 +43,7 @@ describe("sqlJoin", () => {
   it("a partir de um item não sobe de volta para as relações do pedido", () => {
     const d = parsearConsulta('"FDO_SEQGER"\t"FDO_CODITE"\t"AUTOINCREM"\n"00100000000000001001"\t"00004"\t"00100000000000555001"');
     const sql = sqlJoin(d, 0, "FATDOR")!;
-    expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>FATGOR"]);
+    expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>CADMAR", ">>FATGOR"]);
     // o item é identificado pelo AUTOINCREM, não pelo código do produto (que se repete em vários pedidos)
     expect(sql).toContain(" WHERE t0.AUTOINCREM = '00100000000000555001';");
   });
@@ -97,5 +97,25 @@ describe("separarPorMarcadores", () => {
 
   it("resultado comum não é separado", () => {
     expect(separarPorMarcadores(parsearConsulta(fgo.map((l) => l.join("\t")).join("\n")))).toBeNull();
+  });
+});
+
+describe("produto com a marca", () => {
+  it("ao colar o JOIN, a ficha do item mostra a marca da aba CADMAR", () => {
+    const texto = [
+      ['>>CADITE', 'ITE_CODITE', 'ITE_DESITE', 'ITE_CODGRU', 'ITE_CODMAR', '>>CADMAR', 'MAR_CODMAR', 'MAR_DESMAR', 'MAR_CODEMP', 'AUTOINCREM'],
+      ['', '01431', 'TERMINAL DIREC PASSAT', '003001', '000067', '', '000067', 'NAKATA', '001', '00100000000000000067'],
+      ['', '01467', 'BARRA AXIAL', '003001', '000067', '', '000067', 'NAKATA', '001', '00100000000000000067'],
+    ]
+      .map((l) => l.map((v) => `"${v}"`).join("\t"))
+      .join("\n");
+    const partes = separarPorMarcadores(parsearConsulta(texto))!;
+    const s = reducer(estadoInicial, { tipo: "criarVarias", dados: partes.map((p) => p.dados) });
+    expect(s.abas.map((a) => a.perfilId)).toEqual(["CADITE", "CADMAR"]);
+    const [item, marca] = s.abas;
+    expect(marca.dados.linhas).toHaveLength(1);
+    expect(relacionadosDoRegistro(item, 0, s.abas)).toMatchObject([{ rotulo: "Marca", abaId: marca.id, quantidade: 1 }]);
+    // com a aba aberta, a marca não aparece mais como consulta pendente
+    expect(relacoesPendentes(item, 0, s.abas).map((r) => r.perfilDestino)).toEqual(["FATDOR"]);
   });
 });

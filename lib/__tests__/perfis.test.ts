@@ -91,8 +91,9 @@ describe("ligacoesDoPerfil", () => {
     ]);
   });
 
-  it("CADITE enxerga os itens de pedido pelo código do item", () => {
+  it("CADITE enxerga a marca e os itens de pedido pelo código do item", () => {
     expect(ligacoesDoPerfil("CADITE")).toEqual([
+      { perfilDestino: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", extras: [], rotulo: "Marca" },
       { perfilDestino: "FATDOR", colunaOrigem: "ITE_CODITE", colunaDestino: "FDO_CODITE", extras: [], rotulo: "Pedidos com o item" },
     ]);
   });
