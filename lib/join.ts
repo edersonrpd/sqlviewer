@@ -26,6 +26,17 @@ export function condicaoValores(valores: string[]): string {
   return valores.length === 1 ? `= ${literal(valores[0])}` : `IN (${valores.map(literal).join(", ")})`;
 }
 
+/** Filtro a mais no WHERE da tabela principal (ex.: domínio do cliente no HUB). */
+export type FiltroExtra = { coluna: string; valores: string[] };
+
+/** ` AND col = 'x'` para cada filtro com valores (filtros vazios são ignorados). */
+export function condicoesExtras(filtros: FiltroExtra[], alias = ""): string {
+  return filtros
+    .filter((f) => f.valores.length > 0)
+    .map((f) => ` AND ${alias}${f.coluna} ${condicaoValores(f.valores)}`)
+    .join("");
+}
+
 /**
  * JOIN de um registro com todas as tabelas relacionadas no perfil e, um nível
  * abaixo, com as relações declaradas nessas tabelas (ex.: cadastro dos itens).
@@ -51,6 +62,7 @@ export function sqlJoinPor(
   coluna: string,
   valores: string[],
   existe: (coluna: string) => boolean = () => true,
+  filtros: FiltroExtra[] = [],
 ): string | null {
   const perfil = buscarPerfil(perfilId);
   if (!perfil || valores.length === 0) return null;
@@ -95,7 +107,7 @@ export function sqlJoinPor(
     `SELECT ${selects.join(",\n       ")}`,
     `  FROM ${tabelaDe(perfil, perfil.id)} t0`,
     ...joins.map((j) => `  ${j}`),
-    ` WHERE t0.${coluna} ${condicaoValores(valores)};`,
+    ` WHERE t0.${coluna} ${condicaoValores(valores)}${condicoesExtras(filtros, "t0.")};`,
   ].join("\n");
 }
 

@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { BUSCAS_RAPIDAS } from "@/config/perfis";
-import { identificarMarketplace, normalizarNumpok } from "@/lib/marketplace";
-import { montarConsulta, separarValores, temJoin } from "@/lib/montar";
+import { identificarMarketplace } from "@/lib/marketplace";
+import { conversaoDaBusca, montarConsulta, separarValores, temJoin } from "@/lib/montar";
+import { buscarPerfil } from "@/lib/perfis";
 import { CodigoSql } from "./CodigoSql";
 import { IconeCopiar } from "./Icones";
 import { SeloMarketplace } from "./SeloMarketplace";
@@ -13,19 +14,25 @@ import { copiarTexto, useAviso } from "./util";
 export function MontarConsulta() {
   const [id, setId] = useState(BUSCAS_RAPIDAS[0].id);
   const [texto, setTexto] = useState("");
+  // filtro adicional (ex.: domínio do cliente no HUB); fica guardado ao trocar de busca
+  const [textoExtra, setTextoExtra] = useState("");
   const [comJoin, setComJoin] = useState(true);
   // a prévia começa fechada para não empurrar a área de colar em telas menores
   const [verSql, setVerSql] = useState(false);
   const [aviso, setAviso] = useAviso();
 
   const busca = BUSCAS_RAPIDAS.find((b) => b.id === id) ?? BUSCAS_RAPIDAS[0];
+  // tabelas de outro banco (ex.: HUB): o SQL não roda no banco do ERP
+  const banco = buscarPerfil(busca.perfil)?.banco;
   const podeJoin = useMemo(() => temJoin(busca), [busca]);
   const valores = useMemo(() => separarValores(texto), [texto]);
-  const sql = montarConsulta(busca, valores, podeJoin && comJoin);
-  // NUMPOK: mostra como cada número vai para o SQL (com o prefixo do marketplace)
+  const extras = useMemo(() => separarValores(textoExtra), [textoExtra]);
+  const sql = montarConsulta(busca, valores, podeJoin && comJoin, extras);
+  // NUMPOK / order_id do HUB: mostra como cada número vai para o SQL (com ou sem o prefixo do marketplace)
   const convertidos = useMemo(() => {
-    if (!busca.prefixarMarketplace) return [];
-    return valores.map((v) => ({ original: v, final: normalizarNumpok(v) })).filter((c) => identificarMarketplace(c.final));
+    const converter = conversaoDaBusca(busca);
+    if (!converter) return [];
+    return valores.map((v) => ({ original: v, final: converter(v) })).filter((c) => identificarMarketplace(c.final));
   }, [busca, valores]);
 
   return (
@@ -48,6 +55,16 @@ export function MontarConsulta() {
           placeholder={`${busca.exemplo} (vários: separe por vírgula)`}
           aria-label="Valores"
         />
+        {busca.filtroExtra && (
+          <input
+            className="campo w-40 font-mono"
+            value={textoExtra}
+            onChange={(e) => setTextoExtra(e.target.value)}
+            placeholder={`${busca.filtroExtra.rotulo}: ${busca.filtroExtra.exemplo}`}
+            aria-label={busca.filtroExtra.rotulo}
+            title={`${busca.filtroExtra.rotulo} (opcional; vários: separe por vírgula)`}
+          />
+        )}
         {podeJoin && (
           <label className="inline-flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400" title="Traz as tabelas relacionadas na mesma consulta; ao colar, cada uma abre na sua aba">
             <input type="checkbox" checked={comJoin} onChange={(e) => setComJoin(e.target.checked)} />
@@ -68,6 +85,14 @@ export function MontarConsulta() {
           </button>
         )}
         {valores.length > 1 && <span className="text-xs text-zinc-500">{valores.length} valores</span>}
+        {banco && (
+          <span
+            className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300"
+            title={`Estas tabelas ficam no banco do ${banco}, não no do ERP: rode o SQL conectado ao banco do ${banco}`}
+          >
+            Rodar no banco do {banco}
+          </span>
+        )}
         {aviso && <span className="text-xs text-emerald-600">{aviso}</span>}
       </div>
       {convertidos.length > 0 && (

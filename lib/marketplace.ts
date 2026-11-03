@@ -46,3 +46,13 @@ export function normalizarNumpok(valor: string): string {
   const m = MARKETPLACES.find((x) => x.padrao.test(v));
   return m ? m.prefixo + maiusculo : v;
 }
+
+/**
+ * Número como o marketplace envia, sem o prefixo do NUMPOK (MLB_SHML… → SHML…),
+ * ex.: order_id do HUBCitel. Valores sem prefixo conhecido ficam como estão.
+ */
+export function removerPrefixoMarketplace(valor: string): string {
+  const v = valor.trim();
+  const m = MARKETPLACES.find((x) => v.toUpperCase().startsWith(x.prefixo));
+  return m ? v.slice(m.prefixo.length).toUpperCase() : v;
+}
