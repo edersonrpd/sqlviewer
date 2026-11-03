@@ -14,6 +14,8 @@ import { copiarTexto, useAviso } from "./util";
 export function MontarConsulta() {
   const [id, setId] = useState(BUSCAS_RAPIDAS[0].id);
   const [texto, setTexto] = useState("");
+  // filtro adicional (ex.: domínio do cliente no HUB); fica guardado ao trocar de busca
+  const [textoExtra, setTextoExtra] = useState("");
   const [comJoin, setComJoin] = useState(true);
   // a prévia começa fechada para não empurrar a área de colar em telas menores
   const [verSql, setVerSql] = useState(false);
@@ -24,7 +26,8 @@ export function MontarConsulta() {
   const banco = buscarPerfil(busca.perfil)?.banco;
   const podeJoin = useMemo(() => temJoin(busca), [busca]);
   const valores = useMemo(() => separarValores(texto), [texto]);
-  const sql = montarConsulta(busca, valores, podeJoin && comJoin);
+  const extras = useMemo(() => separarValores(textoExtra), [textoExtra]);
+  const sql = montarConsulta(busca, valores, podeJoin && comJoin, extras);
   // NUMPOK / order_id do HUB: mostra como cada número vai para o SQL (com ou sem o prefixo do marketplace)
   const convertidos = useMemo(() => {
     const converter = conversaoDaBusca(busca);
@@ -52,6 +55,16 @@ export function MontarConsulta() {
           placeholder={`${busca.exemplo} (vários: separe por vírgula)`}
           aria-label="Valores"
         />
+        {busca.filtroExtra && (
+          <input
+            className="campo w-40 font-mono"
+            value={textoExtra}
+            onChange={(e) => setTextoExtra(e.target.value)}
+            placeholder={`${busca.filtroExtra.rotulo}: ${busca.filtroExtra.exemplo}`}
+            aria-label={busca.filtroExtra.rotulo}
+            title={`${busca.filtroExtra.rotulo} (opcional; vários: separe por vírgula)`}
+          />
+        )}
         {podeJoin && (
           <label className="inline-flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400" title="Traz as tabelas relacionadas na mesma consulta; ao colar, cada uma abre na sua aba">
             <input type="checkbox" checked={comJoin} onChange={(e) => setComJoin(e.target.checked)} />

@@ -1,5 +1,5 @@
 import { BUSCAS_RAPIDAS, type BuscaRapida } from "@/config/perfis";
-import { condicaoValores, sqlJoinPor } from "./join";
+import { condicaoValores, condicoesExtras, sqlJoinPor } from "./join";
 import { normalizarNumpok, removerPrefixoMarketplace } from "./marketplace";
 import { buscarPerfil } from "./perfis";
 
@@ -22,16 +22,20 @@ export function temJoin(b: BuscaRapida): boolean {
   return sqlJoinPor(b.perfil, b.coluna, ["x"]) !== null;
 }
 
-/** SQL da busca rápida: só a tabela, ou o JOIN com as relacionadas. */
-export function montarConsulta(b: BuscaRapida, valores: string[], comJoin: boolean): string | null {
+/**
+ * SQL da busca rápida: só a tabela, ou o JOIN com as relacionadas.
+ * `extras`: valores do filtro adicional da busca (ex.: domínio no HUB); vazio = sem filtro.
+ */
+export function montarConsulta(b: BuscaRapida, valores: string[], comJoin: boolean, extras: string[] = []): string | null {
   if (valores.length === 0) return null;
   valores = valoresDaBusca(b, valores);
+  const filtros = b.filtroExtra ? [{ coluna: b.filtroExtra.coluna, valores: extras }] : [];
   if (comJoin) {
-    const sql = sqlJoinPor(b.perfil, b.coluna, valores);
+    const sql = sqlJoinPor(b.perfil, b.coluna, valores, undefined, filtros);
     if (sql) return sql;
   }
   const tabela = buscarPerfil(b.perfil)?.tabela ?? b.perfil;
-  return `SELECT * FROM ${tabela} WHERE ${b.coluna} ${condicaoValores(valores)};`;
+  return `SELECT * FROM ${tabela} WHERE ${b.coluna} ${condicaoValores(valores)}${condicoesExtras(filtros)};`;
 }
 
 /** Valores como vão para o SQL (ex.: NUMPOK com o prefixo do marketplace, order_id do HUB sem ele). */

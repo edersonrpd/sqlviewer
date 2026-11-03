@@ -120,7 +120,8 @@ devolve achados. Para criar uma regra nova, copie uma existente e acrescente um 
   fabricante; **HUBCitel – Pedido** pelo `order_id`, que traz a tabela `pedidos` e os
   `itens_pedidos` do HUB — o prefixo do marketplace é retirado, então `MLB_SHML…` vira
   `SHML…`; essas tabelas ficam no **banco do HUB**, não no do ERP, e a tela avisa
-  "Rodar no banco do HUB"), digite um ou vários valores e copie o `SELECT` — ou o JOIN completo, com
+  "Rodar no banco do HUB"; **HUBCitel – Itens vendidos** pelo código do item, com o
+  cabeçalho do pedido no JOIN; nas duas, o campo **Domínio** (opcional) filtra o cliente), digite um ou vários valores e copie o `SELECT` — ou o JOIN completo, com
   as tabelas relacionadas. Os tipos ficam em `BUSCAS_RAPIDAS`, em `config/perfis.ts`.
 - **Comparar**: marque 2 linhas na tabela e clique em **Comparar** para ver só as colunas
   que diferem (com o rótulo da Tela ao lado do nome técnico).

@@ -675,6 +675,8 @@ export type BuscaRapida = {
   prefixarMarketplace?: boolean;
   /** tira o prefixo do marketplace do número digitado (MLB_SHML… → SHML…), ex.: order_id do HUBCitel */
   removerPrefixoMarketplace?: boolean;
+  /** segundo campo, opcional, que entra no WHERE com AND (ex.: domínio do cliente no HUB) */
+  filtroExtra?: { coluna: string; rotulo: string; exemplo: string };
 };
 
 // a primeira é a opção inicial do "Montar consulta"
@@ -689,7 +691,25 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   { id: "itebar", rotulo: "Item – código de barras", perfil: "CADITE", coluna: "ITE_CODBAR", exemplo: "7891252071268" },
   { id: "itefab", rotulo: "Item – código do fabricante", perfil: "CADITE", coluna: "ITE_CODFAB", exemplo: "7126" },
   // HUBCitel: o order_id fica sem o prefixo do marketplace (MLB_SHML… → SHML…)
-  { id: "hubpedido", rotulo: "HUBCitel – Pedido (order_id)", perfil: "HUB_PEDIDOS", coluna: "order_id", exemplo: "SHML48412293490", removerPrefixoMarketplace: true },
+  // o banco do HUB tem todos os clientes, separados por domínio
+  {
+    id: "hubpedido",
+    rotulo: "HUBCitel – Pedido (order_id)",
+    perfil: "HUB_PEDIDOS",
+    coluna: "order_id",
+    exemplo: "SHML48412293490",
+    removerPrefixoMarketplace: true,
+    filtroExtra: { coluna: "dominio", rotulo: "Domínio", exemplo: "ulitintas" },
+  },
+  // itens vendidos de um cliente, com o cabeçalho do pedido (como FATDOR + FATGOR)
+  {
+    id: "hubitem",
+    rotulo: "HUBCitel – Itens vendidos (código do item)",
+    perfil: "HUB_ITENS_PEDIDOS",
+    coluna: "codigo_item",
+    exemplo: "06377",
+    filtroExtra: { coluna: "dominio", rotulo: "Domínio", exemplo: "ulitintas" },
+  },
 ];
 
 /**

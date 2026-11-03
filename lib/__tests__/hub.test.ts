@@ -60,3 +60,31 @@ describe("HUBCitel – Pedido", () => {
     expect(t.secoes.some((s) => s.titulo === "Outros campos")).toBe(false);
   });
 });
+
+describe("HUBCitel – filtro por domínio", () => {
+  const b = (id: string) => buscaRapida(id)!;
+
+  it("pedido com domínio opcional", () => {
+    expect(montarConsulta(b("hubpedido"), ["SHML1"], false, ["ulitintas"])).toBe(
+      "SELECT * FROM pedidos WHERE order_id = 'SHML1' AND dominio = 'ulitintas';",
+    );
+    expect(montarConsulta(b("hubpedido"), ["SHML1"], true, ["ulitintas"])!.endsWith(" WHERE t0.order_id = 'SHML1' AND t0.dominio = 'ulitintas';")).toBe(true);
+  });
+
+  it("itens vendidos por código e domínio, com o cabeçalho do pedido", () => {
+    expect(montarConsulta(b("hubitem"), ["06377"], false, ["ulitintas"])).toBe(
+      "SELECT * FROM itens_pedidos WHERE codigo_item = '06377' AND dominio = 'ulitintas';",
+    );
+    expect(montarConsulta(b("hubitem"), ["06377", "06378"], true, ["ulitintas"])).toBe(
+      [
+        "SELECT '' AS `>>HUB_ITENS_PEDIDOS`, t0.*,",
+        "       '' AS `>>HUB_PEDIDOS`, t1.*",
+        "  FROM itens_pedidos t0",
+        "  LEFT JOIN pedidos t1\n       ON t1.order_id = t0.order_id AND t0.order_id <> ''\n      AND t1.dominio = t0.dominio",
+        " WHERE t0.codigo_item IN ('06377', '06378') AND t0.dominio = 'ulitintas';",
+      ].join("\n"),
+    );
+    // sem domínio: todos os clientes
+    expect(montarConsulta(b("hubitem"), ["06377"], false)).toBe("SELECT * FROM itens_pedidos WHERE codigo_item = '06377';");
+  });
+});
