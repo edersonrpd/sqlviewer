@@ -1134,7 +1134,8 @@ export const PERFIS: Perfil[] = [
     chave: "ITE_CODITE",
     graficoSugerido: { modo: "contagem", categoria: "ITE_CODGRU" },
     rotulosInversos: { FATDOR: "Pedidos com o item" },
-    cadastros: [{ coluna: "ITE_CODMAR", tabela: "CADMAR", colunaTabela: "MAR_CODMAR", rotulo: "Marca" }],
+    // relação (não só cadastro): com a aba da CADMAR aberta, a ficha do item mostra a marca
+    relacoes: [{ perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" }],
     tela: TELA_CADITE,
   },
   {
@@ -1145,6 +1146,7 @@ export const PERFIS: Perfil[] = [
     colunasFixas: ["MAR_CODMAR", "MAR_DESMAR"],
     colunaTitulo: "MAR_CODMAR",
     chave: "MAR_CODMAR",
+    rotulosInversos: { CADITE: "Itens da marca" },
   },
   {
     // HUBCitel (banco do HUB, não do ERP): cabeçalho do pedido, pelo order_id sem prefixo
