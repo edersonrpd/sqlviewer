@@ -5,7 +5,8 @@ import { removerPrefixoMarketplace } from "../marketplace";
 import { buscaRapida, montarConsulta } from "../montar";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil, detectarPerfil } from "../perfis";
-import { montarTela } from "../tela";
+import { separarPorMarcadores } from "../join";
+import { montarTela, resumoRegistro } from "../tela";
 
 const texto = (nome: string) => readFileSync(join(__dirname, "../../fixtures", nome), "utf-8");
 const pedidos = parsearConsulta(texto("exemplo-hub-pedidos.txt"));
@@ -56,7 +57,7 @@ describe("HUBCitel – Pedido", () => {
 
   it("Tela do item", () => {
     const t = montarTela(itens, 0, buscarPerfil("HUB_ITENS_PEDIDOS"));
-    expect(t.titulo).toBe("Item do pedido HUB 06377");
+    expect(t.titulo).toBe("Item do pedido HUB SHML48412293490");
     expect(t.secoes.some((s) => s.titulo === "Outros campos")).toBe(false);
   });
 });
@@ -86,5 +87,33 @@ describe("HUBCitel – filtro por domínio", () => {
     );
     // sem domínio: todos os clientes
     expect(montarConsulta(b("hubitem"), ["06377"], false)).toBe("SELECT * FROM itens_pedidos WHERE codigo_item = '06377';");
+  });
+});
+
+describe("HUBCitel – resultado do JOIN de itens vendidos", () => {
+  const partes = separarPorMarcadores(parsearConsulta(texto("exemplo-hub-itens-join.txt")))!;
+
+  it("separa itens e cabeçalhos, inclusive com quebra de linha no complemento", () => {
+    expect(partes.map((p) => [p.tabela, p.dados.linhas.length])).toEqual([
+      ["HUB_ITENS_PEDIDOS", 4],
+      ["HUB_PEDIDOS", 4],
+    ]);
+    // código do item continua texto (zeros à esquerda)
+    const itens = partes[0].dados;
+    expect(itens.colunas.find((c) => c.nome === "codigo_item")?.tipo).toBe("texto");
+  });
+
+  it("na lista, cada item aparece pelo pedido (o código é o mesmo em todas as linhas)", () => {
+    const itens = partes[0].dados;
+    const r = resumoRegistro(itens, 1, buscarPerfil("HUB_ITENS_PEDIDOS"));
+    expect(r.titulo).toBe("SHML47573359018");
+    expect(r.detalhe).toBe("06377 · 7");
+  });
+
+  it("status com cor", () => {
+    const t = montarTela(partes[0].dados, 1, buscarPerfil("HUB_ITENS_PEDIDOS"));
+    expect(t.status).toEqual([expect.objectContaining({ texto: "Cancelado (cancelled)", cor: "vermelho" })]);
+    const p = montarTela(partes[1].dados, 0, buscarPerfil("HUB_PEDIDOS"));
+    expect(p.status[0]).toEqual(expect.objectContaining({ texto: "Pago (paid)", cor: "verde" }));
   });
 });

@@ -488,6 +488,16 @@ const TELA_CADITE: Tela = {
   ],
 };
 
+/* Status do HUB com cor (texto original entre parênteses); os demais aparecem como vierem. */
+const STATUS_HUB_PEDIDO: StatusTela["valores"] = {
+  paid: { texto: "Pago (paid)", cor: "verde" },
+  CanceledOrder: { texto: "Cancelado (CanceledOrder)", cor: "vermelho" },
+};
+const STATUS_HUB_ITEM: StatusTela["valores"] = {
+  paid: { texto: "Pago (paid)", cor: "verde" },
+  cancelled: { texto: "Cancelado (cancelled)", cor: "vermelho" },
+};
+
 /* HUBCitel – tabela `pedidos` (banco do HUB). Rótulos: ponto de partida a revisar. */
 const TELA_HUB_PEDIDOS: Tela = {
   titulo: "Pedido HUB",
@@ -501,7 +511,7 @@ const TELA_HUB_PEDIDOS: Tela = {
     {
       coluna: "status",
       rotulo: "Status",
-      valores: { CanceledOrder: { texto: "Cancelado (CanceledOrder)", cor: "vermelho" } },
+      valores: STATUS_HUB_PEDIDO,
     },
     { coluna: "situacao", rotulo: "Situação" },
     { coluna: "sincronizado_marketplace", rotulo: "Sincronizado no marketplace", valores: { "1": { texto: "Sim", cor: "verde" }, "0": { texto: "Não", cor: "cinza" } } },
@@ -607,11 +617,12 @@ const TELA_HUB_PEDIDOS: Tela = {
 const TELA_HUB_ITENS: Tela = {
   titulo: "Item do pedido HUB",
   subtitulo: [
-    { coluna: "order_id", rotulo: "Pedido" },
+    { coluna: "codigo_item", rotulo: "Item" },
+    { coluna: "nome", rotulo: "Nome" },
     { coluna: "dominio", rotulo: "Domínio" },
     { coluna: "anuncio_id", rotulo: "Anúncio" },
   ],
-  status: [{ coluna: "order_status", rotulo: "Status no marketplace", valores: { cancelled: { texto: "Cancelado", cor: "vermelho" } } }],
+  status: [{ coluna: "order_status", rotulo: "Status no marketplace", valores: STATUS_HUB_ITEM }],
   destaques: [
     { coluna: "quantidade", rotulo: "Quantidade" },
     { coluna: "valor_unitario", rotulo: "Valor unitário", formato: "moeda" },
@@ -1103,7 +1114,6 @@ export const PERFIS: Perfil[] = [
     colunasFixas: ["order_id"],
     colunaTitulo: "order_id",
     chave: "order_id",
-    destaque: { coluna: "order_id", rotulo: "Order ID" },
     graficoSugerido: { modo: "contagem", categoria: "status" },
     relacoes: [
       // o mesmo order_id pode existir em mais de um domínio (cliente) do HUB
@@ -1123,12 +1133,13 @@ export const PERFIS: Perfil[] = [
     tabela: "itens_pedidos",
     banco: "HUB",
     assinatura: ["order_id", "codigo_item", "anuncio_id"],
+    // status da venda logo no começo: na busca por item, cada linha é uma venda
     colunasPadrao: [
-      "order_id", "codigo_item", "nome", "quantidade", "valor_unitario", "taxa_venda",
-      "anuncio_id", "tipo_anuncio", "order_status", "ean",
+      "order_id", "order_status", "codigo_item", "quantidade", "valor_unitario", "taxa_venda",
+      "nome", "anuncio_id", "tipo_anuncio", "ean",
     ],
-    colunasFixas: ["codigo_item"],
-    colunaTitulo: "codigo_item",
+    colunasFixas: ["order_id"],
+    colunaTitulo: "order_id",
     chave: "id",
     totais: ["quantidade"],
     graficoSugerido: { modo: "soma", categoria: "codigo_item", valor: "quantidade" },
