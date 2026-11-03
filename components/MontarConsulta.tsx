@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { BUSCAS_RAPIDAS } from "@/config/perfis";
-import { identificarMarketplace, normalizarNumpok } from "@/lib/marketplace";
-import { montarConsulta, separarValores, temJoin } from "@/lib/montar";
+import { identificarMarketplace } from "@/lib/marketplace";
+import { conversaoDaBusca, montarConsulta, separarValores, temJoin } from "@/lib/montar";
 import { CodigoSql } from "./CodigoSql";
 import { IconeCopiar } from "./Icones";
 import { SeloMarketplace } from "./SeloMarketplace";
@@ -22,10 +22,11 @@ export function MontarConsulta() {
   const podeJoin = useMemo(() => temJoin(busca), [busca]);
   const valores = useMemo(() => separarValores(texto), [texto]);
   const sql = montarConsulta(busca, valores, podeJoin && comJoin);
-  // NUMPOK: mostra como cada número vai para o SQL (com o prefixo do marketplace)
+  // NUMPOK / order_id do HUB: mostra como cada número vai para o SQL (com ou sem o prefixo do marketplace)
   const convertidos = useMemo(() => {
-    if (!busca.prefixarMarketplace) return [];
-    return valores.map((v) => ({ original: v, final: normalizarNumpok(v) })).filter((c) => identificarMarketplace(c.final));
+    const converter = conversaoDaBusca(busca);
+    if (!converter) return [];
+    return valores.map((v) => ({ original: v, final: converter(v) })).filter((c) => identificarMarketplace(c.final));
   }, [busca, valores]);
 
   return (

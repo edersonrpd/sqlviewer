@@ -1,0 +1,2 @@
+"id"	"order_id"	"codigo_item"	"anuncio_id"	"dominio"	"variacao_id"	"nome"	"quantidade"	"valor_unitario"	"taxa_venda"	"tipo_anuncio"	"order_origem"	"order_status"	"tabela_preco"	"ean"	"loja_nome"	"descricao_variacao"	"frete_gratis"	"publicidade"	"md5_tintometrico"	"sigla_tintometrico"	"deposito_marketplace_codigo"	"deposito_codigo"
+"18723681"	"SHML48412293490"	"06377"	"MLB4973537904"	"ulitintas"	\N	"3 Rolos Antigota Pintura 321/9 Látex Acrílica Pva 9cm Atlas"	"2"	"0.02"	"0.00"	"Classic"	"2000019304991938"	"cancelled"	"Custo"	"1009003063776"	\N	\N	"0"	\N	\N	\N	\N	\N

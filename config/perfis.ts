@@ -486,6 +486,182 @@ const TELA_CADITE: Tela = {
   ],
 };
 
+/* HUBCitel – tabela `pedidos` (banco do HUB). Rótulos: ponto de partida a revisar. */
+const TELA_HUB_PEDIDOS: Tela = {
+  titulo: "Pedido HUB",
+  subtitulo: [
+    { coluna: "dominio", rotulo: "Domínio" },
+    { coluna: "origem_pedido", rotulo: "Origem" },
+    { coluna: "canal", rotulo: "Canal" },
+    { coluna: "data_pedido", rotulo: "Pedido em" },
+  ],
+  status: [
+    {
+      coluna: "status",
+      rotulo: "Status",
+      valores: { CanceledOrder: { texto: "Cancelado (CanceledOrder)", cor: "vermelho" } },
+    },
+    { coluna: "situacao", rotulo: "Situação" },
+    { coluna: "sincronizado_marketplace", rotulo: "Sincronizado no marketplace", valores: { "1": { texto: "Sim", cor: "verde" }, "0": { texto: "Não", cor: "cinza" } } },
+  ],
+  destaques: [
+    { coluna: "valor_total", rotulo: "Valor total", formato: "moeda" },
+    { coluna: "valor_itens", rotulo: "Itens", formato: "moeda" },
+    { coluna: "valor_frete", rotulo: "Frete", formato: "moeda" },
+    { coluna: "valor_total_liquido_receber", rotulo: "Líquido a receber", formato: "moeda" },
+  ],
+  secoes: [
+    {
+      titulo: "Identificação",
+      campos: [
+        { coluna: "order_id", rotulo: "Order ID" },
+        { coluna: "id_hub", rotulo: "ID no HUB" },
+        { coluna: "dominio", rotulo: "Domínio" },
+        { coluna: "order_id_marketplace", rotulo: "Order ID no marketplace" },
+        { coluna: "pack_id", rotulo: "Pack ID" },
+        { coluna: "shipping_id", rotulo: "Shipping ID" },
+        { coluna: "id_cliente", rotulo: "Cliente" },
+        { coluna: "tipo_pedido", rotulo: "Tipo de pedido" },
+        { coluna: "origem_pedido", rotulo: "Origem do pedido" },
+        { coluna: "origem_venda", rotulo: "Origem da venda" },
+        { coluna: "canal", rotulo: "Canal" },
+        { coluna: "status", rotulo: "Status" },
+        { coluna: "situacao", rotulo: "Situação" },
+        { coluna: "sincronizado_marketplace", rotulo: "Sincronizado no marketplace", valores: { "1": "Sim", "0": "Não" } },
+      ],
+    },
+    {
+      titulo: "Datas",
+      campos: [
+        { coluna: "data_pedido", rotulo: "Pedido" },
+        { coluna: "data_aprovacao", rotulo: "Aprovação" },
+        { coluna: "data_cadastro", rotulo: "Cadastro no HUB" },
+        { coluna: "data_ultima_integracao", rotulo: "Última integração" },
+        { coluna: "data_previsao_fat", rotulo: "Previsão de faturamento" },
+        { coluna: "data_disponivel_envio", rotulo: "Disponível para envio" },
+        { coluna: "data_limite_envio", rotulo: "Limite de envio" },
+        { coluna: "data_estimada_entrega_inicio", rotulo: "Entrega estimada (início)" },
+        { coluna: "data_estimada_entrega", rotulo: "Entrega estimada" },
+      ],
+    },
+    {
+      titulo: "Valores",
+      campos: [
+        { coluna: "valor_itens", rotulo: "Itens", formato: "moeda" },
+        { coluna: "valor_frete", rotulo: "Frete", formato: "moeda" },
+        { coluna: "valor_desconto", rotulo: "Desconto", formato: "moeda" },
+        { coluna: "valor_taxa", rotulo: "Taxa", formato: "moeda" },
+        { coluna: "valor_total", rotulo: "Total", formato: "moeda" },
+        { coluna: "valor_total_liquido_receber", rotulo: "Líquido a receber", formato: "moeda" },
+        { coluna: "valor_receber_debito", rotulo: "A receber (débito)", formato: "moeda" },
+        { coluna: "valor_frete_debito", rotulo: "Frete (débito)", formato: "moeda" },
+        { coluna: "custo_frete_flex", rotulo: "Custo do frete Flex", formato: "moeda" },
+        { coluna: "desconto_marketplace", rotulo: "Desconto do marketplace", formato: "moeda" },
+        { coluna: "desconto_frete_marketplace", rotulo: "Desconto de frete do marketplace", formato: "moeda" },
+        { coluna: "desconto_promocoes", rotulo: "Desconto de promoções", formato: "moeda" },
+        { coluna: "tipo_calculo", rotulo: "Tipo de cálculo" },
+      ],
+    },
+    {
+      titulo: "Envio e transporte",
+      campos: [
+        { coluna: "modo_entrega", rotulo: "Modo de entrega" },
+        { coluna: "tipo_envio", rotulo: "Tipo de envio" },
+        { coluna: "fulfillment", rotulo: "Fulfillment", valores: { "1": "Sim", "0": "Não" } },
+        { coluna: "id_servico", rotulo: "ID do serviço" },
+        { coluna: "nome_transportadora", rotulo: "Serviço / transportadora" },
+        { coluna: "transportadora_nome", rotulo: "Transportadora" },
+        { coluna: "cnpj_transportadora", rotulo: "CNPJ da transportadora" },
+        { coluna: "id_marketplace_transportadora", rotulo: "ID da transportadora no marketplace" },
+        { coluna: "tag_impressa", rotulo: "Etiqueta impressa", valores: { "1": "Sim", "0": "Não" } },
+        { coluna: "coleta_endereco_id_marketplace", rotulo: "Coleta – endereço (marketplace)" },
+        { coluna: "coleta_hora_id_marketplace", rotulo: "Coleta – horário (marketplace)" },
+        { coluna: "deposito_marketplace_codigo", rotulo: "Depósito no marketplace" },
+      ],
+    },
+    {
+      titulo: "Endereço de entrega",
+      campos: [
+        { coluna: "endereco_entrega", rotulo: "Endereço", largo: true },
+        { coluna: "numero_entrega", rotulo: "Número" },
+        { coluna: "complemento_entrega", rotulo: "Complemento" },
+        { coluna: "bairro_entrega", rotulo: "Bairro" },
+        { coluna: "cidade_entrega", rotulo: "Cidade" },
+        { coluna: "uf_entrega", rotulo: "UF" },
+        { coluna: "cep_entrega", rotulo: "CEP" },
+      ],
+    },
+    {
+      titulo: "Observações",
+      campos: [
+        { coluna: "observacao", rotulo: "Observação", largo: true },
+        { coluna: "observacao_complementar", rotulo: "Observação complementar", largo: true },
+      ],
+    },
+  ],
+};
+
+/* HUBCitel – tabela `itens_pedidos`. */
+const TELA_HUB_ITENS: Tela = {
+  titulo: "Item do pedido HUB",
+  subtitulo: [
+    { coluna: "order_id", rotulo: "Pedido" },
+    { coluna: "dominio", rotulo: "Domínio" },
+    { coluna: "anuncio_id", rotulo: "Anúncio" },
+  ],
+  status: [{ coluna: "order_status", rotulo: "Status no marketplace", valores: { cancelled: { texto: "Cancelado", cor: "vermelho" } } }],
+  destaques: [
+    { coluna: "quantidade", rotulo: "Quantidade" },
+    { coluna: "valor_unitario", rotulo: "Valor unitário", formato: "moeda" },
+    { coluna: "taxa_venda", rotulo: "Taxa de venda", formato: "moeda" },
+  ],
+  secoes: [
+    {
+      titulo: "Item",
+      campos: [
+        { coluna: "codigo_item", rotulo: "Código do item (SKU)" },
+        { coluna: "nome", rotulo: "Nome", largo: true },
+        { coluna: "ean", rotulo: "EAN" },
+        { coluna: "quantidade", rotulo: "Quantidade" },
+        { coluna: "valor_unitario", rotulo: "Valor unitário", formato: "moeda" },
+        { coluna: "taxa_venda", rotulo: "Taxa de venda", formato: "moeda" },
+        { coluna: "tabela_preco", rotulo: "Tabela de preço" },
+        { coluna: "descricao_variacao", rotulo: "Variação", largo: true },
+        { coluna: "variacao_id", rotulo: "ID da variação" },
+      ],
+    },
+    {
+      titulo: "Anúncio",
+      campos: [
+        { coluna: "anuncio_id", rotulo: "Anúncio" },
+        { coluna: "tipo_anuncio", rotulo: "Tipo de anúncio" },
+        { coluna: "loja_nome", rotulo: "Loja" },
+        { coluna: "frete_gratis", rotulo: "Frete grátis", valores: { "1": "Sim", "0": "Não" } },
+        { coluna: "publicidade", rotulo: "Publicidade" },
+      ],
+    },
+    {
+      titulo: "Pedido",
+      campos: [
+        { coluna: "order_id", rotulo: "Order ID" },
+        { coluna: "dominio", rotulo: "Domínio" },
+        { coluna: "order_origem", rotulo: "Pedido de origem (marketplace)" },
+        { coluna: "order_status", rotulo: "Status no marketplace" },
+        { coluna: "id", rotulo: "ID do item" },
+      ],
+    },
+    {
+      titulo: "Tintométrico e depósito",
+      campos: [
+        { coluna: "md5_tintometrico", rotulo: "MD5 tintométrico" },
+        { coluna: "sigla_tintometrico", rotulo: "Sigla tintométrico" },
+        { coluna: "deposito_marketplace_codigo", rotulo: "Depósito no marketplace" },
+        { coluna: "deposito_codigo", rotulo: "Depósito" },
+      ],
+    },
+  ],
+};
+
 /** Buscas da tela "Nova consulta": monta o SELECT (ou o JOIN) a partir de um número. */
 export type BuscaRapida = {
   id: string;
@@ -495,6 +671,8 @@ export type BuscaRapida = {
   exemplo: string;
   /** acrescenta o prefixo do marketplace ao número digitado (SHML… → MLB_SHML…), ver lib/marketplace.ts */
   prefixarMarketplace?: boolean;
+  /** tira o prefixo do marketplace do número digitado (MLB_SHML… → SHML…), ex.: order_id do HUBCitel */
+  removerPrefixoMarketplace?: boolean;
 };
 
 // a primeira é a opção inicial do "Montar consulta"
@@ -508,6 +686,8 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   { id: "item", rotulo: "Item – código (CADITE)", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
   { id: "itebar", rotulo: "Item – código de barras", perfil: "CADITE", coluna: "ITE_CODBAR", exemplo: "7891252071268" },
   { id: "itefab", rotulo: "Item – código do fabricante", perfil: "CADITE", coluna: "ITE_CODFAB", exemplo: "7126" },
+  // HUBCitel: o order_id fica sem o prefixo do marketplace (MLB_SHML… → SHML…)
+  { id: "hubpedido", rotulo: "HUBCitel – Pedido (order_id)", perfil: "HUB_PEDIDOS", coluna: "order_id", exemplo: "SHML48412293490", removerPrefixoMarketplace: true },
 ];
 
 /**
@@ -885,5 +1065,50 @@ export const PERFIS: Perfil[] = [
     graficoSugerido: { modo: "contagem", categoria: "ITE_CODGRU" },
     rotulosInversos: { FATDOR: "Pedidos com o item" },
     tela: TELA_CADITE,
+  },
+  {
+    // HUBCitel (banco do HUB, não do ERP): cabeçalho do pedido, pelo order_id sem prefixo
+    id: "HUB_PEDIDOS",
+    nome: "HUBCitel – Pedido",
+    tabela: "pedidos",
+    assinatura: ["id_hub", "order_id", "valor_total_liquido_receber"],
+    colunasPadrao: [
+      "order_id", "dominio", "status", "situacao", "data_pedido", "origem_pedido", "canal",
+      "valor_itens", "valor_frete", "valor_total", "valor_total_liquido_receber", "modo_entrega",
+      "transportadora_nome", "data_limite_envio",
+    ],
+    colunasFixas: ["order_id"],
+    colunaTitulo: "order_id",
+    chave: "order_id",
+    destaque: { coluna: "order_id", rotulo: "Order ID" },
+    graficoSugerido: { modo: "contagem", categoria: "status" },
+    relacoes: [
+      // o mesmo order_id pode existir em mais de um domínio (cliente) do HUB
+      {
+        perfil: "HUB_ITENS_PEDIDOS",
+        colunaOrigem: "order_id",
+        colunaDestino: "order_id",
+        extras: [{ origem: "dominio", destino: "dominio" }],
+        rotulo: "Itens do pedido",
+      },
+    ],
+    tela: TELA_HUB_PEDIDOS,
+  },
+  {
+    id: "HUB_ITENS_PEDIDOS",
+    nome: "HUBCitel – Itens do pedido",
+    tabela: "itens_pedidos",
+    assinatura: ["order_id", "codigo_item", "anuncio_id"],
+    colunasPadrao: [
+      "order_id", "codigo_item", "nome", "quantidade", "valor_unitario", "taxa_venda",
+      "anuncio_id", "tipo_anuncio", "order_status", "ean",
+    ],
+    colunasFixas: ["codigo_item"],
+    colunaTitulo: "codigo_item",
+    chave: "id",
+    totais: ["quantidade"],
+    graficoSugerido: { modo: "soma", categoria: "codigo_item", valor: "quantidade" },
+    rotulosInversos: { HUB_PEDIDOS: "Pedido (cabeçalho)" },
+    tela: TELA_HUB_ITENS,
   },
 ];

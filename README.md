@@ -117,7 +117,9 @@ devolve achados. Para criar uma regra nova, copie uma existente e acrescente um 
 
 - **Montar consulta** (tela "Nova consulta"): escolha o tipo (pedido por nº documento,
   NUMPOK, NF ou AUTOINCREM; NF-e; item por código, código de barras ou código do
-  fabricante), digite um ou vários valores e copie o `SELECT` — ou o JOIN completo, com
+  fabricante; **HUBCitel – Pedido** pelo `order_id`, que traz a tabela `pedidos` e os
+  `itens_pedidos` do HUB — o prefixo do marketplace é retirado, então `MLB_SHML…` vira
+  `SHML…`), digite um ou vários valores e copie o `SELECT` — ou o JOIN completo, com
   as tabelas relacionadas. Os tipos ficam em `BUSCAS_RAPIDAS`, em `config/perfis.ts`.
 - **Comparar**: marque 2 linhas na tabela e clique em **Comparar** para ver só as colunas
   que diferem (com o rótulo da Tela ao lado do nome técnico).
