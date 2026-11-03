@@ -19,7 +19,7 @@ export function buscaRapida(id: string): BuscaRapida | undefined {
 
 /** A busca tem JOIN disponível (o perfil tem relações)? */
 export function temJoin(b: BuscaRapida): boolean {
-  return sqlJoinPor(b.perfil, b.coluna, ["x"]) !== null;
+  return sqlJoinPor(b.perfil, b.coluna, ["x"], undefined, [], [], b.joins) !== null;
 }
 
 /**
@@ -31,7 +31,7 @@ export function montarConsulta(b: BuscaRapida, valores: string[], comJoin: boole
   valores = valoresDaBusca(b, valores);
   const filtros = b.filtroExtra ? [{ coluna: b.filtroExtra.coluna, valores: extras }] : [];
   if (comJoin) {
-    const sql = sqlJoinPor(b.perfil, b.coluna, valores, undefined, filtros, b.copiarColunas);
+    const sql = sqlJoinPor(b.perfil, b.coluna, valores, undefined, filtros, b.copiarColunas, b.joins);
     if (sql) return sql;
   }
   const tabela = buscarPerfil(b.perfil)?.tabela ?? b.perfil;

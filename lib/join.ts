@@ -1,4 +1,4 @@
-import type { Perfil } from "@/config/perfis";
+import type { Perfil, Relacao } from "@/config/perfis";
 import { inferirTipo } from "./parser";
 import { buscarPerfil, chaveRelacao, ligacoesDoPerfil } from "./perfis";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
@@ -70,10 +70,15 @@ export function sqlJoinPor(
   existe: (coluna: string) => boolean = () => true,
   filtros: FiltroExtra[] = [],
   copiar: ColunasCopiadas[] = [],
+  /** ligações fixas no lugar das relações do perfil (sem descer um nível) */
+  fixas?: Relacao[],
 ): string | null {
   const perfil = buscarPerfil(perfilId);
   if (!perfil || valores.length === 0) return null;
-  const ligacoes = ligacoesDoPerfil(perfil.id)
+  const todas = fixas
+    ? fixas.map((r) => ({ perfilDestino: r.perfil, colunaOrigem: r.colunaOrigem, colunaDestino: r.colunaDestino, extras: r.extras ?? [], rotulo: r.rotulo }))
+    : ligacoesDoPerfil(perfil.id);
+  const ligacoes = todas
     .filter((l) => existe(l.colunaOrigem))
     .map((l) => ({ ...l, extras: l.extras.filter((e) => existe(e.origem)) }));
   if (ligacoes.length === 0) return null;
@@ -104,7 +109,7 @@ export function sqlJoinPor(
     const a = juntar(l.perfilDestino, l.colunaDestino, "t0", l.colunaOrigem, l.extras);
     // desce um nível pelas relações declaradas na tabela ligada (ex.: FATGOR → FATDOR → CADITE);
     // só quando a ligação também desce, para não subir de volta e puxar tudo do pai
-    if (!perfil.relacoes?.some((r) => r.perfil === l.perfilDestino)) return;
+    if (fixas || !perfil.relacoes?.some((r) => r.perfil === l.perfilDestino)) return;
     for (const r of buscarPerfil(l.perfilDestino)?.relacoes ?? []) {
       if (incluidos.has(r.perfil)) continue;
       incluidos.add(r.perfil);
