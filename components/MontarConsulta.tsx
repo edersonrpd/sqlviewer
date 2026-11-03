@@ -10,6 +10,9 @@ import { IconeCopiar } from "./Icones";
 import { SeloMarketplace } from "./SeloMarketplace";
 import { copiarTexto, useAviso } from "./util";
 
+// grupos do menu, na ordem em que aparecem nas buscas
+const GRUPOS = [...new Set(BUSCAS_RAPIDAS.map((b) => b.grupo))];
+
 /** Gera o SELECT (ou o JOIN completo) a partir de um ou mais números, para rodar no MySQL e colar o resultado. */
 export function MontarConsulta() {
   const [id, setId] = useState(BUSCAS_RAPIDAS[0].id);
@@ -42,10 +45,14 @@ export function MontarConsulta() {
           Montar consulta
         </h3>
         <select className="campo" value={id} onChange={(e) => setId(e.target.value)} aria-label="Tipo de busca">
-          {BUSCAS_RAPIDAS.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.rotulo}
-            </option>
+          {GRUPOS.map((g) => (
+            <optgroup key={g} label={g}>
+              {BUSCAS_RAPIDAS.filter((b) => b.grupo === g).map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.rotulo}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <input

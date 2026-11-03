@@ -685,6 +685,8 @@ const TELA_HUB_ITENS: Tela = {
 /** Buscas da tela "Nova consulta": monta o SELECT (ou o JOIN) a partir de um número. */
 export type BuscaRapida = {
   id: string;
+  /** grupo no menu do "Montar consulta" (ex.: "Autcom", "HUB") */
+  grupo: string;
   rotulo: string;
   perfil: string;
   coluna: string;
@@ -704,31 +706,30 @@ export type BuscaRapida = {
   joins?: Relacao[];
 };
 
-// a primeira é a opção inicial do "Montar consulta"
+// a primeira é a opção inicial do "Montar consulta"; no menu, agrupadas por `grupo`, nesta ordem
 export const BUSCAS_RAPIDAS: BuscaRapida[] = [
-  { id: "numpok", rotulo: "Pedido – NUMPOK", perfil: "FATGOR", coluna: "FGO_NUMPOK", exemplo: "SHML48393430410", prefixarMarketplace: true },
-  { id: "pedido", rotulo: "Pedido – nº documento", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001" },
-  { id: "nf", rotulo: "Pedido – nº da NF (fatura)", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684" },
-  { id: "autoincrem", rotulo: "Pedido – AUTOINCREM", perfil: "FATGOR", coluna: "AUTOINCREM", exemplo: "00100000000000001001" },
-  { id: "fataut", rotulo: "Faturamento automático – nº documento (FATAUT)", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818" },
-  { id: "nfe", rotulo: "NF-e – nº documento (LOGNFE)", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684" },
+  { id: "numpok", grupo: "Autcom", rotulo: "Pedido – NUMPOK", perfil: "FATGOR", coluna: "FGO_NUMPOK", exemplo: "SHML48393430410", prefixarMarketplace: true },
+  { id: "pedido", grupo: "Autcom", rotulo: "Pedido – NUMDOC", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001" },
+  { id: "nf", grupo: "Autcom", rotulo: "Pedido – NUMFAT", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684" },
   // pedidos em que o item aparece (CADITE → FATDOR)
-  { id: "item", rotulo: "Pedido – Produto (CADITE)", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
+  { id: "item", grupo: "Autcom", rotulo: "Pedido – CADITE", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
+  { id: "fataut", grupo: "Autcom", rotulo: "FATAUT – NUMDOC", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818" },
+  { id: "nfe", grupo: "Autcom", rotulo: "LOGNFE – NUMDOC", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684" },
   // cadastro do produto com as tabelas de cadastro ligadas (marca…)
   {
     id: "produto",
-    rotulo: "Produto (CADITE)",
+    grupo: "Autcom",
+    rotulo: "Produto – CADITE",
     perfil: "CADITE",
     coluna: "ITE_CODITE",
     exemplo: "00004",
     joins: [{ perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" }],
   },
-  { id: "itebar", rotulo: "Item – código de barras", perfil: "CADITE", coluna: "ITE_CODBAR", exemplo: "7891252071268" },
-  { id: "itefab", rotulo: "Item – código do fabricante", perfil: "CADITE", coluna: "ITE_CODFAB", exemplo: "7126" },
   // HUBCitel: o order_id fica sem o prefixo do marketplace (MLB_SHML… → SHML…)
   // o banco do HUB tem todos os clientes, separados por domínio
   {
     id: "hubpedido",
+    grupo: "HUB",
     rotulo: "HUBCitel – Pedido (order_id)",
     perfil: "HUB_PEDIDOS",
     coluna: "order_id",
@@ -739,6 +740,7 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   // itens vendidos de um cliente, com o cabeçalho do pedido (como FATDOR + FATGOR)
   {
     id: "hubitem",
+    grupo: "HUB",
     rotulo: "HUBCitel – Itens vendidos (código do item)",
     perfil: "HUB_ITENS_PEDIDOS",
     coluna: "codigo_item",
