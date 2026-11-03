@@ -79,6 +79,7 @@ describe("HUBCitel – filtro por domínio", () => {
     expect(montarConsulta(b("hubitem"), ["06377", "06378"], true, ["ulitintas"])).toBe(
       [
         "SELECT '' AS `>>HUB_ITENS_PEDIDOS`, t0.*,",
+        "       t1.data_pedido, t1.status AS status_pedido, t1.valor_total AS valor_total_pedido,",
         "       '' AS `>>HUB_PEDIDOS`, t1.*",
         "  FROM itens_pedidos t0",
         "  LEFT JOIN pedidos t1\n       ON t1.order_id = t0.order_id AND t0.order_id <> ''\n      AND t1.dominio = t0.dominio",
@@ -110,9 +111,23 @@ describe("HUBCitel – resultado do JOIN de itens vendidos", () => {
     expect(r.detalhe).toBe("06377 · 7");
   });
 
+  it("a aba de itens traz data, status e total do pedido para filtrar por data", () => {
+    const itens = partes[0].dados;
+    const col = (n: string) => itens.colunas.find((c) => c.nome === n);
+    expect(col("data_pedido")?.tipo).toBe("datahora");
+    expect(col("status_pedido")).toBeDefined();
+    expect(col("valor_total_pedido")?.tipo).toBe("decimal");
+    // continua sendo o perfil de itens (a aba do cabeçalho abre separada)
+    expect(detectarPerfil(itens.colunas.map((c) => c.nome))).toMatchObject({ perfil: { id: "HUB_ITENS_PEDIDOS" } });
+    expect(partes[1].dados.colunas).toHaveLength(57);
+  });
+
   it("status com cor", () => {
     const t = montarTela(partes[0].dados, 1, buscarPerfil("HUB_ITENS_PEDIDOS"));
-    expect(t.status).toEqual([expect.objectContaining({ texto: "Cancelado (cancelled)", cor: "vermelho" })]);
+    expect(t.status).toEqual([
+      expect.objectContaining({ texto: "Cancelado (cancelled)", cor: "vermelho" }),
+      expect.objectContaining({ texto: "Cancelado (CanceledOrder)", cor: "vermelho" }),
+    ]);
     const p = montarTela(partes[1].dados, 0, buscarPerfil("HUB_PEDIDOS"));
     expect(p.status[0]).toEqual(expect.objectContaining({ texto: "Pago (paid)", cor: "verde" }));
   });

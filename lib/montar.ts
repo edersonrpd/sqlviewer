@@ -31,7 +31,7 @@ export function montarConsulta(b: BuscaRapida, valores: string[], comJoin: boole
   valores = valoresDaBusca(b, valores);
   const filtros = b.filtroExtra ? [{ coluna: b.filtroExtra.coluna, valores: extras }] : [];
   if (comJoin) {
-    const sql = sqlJoinPor(b.perfil, b.coluna, valores, undefined, filtros);
+    const sql = sqlJoinPor(b.perfil, b.coluna, valores, undefined, filtros, b.copiarColunas);
     if (sql) return sql;
   }
   const tabela = buscarPerfil(b.perfil)?.tabela ?? b.perfil;

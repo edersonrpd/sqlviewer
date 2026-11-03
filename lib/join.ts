@@ -26,6 +26,12 @@ export function condicaoValores(valores: string[]): string {
   return valores.length === 1 ? `= ${literal(valores[0])}` : `IN (${valores.map(literal).join(", ")})`;
 }
 
+/**
+ * Colunas de uma tabela ligada que também entram junto da tabela principal no JOIN
+ * (ex.: data do pedido na aba de itens, para filtrar e ordenar ali mesmo).
+ */
+export type ColunasCopiadas = { perfil: string; colunas: { coluna: string; alias?: string }[] };
+
 /** Filtro a mais no WHERE da tabela principal (ex.: domínio do cliente no HUB). */
 export type FiltroExtra = { coluna: string; valores: string[] };
 
@@ -63,6 +69,7 @@ export function sqlJoinPor(
   valores: string[],
   existe: (coluna: string) => boolean = () => true,
   filtros: FiltroExtra[] = [],
+  copiar: ColunasCopiadas[] = [],
 ): string | null {
   const perfil = buscarPerfil(perfilId);
   if (!perfil || valores.length === 0) return null;
@@ -73,6 +80,7 @@ export function sqlJoinPor(
 
   const selects = [`'' AS \`${PREFIXO_MARCADOR}${perfil.id}\`, t0.*`];
   const joins: string[] = [];
+  const aliases = new Map<string, string>();
   const incluidos = new Set([perfil.id, ...ligacoes.map((l) => l.perfilDestino)]);
   const juntar = (
     destinoId: string,
@@ -82,6 +90,7 @@ export function sqlJoinPor(
     extras: { origem: string; destino: string }[] = [],
   ) => {
     const a = `t${joins.length + 1}`;
+    aliases.set(destinoId, a);
     selects.push(`'' AS \`${PREFIXO_MARCADOR}${destinoId}\`, ${a}.*`);
     // a condição "<> ''" evita ligar registros pela chave vazia (ex.: pedido sem NUMPOK);
     // numa chave composta, as demais colunas também precisam ser iguais
@@ -102,6 +111,13 @@ export function sqlJoinPor(
       juntar(r.perfil, r.colunaDestino, a, r.colunaOrigem, r.extras);
     }
   });
+
+  // colunas da tabela ligada repetidas junto da principal (ficam na mesma aba ao separar)
+  const copiadas = copiar.flatMap((c) => {
+    const a = aliases.get(c.perfil);
+    return a ? c.colunas.map((x) => `${a}.${x.coluna}${x.alias ? ` AS ${x.alias}` : ""}`) : [];
+  });
+  if (copiadas.length) selects[0] += `,\n       ${copiadas.join(", ")}`;
 
   return [
     `SELECT ${selects.join(",\n       ")}`,

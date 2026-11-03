@@ -622,7 +622,11 @@ const TELA_HUB_ITENS: Tela = {
     { coluna: "dominio", rotulo: "Domínio" },
     { coluna: "anuncio_id", rotulo: "Anúncio" },
   ],
-  status: [{ coluna: "order_status", rotulo: "Status no marketplace", valores: STATUS_HUB_ITEM }],
+  status: [
+    { coluna: "order_status", rotulo: "Status no marketplace", valores: STATUS_HUB_ITEM },
+    // vem só na busca de itens vendidos (copiado do cabeçalho)
+    { coluna: "status_pedido", rotulo: "Status do pedido", valores: STATUS_HUB_PEDIDO },
+  ],
   destaques: [
     { coluna: "quantidade", rotulo: "Quantidade" },
     { coluna: "valor_unitario", rotulo: "Valor unitário", formato: "moeda" },
@@ -660,6 +664,9 @@ const TELA_HUB_ITENS: Tela = {
         { coluna: "dominio", rotulo: "Domínio" },
         { coluna: "order_origem", rotulo: "Pedido de origem (marketplace)" },
         { coluna: "order_status", rotulo: "Status no marketplace" },
+        { coluna: "data_pedido", rotulo: "Data do pedido" },
+        { coluna: "status_pedido", rotulo: "Status do pedido" },
+        { coluna: "valor_total_pedido", rotulo: "Valor total do pedido", formato: "moeda" },
         { coluna: "id", rotulo: "ID do item" },
       ],
     },
@@ -688,6 +695,8 @@ export type BuscaRapida = {
   removerPrefixoMarketplace?: boolean;
   /** segundo campo, opcional, que entra no WHERE com AND (ex.: domínio do cliente no HUB) */
   filtroExtra?: { coluna: string; rotulo: string; exemplo: string };
+  /** no JOIN, colunas da tabela ligada repetidas na aba da principal (para filtrar/ordenar ali) */
+  copiarColunas?: { perfil: string; colunas: { coluna: string; alias?: string }[] }[];
 };
 
 // a primeira é a opção inicial do "Montar consulta"
@@ -720,6 +729,17 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
     coluna: "codigo_item",
     exemplo: "06377",
     filtroExtra: { coluna: "dominio", rotulo: "Domínio", exemplo: "ulitintas" },
+    // data e situação do pedido também na aba de itens, para filtrar as vendas por data
+    copiarColunas: [
+      {
+        perfil: "HUB_PEDIDOS",
+        colunas: [
+          { coluna: "data_pedido" },
+          { coluna: "status", alias: "status_pedido" },
+          { coluna: "valor_total", alias: "valor_total_pedido" },
+        ],
+      },
+    ],
   },
 ];
 
@@ -1135,8 +1155,8 @@ export const PERFIS: Perfil[] = [
     assinatura: ["order_id", "codigo_item", "anuncio_id"],
     // status da venda logo no começo: na busca por item, cada linha é uma venda
     colunasPadrao: [
-      "order_id", "order_status", "codigo_item", "quantidade", "valor_unitario", "taxa_venda",
-      "nome", "anuncio_id", "tipo_anuncio", "ean",
+      "order_id", "data_pedido", "status_pedido", "order_status", "codigo_item", "quantidade",
+      "valor_unitario", "taxa_venda", "valor_total_pedido", "nome", "anuncio_id", "tipo_anuncio", "ean",
     ],
     colunasFixas: ["order_id"],
     colunaTitulo: "order_id",
