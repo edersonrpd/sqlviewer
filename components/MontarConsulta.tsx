@@ -28,7 +28,7 @@ export function MontarConsulta() {
   // tabelas de outro banco (ex.: HUB): o SQL não roda no banco do ERP
   const banco = buscarPerfil(busca.perfil)?.banco;
   const podeJoin = useMemo(() => temJoin(busca), [busca]);
-  const valores = useMemo(() => separarValores(texto), [texto]);
+  const valores = useMemo(() => separarValores(texto, busca.separarSoPorVirgula), [texto, busca.separarSoPorVirgula]);
   const extras = useMemo(() => separarValores(textoExtra), [textoExtra]);
   const sql = montarConsulta(busca, valores, podeJoin && comJoin, extras);
   // NUMPOK / order_id do HUB: mostra como cada número vai para o SQL (com ou sem o prefixo do marketplace)

@@ -873,6 +873,8 @@ export type BuscaRapida = {
   prefixarMarketplace?: boolean;
   /** tira o prefixo do marketplace do número digitado (MLB_SHML… → SHML…), ex.: order_id do HUBCitel */
   removerPrefixoMarketplace?: boolean;
+  /** valores separados só por vírgula/ponto e vírgula/linha, não por espaço (ex.: nome de marca "MOTUL BRASIL") */
+  separarSoPorVirgula?: boolean;
   /** segundo campo, opcional, que entra no WHERE com AND (ex.: domínio do cliente no HUB) */
   filtroExtra?: { coluna: string; rotulo: string; exemplo: string };
   /** no JOIN, colunas da tabela ligada repetidas na aba da principal (para filtrar/ordenar ali) */
@@ -907,6 +909,17 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
     ],
     // medidas da DESSIT também na aba do item, ao lado do peso (ITE_PESLIQ)
     copiarColunas: [{ perfil: "DESSIT", colunas: [{ coluna: "ITE_EXPALT" }, { coluna: "ITE_EXPLAR" }, { coluna: "ITE_EXPPRO" }] }],
+  },
+  // todos os produtos de uma marca, pelo nome (CADMAR → CADITE)
+  {
+    id: "marca",
+    grupo: "Autcom",
+    rotulo: "Produto – MARCA",
+    perfil: "CADMAR",
+    coluna: "MAR_DESMAR",
+    exemplo: "NAKATA",
+    separarSoPorVirgula: true,
+    joins: [{ perfil: "CADITE", colunaOrigem: "MAR_CODMAR", colunaDestino: "ITE_CODMAR", rotulo: "Itens da marca" }],
   },
   // HUBCitel: o order_id fica sem o prefixo do marketplace (MLB_SHML… → SHML…)
   // o banco do HUB tem todos os clientes, separados por domínio

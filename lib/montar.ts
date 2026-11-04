@@ -3,10 +3,13 @@ import { condicaoValores, condicoesExtras, sqlJoinPor } from "./join";
 import { normalizarNumpok, removerPrefixoMarketplace } from "./marketplace";
 import { buscarPerfil } from "./perfis";
 
-/** Separa os valores digitados/colados (vírgula, ponto e vírgula, espaço ou quebra de linha), sem aspas e sem repetição. */
-export function separarValores(texto: string): string[] {
+/**
+ * Separa os valores digitados/colados (vírgula, ponto e vírgula, espaço ou quebra de linha), sem aspas e sem repetição.
+ * `soVirgula`: espaço faz parte do valor (ex.: nome de marca com espaço).
+ */
+export function separarValores(texto: string, soVirgula = false): string[] {
   const vistos = new Set<string>();
-  for (const bruto of texto.split(/[\s,;]+/)) {
+  for (const bruto of texto.split(soVirgula ? /\s*[,;\n\r]+\s*/ : /[\s,;]+/)) {
     const v = bruto.replace(/^['"]+|['"]+$/g, "").trim();
     if (v) vistos.add(v);
   }
