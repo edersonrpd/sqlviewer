@@ -75,6 +75,10 @@ describe("montar consulta", () => {
     expect(sql.match(/>>\w+/g)).toEqual([">>CADMAR", ">>CADITE"]);
     expect(sql).toContain("LEFT JOIN CADITE t1\n       ON t1.ITE_CODMAR = t0.MAR_CODMAR AND t0.MAR_CODMAR <> ''");
     expect(sql.endsWith(" WHERE t0.MAR_DESMAR IN ('NAKATA', 'MOTUL BRASIL');")).toBe(true);
+    // nome da marca também na aba dos itens
+    expect(sql).toContain("'' AS `>>CADITE`, t1.*,\n       t0.MAR_DESMAR\n");
+    // várias marcas coladas uma por linha (ex.: coluna do Excel)
+    expect(separarValores("NAKATA\r\nMOTUL BRASIL\n\nCONTROIL\n", true)).toEqual(["NAKATA", "MOTUL BRASIL", "CONTROIL"]);
     expect(montarConsulta(b, ["NAKATA"], false)).toBe("SELECT * FROM CADMAR WHERE MAR_DESMAR = 'NAKATA';");
   });
 

@@ -59,7 +59,20 @@ export function MontarConsulta() {
           className="campo min-w-56 flex-1 font-mono"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder={`${busca.exemplo} (vários: separe por vírgula)`}
+          // colar uma coluna (Excel/MySQL): o campo de uma linha descartaria as quebras de linha e
+          // grudaria os valores (ex.: marcas com espaço); vira lista separada por vírgula
+          onPaste={(e) => {
+            const colado = e.clipboardData.getData("text");
+            if (!/[\r\n]/.test(colado)) return;
+            e.preventDefault();
+            const lista = colado.split(/[\r\n]+/).map((v) => v.trim()).filter(Boolean).join(", ");
+            const el = e.currentTarget;
+            const ini = el.selectionStart ?? texto.length;
+            const fim = el.selectionEnd ?? texto.length;
+            const antes = texto.slice(0, ini);
+            setTexto(`${antes}${antes.trim() && !/[,;]\s*$/.test(antes) ? ", " : ""}${lista}${texto.slice(fim)}`);
+          }}
+          placeholder={`${busca.exemplo} (vários: separe por vírgula ou cole uma coluna)`}
           aria-label="Valores"
         />
         {busca.filtroExtra && (
@@ -102,6 +115,20 @@ export function MontarConsulta() {
         )}
         {aviso && <span className="text-xs text-emerald-600">{aviso}</span>}
       </div>
+      {/* valores com espaço (ex.: marcas): mostra como o texto foi separado */}
+      {busca.separarSoPorVirgula && valores.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Valores da busca">
+          {valores.slice(0, 30).map((v) => (
+            <li
+              key={v}
+              className="inline-flex animate-surgir items-center rounded-full border border-zinc-200 bg-white/70 px-2.5 py-0.5 font-mono text-xs font-semibold dark:border-white/10 dark:bg-white/5"
+            >
+              {v}
+            </li>
+          ))}
+          {valores.length > 30 && <li className="self-center text-xs text-zinc-500">+{valores.length - 30}</li>}
+        </ul>
+      )}
       {convertidos.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="NUMPOK identificados">
           {convertidos.slice(0, 8).map((c) => (
