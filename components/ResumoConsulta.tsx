@@ -11,7 +11,8 @@ const ORDEM_TIPOS: TipoColuna[] = ["texto", "decimal", "inteiro", "data", "datah
 
 export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerfil: (perfilId: string | null) => void }) {
   const { dados, deteccao } = aba;
-  const [aberto, setAberto] = useState(dados.avisos.length > 0 || deteccao.tipo === "combinada");
+  // o aviso de "separada do JOIN" é só informativo: não abre o painel sozinho (ocupa espaço da grade)
+  const [aberto, setAberto] = useState(dados.avisos.some((a) => a.tipo !== "separacao") || deteccao.tipo === "combinada");
   const [tipoAberto, setTipoAberto] = useState<TipoColuna | null>(null);
 
   const porTipo = new Map<TipoColuna, string[]>();
@@ -28,18 +29,19 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
   const qtdAvisos = dados.avisos.length + (deteccao.tipo === "combinada" ? 1 : 0);
 
   const cartao =
-    "rounded-[14px] border border-zinc-900/[0.08] bg-gradient-to-b from-white/90 to-white/60 px-4 py-3 backdrop-blur-md dark:border-white/[0.08] dark:from-white/[0.05] dark:to-white/[0.015] [@media(max-height:760px)]:py-2";
-  const valorCartao = "mt-1 font-mono text-2xl leading-tight font-semibold tabular-nums [@media(max-height:760px)]:mt-0 [@media(max-height:760px)]:text-lg";
+    "rounded-[14px] border border-zinc-900/[0.08] bg-gradient-to-b from-white/90 to-white/60 px-4 py-3 backdrop-blur-md dark:border-white/[0.08] dark:from-white/[0.05] dark:to-white/[0.015] baixa:flex baixa:items-baseline baixa:gap-2 baixa:py-1.5";
+  // em telas baixas, rótulo e valor na mesma linha
+  const valorCartao = "mt-1 font-mono text-2xl leading-tight font-semibold tabular-nums baixa:mt-0 baixa:text-base";
 
   return (
-    <section className="relative z-10 animate-[aparecer_0.3s_ease-out_both] px-3 pt-4 text-sm sm:px-5 [@media(max-height:760px)]:pt-2">
-      <div className="flex flex-wrap gap-3 [@media(max-height:760px)]:gap-2">
-        <div className={`${cartao} flex-[1_1_150px] animate-subir`}>
+    <section className="relative z-10 animate-[aparecer_0.3s_ease-out_both] px-3 pt-4 text-sm sm:px-5 baixa:pt-2">
+      <div className="flex flex-wrap gap-3 baixa:gap-2">
+        <div className={`${cartao} flex-[1_1_150px] animate-subir baixa:flex-[0_1_160px]`}>
           <div className="text-xs text-zinc-500 dark:text-[#8b92a5]">Linhas</div>
           <div className={valorCartao}>{dados.linhas.length.toLocaleString("pt-BR")}</div>
         </div>
         <button
-          className={`${cartao} flex-[1_1_150px] animate-subir text-left transition duration-200 [animation-delay:60ms] hover:-translate-y-px hover:border-zinc-900/15 dark:hover:border-white/20`}
+          className={`${cartao} flex-[1_1_150px] animate-subir text-left baixa:flex-[0_1_160px] transition duration-200 [animation-delay:60ms] hover:-translate-y-px hover:border-zinc-900/15 dark:hover:border-white/20`}
           onClick={() => setAberto(!aberto)}
           aria-expanded={aberto}
           title="Ver os tipos detectados"
@@ -52,23 +54,23 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
         </button>
 
         <div
-          className={`flex flex-[2_1_320px] animate-subir flex-wrap items-center gap-3 rounded-[14px] border px-4 py-3 [animation-delay:120ms] [@media(max-height:760px)]:py-2 ${
+          className={`flex flex-[2_1_320px] animate-subir flex-wrap items-center gap-3 rounded-[14px] border px-4 py-3 [animation-delay:120ms] baixa:flex-nowrap baixa:gap-2 baixa:py-1 ${
             perfil
               ? "border-emerald-300/70 bg-gradient-to-b from-emerald-50 to-emerald-50/40 dark:border-emerald-400/25 dark:from-emerald-400/10 dark:to-emerald-400/[0.02]"
               : "border-zinc-900/[0.08] bg-white/70 dark:border-white/[0.08] dark:bg-white/[0.03]"
           }`}
           title={perfil && detectadoId !== perfil.id ? "Perfil escolhido manualmente" : "Perfil detectado pelas colunas"}
         >
-          <div className="min-w-0">
-            <div className={`text-xs ${perfil ? "text-emerald-700 dark:text-emerald-300" : "text-zinc-500 dark:text-[#8b92a5]"}`}>
+          <div className="min-w-0 baixa:flex baixa:flex-1 baixa:items-baseline baixa:gap-2">
+            <div className={`shrink-0 text-xs ${perfil ? "text-emerald-700 dark:text-emerald-300" : "text-zinc-500 dark:text-[#8b92a5]"}`}>
               {perfil ? (detectadoId === perfil.id ? "Perfil detectado" : "Perfil escolhido") : "Perfil"}
             </div>
-            <div className="mt-1 truncate text-base font-semibold [@media(max-height:760px)]:mt-0">{badge}</div>
+            <div className="mt-1 truncate text-base font-semibold baixa:mt-0 baixa:text-sm">{badge}</div>
           </div>
-          <label className="ml-auto inline-flex items-center gap-2 text-xs text-zinc-600 dark:text-[#9aa1b2]">
-            Perfil
+          <label className="ml-auto inline-flex min-w-0 items-center gap-2 text-xs text-zinc-600 dark:text-[#9aa1b2]">
+            <span className="baixa:sr-only">Perfil</span>
             <select
-              className="campo h-8 py-0 text-xs dark:bg-[#0a0c14]/80"
+              className="campo h-8 max-w-full py-0 text-xs dark:bg-[#0a0c14]/80 baixa:h-7 baixa:max-w-80"
               value={aba.perfilId ?? ""}
               onChange={(e) => onTrocarPerfil(e.target.value || null)}
             >
@@ -85,7 +87,7 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
 
         {qtdAvisos > 0 && (
           <button
-            className="inline-flex flex-[0_1_auto] animate-subir items-center gap-2 rounded-[14px] border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] font-medium text-amber-800 transition duration-200 [animation-delay:180ms] hover:-translate-y-px dark:border-amber-400/30 dark:bg-amber-400/[0.08] dark:text-amber-300 [@media(max-height:760px)]:py-2"
+            className="inline-flex flex-[0_1_auto] animate-subir items-center gap-2 rounded-[14px] border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] font-medium text-amber-800 transition duration-200 [animation-delay:180ms] hover:-translate-y-px dark:border-amber-400/30 dark:bg-amber-400/[0.08] dark:text-amber-300 baixa:py-1.5"
             onClick={() => setAberto(!aberto)}
             aria-expanded={aberto}
           >
@@ -95,7 +97,7 @@ export function ResumoConsulta({ aba, onTrocarPerfil }: { aba: Aba; onTrocarPerf
       </div>
 
       {aberto && (
-        <div className="mt-3 animate-subir space-y-2">
+        <div className="mt-3 animate-subir space-y-2 baixa:mt-2">
           <div className="flex flex-wrap gap-1.5">
             <span className="text-xs text-zinc-500">Tipos detectados:</span>
             {ORDEM_TIPOS.filter((t) => porTipo.has(t)).map((t) => (
