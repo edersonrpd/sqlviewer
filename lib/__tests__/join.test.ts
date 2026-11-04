@@ -24,9 +24,8 @@ describe("sqlJoin", () => {
         "       '' AS `>>MOVCAR`, t4.*,",
         "       '' AS `>>HUBCIT_INFPED`, t5.*,",
         "       '' AS `>>HUBCIT_LOGPED`, t6.*,",
-        "       '' AS `>>LOGNFE`, t7.*,",
-        "       '' AS `>>ADTCLI`, t8.*,",
-        "       '' AS `>>FATAUT`, t9.*",
+        "       '' AS `>>ADTCLI`, t7.*,",
+        "       '' AS `>>FATAUT`, t8.*",
         "  FROM FATGOR t0",
         "  LEFT JOIN FATDOR t1\n       ON t1.FDO_SEQGER = t0.AUTOINCREM AND t0.AUTOINCREM <> ''",
         "  LEFT JOIN CADITE t2\n       ON t2.ITE_CODITE = t1.FDO_CODITE AND t1.FDO_CODITE <> ''",
@@ -34,11 +33,10 @@ describe("sqlJoin", () => {
         "  LEFT JOIN MOVCAR t4\n       ON t4.MCA_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
         "  LEFT JOIN HUBCIT_INFPED t5\n       ON t5.INF_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
         "  LEFT JOIN HUBCIT_LOGPED t6\n       ON t6.LOG_PEDIDO = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
-        "  LEFT JOIN LOGNFE t7\n       ON t7.NFE_NUMDOC = t0.FGO_NUMFAT AND t0.FGO_NUMFAT <> ''",
         // adiantamentos só do pedido: nº do documento + espécie + empresa
-        "  LEFT JOIN ADTCLI t8\n       ON t8.ADT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t8.ADT_ESPDOC = t0.FGO_ESPDOC\n      AND t8.ADT_CODEMP = t0.FGO_CODEMP",
+        "  LEFT JOIN ADTCLI t7\n       ON t7.ADT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t7.ADT_ESPDOC = t0.FGO_ESPDOC\n      AND t7.ADT_CODEMP = t0.FGO_CODEMP",
         // fila do faturamento automático: mesma chave composta (empresa em FAT_EMPDOC)
-        "  LEFT JOIN FATAUT t9\n       ON t9.FAT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t9.FAT_ESPDOC = t0.FGO_ESPDOC\n      AND t9.FAT_EMPDOC = t0.FGO_CODEMP",
+        "  LEFT JOIN FATAUT t8\n       ON t8.FAT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t8.FAT_ESPDOC = t0.FGO_ESPDOC\n      AND t8.FAT_EMPDOC = t0.FGO_CODEMP",
         " WHERE t0.AUTOINCREM = '00100000000000001001';",
       ].join("\n"),
     );

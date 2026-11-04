@@ -88,6 +88,11 @@ export type Relacao = {
   extras?: { origem: string; destino: string }[];
   /** texto exibido na ficha do registro */
   rotulo: string;
+  /**
+   * fica fora do JOIN "tudo de uma vez" deste perfil: só o SELECT individual em
+   * "Ver também" (a ligação com a aba aberta continua valendo)
+   */
+  foraDoJoin?: boolean;
 };
 
 /**
@@ -969,7 +974,19 @@ export const PERFIS: Perfil[] = [
       { perfil: "MOVCAR", colunaOrigem: "FGO_NUMPOK", colunaDestino: "MCA_NUMPOK", rotulo: "Movimentação de cartões" },
       { perfil: "HUBCIT_INFPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "INF_NUMPOK", rotulo: "Dados do pedido no HUB" },
       { perfil: "HUBCIT_LOGPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "LOG_PEDIDO", rotulo: "Log do pedido recebido do HUB" },
-      { perfil: "LOGNFE", colunaOrigem: "FGO_NUMFAT", colunaDestino: "NFE_NUMDOC", rotulo: "Log da NF-e" },
+      // o nº da nota se repete entre empresas/clientes: mesma fatura, cliente e empresa do pedido;
+      // fora do JOIN do pedido (só em "Ver também")
+      {
+        perfil: "LOGNFE",
+        colunaOrigem: "FGO_NUMFAT",
+        colunaDestino: "NFE_NUMDOC",
+        extras: [
+          { origem: "FGO_CODCLI", destino: "NFE_CODCLI" },
+          { origem: "FGO_CODEMP", destino: "NFE_CODEMP" },
+        ],
+        rotulo: "Log da NF-e",
+        foraDoJoin: true,
+      },
       // só os lançamentos deste pedido (crédito e o débito da emissão), não o extrato inteiro do cliente
       {
         perfil: "ADTCLI",

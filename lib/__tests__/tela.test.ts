@@ -145,14 +145,19 @@ describe("LOGNFE", () => {
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const p = relacoesPendentes(s.abas[0], 0, s.abas).find((r) => r.perfilDestino === "LOGNFE");
     expect(p).toMatchObject({ tabela: "LOGNFE", colunaDestino: "NFE_NUMDOC", chave: "000000053684" });
-    expect(sqlRelacionado(p!.tabela, p!.colunaDestino, p!.chave!)).toBe("SELECT * FROM LOGNFE WHERE NFE_NUMDOC = '000000053684';");
+    expect(sqlRelacionado(p!.tabela, p!.colunaDestino, p!.chave!, p!.extras)).toBe(
+      "SELECT * FROM LOGNFE WHERE NFE_NUMDOC = '000000053684' AND NFE_CODCLI = '00000345' AND NFE_CODEMP = '001';",
+    );
     // pedido sem fatura mostra a relação, mas sem chave
     expect(relacoesPendentes(s.abas[0], 2, s.abas).find((r) => r.perfilDestino === "LOGNFE")).toMatchObject({ chave: null });
   });
 
   it("com as duas abas abertas, liga pedido e NF-e nos dois sentidos", () => {
     const nfe = parsearConsulta(
-      readFileSync(join(__dirname, "../../fixtures/exemplo-lognfe.txt"), "utf-8").replace('"000000003014"', '"000000053684"'),
+      readFileSync(join(__dirname, "../../fixtures/exemplo-lognfe.txt"), "utf-8").replace(
+        '"000000003014"\t"NF"\t"101"\t"20109202"',
+        '"000000053684"\t"NF"\t"001"\t"00000345"',
+      ),
     );
     let s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     s = reducer(s, { tipo: "criar", dados: nfe });
@@ -160,6 +165,39 @@ describe("LOGNFE", () => {
     expect(relacionadosDoRegistro(s.abas[1], 1, s.abas)).toEqual([
       expect.objectContaining({ rotulo: "Pedido (cabeçalho)", quantidade: 1, colunaDestinoNome: "FGO_NUMFAT" }),
     ]);
+  });
+});
+
+describe("LOGNFE do pedido: mesmo nº da nota em outra empresa/cliente", () => {
+  // o nº 000000011405 existe em duas empresas; a nota do pedido é a da empresa 006, cliente 00100177
+  const fat = parsearConsulta(
+    ['"AUTOINCREM"\t"FGO_NUMDOC"\t"FGO_ESPDOC"\t"FGO_JAFATU"\t"FGO_CODEMP"\t"FGO_CODCLI"\t"FGO_NUMFAT"',
+     '"1"\t"000001000001"\t"PD"\t"1"\t"006"\t"00100177"\t"000000011405"'].join("\n"),
+  );
+  const nfe = parsearConsulta(
+    ['"NFE_NUMDOC"\t"NFE_ESPDOC"\t"NFE_CODEMP"\t"NFE_CODCLI"\t"NFE_ACESSO"\t"NFE_STATUS"',
+     '"000000011405"\t"NF"\t"006"\t"00100177"\t"33261107454203000105550020000114051886227507"\t"AT"',
+     '"000000011405"\t"NF"\t"014"\t"00090097"\t"33260455246371000573550010000114051716085783"\t"AT"'].join("\n"),
+  );
+
+  it("liga só a nota da mesma empresa e cliente", () => {
+    const s = reducer(estadoInicial, { tipo: "criarVarias", dados: [fat, nfe] });
+    expect(s.abas.map((a) => a.perfilId)).toEqual(["FATGOR", "LOGNFE"]);
+    const [r] = relacionadosDoRegistro(s.abas[0], 0, s.abas);
+    expect(r).toMatchObject({ rotulo: "Log da NF-e", quantidade: 1 });
+    // a nota ligada é a primeira (empresa 006)
+    expect(relacionadosDoRegistro(s.abas[1], 0, s.abas)).toMatchObject([{ quantidade: 1 }]);
+    expect(relacionadosDoRegistro(s.abas[1], 1, s.abas)).toMatchObject([{ quantidade: 0 }]);
+  });
+
+  it("fica fora do JOIN do pedido, só em \"Ver também\"", async () => {
+    const { sqlJoin } = await import("../join");
+    expect(sqlJoin(fat, 0, "FATGOR")).not.toContain("LOGNFE");
+    const s = reducer(estadoInicial, { tipo: "criar", dados: fat });
+    const p = relacoesPendentes(s.abas[0], 0, s.abas).find((x) => x.perfilDestino === "LOGNFE")!;
+    expect(sqlRelacionado(p.tabela, p.colunaDestino, p.chave!, p.extras)).toBe(
+      "SELECT * FROM LOGNFE WHERE NFE_NUMDOC = '000000011405' AND NFE_CODCLI = '00100177' AND NFE_CODEMP = '006';",
+    );
   });
 });
 
