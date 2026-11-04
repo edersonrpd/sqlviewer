@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import { estadoInicial, reducer } from "../estado";
 import { separarPorMarcadores, sqlJoin } from "../join";
 import { parsearConsulta } from "../parser";
-import { relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
+import { dadosComColunasLigadas, relacionadosDoRegistro, relacoesPendentes } from "../relacionados";
+import { montarTela } from "../tela";
+import { buscarPerfil } from "../perfis";
 
 const ler = (f: string) => readFileSync(join(__dirname, "../../fixtures", f), "utf-8").trim().split("\n").map((l) => l.split("\t"));
 const fgo = ler("exemplo-fgo.txt");
@@ -131,5 +133,30 @@ describe("produto com a marca", () => {
     expect(s.abas.map((a) => a.perfilId)).toEqual(["CADITE", "DESSIT"]);
     const [item, site] = s.abas;
     expect(relacionadosDoRegistro(item, 0, s.abas)).toMatchObject([{ rotulo: "Dados para o site", abaId: site.id, quantidade: 1 }]);
+  });
+});
+
+describe("medidas da DESSIT na Tela do item", () => {
+  const tabela = (linhas: string[][]) => linhas.map((l) => l.map((v) => `"${v}"`).join("\t")).join("\n");
+  it("sem as medidas copiadas, a Tela do item traz altura/largura/profundidade da aba DESSIT, junto do peso", () => {
+    const texto = tabela([
+      ['>>CADITE', 'ITE_CODITE', 'ITE_DESITE', 'ITE_CODGRU', 'ITE_PESLIQ', '>>DESSIT', 'ITE_CODITE', 'ITE_NOMITE', 'ITE_ATZPRE', 'ITE_EXPALT', 'ITE_EXPLAR', 'ITE_EXPPRO'],
+      ['', '01431', 'TERMINAL', '003001', '0.350', '', '01431', 'Terminal', 'S', '10.000', '5.000', '3.000'],
+      ['', '01467', 'BARRA', '003001', '0.500', '', '01467', 'Barra', 'S', '20.000', '6.000', '4.000'],
+    ]);
+    const partes = separarPorMarcadores(parsearConsulta(texto))!;
+    const s = reducer(estadoInicial, { tipo: "criarVarias", dados: partes.map((p) => p.dados) });
+    const [item] = s.abas;
+    const d = dadosComColunasLigadas(item, 1, s.abas);
+    const tela = montarTela(d.dados, d.registro, buscarPerfil("CADITE"));
+    const emb = tela.secoes.find((x) => x.titulo === "Embalagem e venda")!;
+    expect(emb.campos.map((c) => [c.nome, c.raw])).toEqual([
+      ["ITE_PESLIQ", "0.500"],
+      ["ITE_EXPALT", "20.000"],
+      ["ITE_EXPLAR", "6.000"],
+      ["ITE_EXPPRO", "4.000"],
+    ]);
+    // sem a aba da DESSIT, a Tela fica só com o que veio na CADITE
+    expect(dadosComColunasLigadas(item, 1, [item]).dados).toBe(item.dados);
   });
 });

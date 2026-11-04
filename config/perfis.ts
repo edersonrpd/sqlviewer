@@ -134,6 +134,12 @@ export type Perfil = {
    * Tela, o rodapé mostra créditos, débitos e saldo em vez de somar tudo junto.
    */
   saldo?: { valor: string; tipo: string; credito: string[]; debito: string[] };
+  /**
+   * Colunas de uma tabela ligada (por uma relação deste perfil) mostradas na Tela
+   * do registro quando a aba dela está aberta, ex.: medidas da DESSIT no item.
+   * Só entram as que o resultado deste perfil não tiver; cite-as nas seções da `tela`.
+   */
+  colunasLigadas?: { perfil: string; colunas: string[] }[];
   /** layout da visão "Tela"; colunas não citadas vão para "Outros campos" */
 
   tela?: Tela;
@@ -466,7 +472,7 @@ const TELA_CADITE: Tela = {
       campos: [
         { coluna: "ITE_PESOIT", rotulo: "Peso" },
         { coluna: "ITE_PESLIQ", rotulo: "Peso líquido" },
-        // medidas da DESSIT, copiadas para a aba do item na busca "Produto – CADITE"
+        // medidas da DESSIT: vêm da aba da DESSIT ligada (colunasLigadas) ou copiadas no JOIN do produto
         { coluna: "ITE_EXPALT", rotulo: "Altura (DESSIT)" },
         { coluna: "ITE_EXPLAR", rotulo: "Largura (DESSIT)" },
         { coluna: "ITE_EXPPRO", rotulo: "Profundidade (DESSIT)" },
@@ -1189,6 +1195,8 @@ export const PERFIS: Perfil[] = [
       { perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" },
       { perfil: "DESSIT", colunaOrigem: "ITE_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Dados para o site" },
     ],
+    // altura, largura e profundidade ficam na DESSIT; o peso (ITE_PESLIQ) fica na própria CADITE
+    colunasLigadas: [{ perfil: "DESSIT", colunas: ["ITE_EXPALT", "ITE_EXPLAR", "ITE_EXPPRO"] }],
     tela: TELA_CADITE,
   },
   {
