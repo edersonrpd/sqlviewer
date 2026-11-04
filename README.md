@@ -5,8 +5,9 @@ do grid do cliente SQL: tabela interativa, ficha do registro, gráficos simples 
 (CSV, Excel e "copiar para chamado").
 
 **Todo o processamento acontece no navegador.** Não há API routes, server actions,
-analytics, logs, login, banco de dados nem localStorage. Os dados colados ficam só na
-memória da página e somem ao fechá-la, a não ser que você salve a sessão em arquivo.
+analytics, logs, login nem banco de dados. Os dados colados ficam só na memória da
+página e somem ao fechá-la, a não ser que você salve a sessão em arquivo. A única coisa
+guardada no navegador (localStorage) é a escolha do tema claro/escuro.
 
 ## Rodar localmente
 

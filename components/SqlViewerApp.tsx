@@ -287,6 +287,8 @@ function BotoesSessao({ estado, dispatch }: { estado: typeof estadoInicial; disp
   );
 }
 
+const CHAVE_TEMA = "sqlviewer-tema";
+
 function BotaoTema() {
   const [escuro, setEscuro] = useState(false);
   useEffect(() => setEscuro(document.documentElement.classList.contains("dark")), []);
@@ -298,6 +300,12 @@ function BotaoTema() {
       onClick={() => {
         document.documentElement.classList.toggle("dark", !escuro);
         setEscuro(!escuro);
+        // só a preferência de tema fica no navegador (lida em app/layout.tsx); nenhum dado
+        try {
+          localStorage.setItem(CHAVE_TEMA, escuro ? "claro" : "escuro");
+        } catch {
+          // navegação privada ou armazenamento bloqueado: o tema vale só nesta visita
+        }
       }}
     >
       {escuro ? <IconeSol /> : <IconeLua />}

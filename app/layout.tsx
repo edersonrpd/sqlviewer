@@ -12,8 +12,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Aplica o tema do sistema antes da pintura para evitar flash. Nada é salvo no navegador.
-const scriptTema = `try{if(window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark')}catch(e){}`;
+// Aplica o tema antes da pintura para evitar flash: o escolhido no botão (único valor
+// salvo no navegador, em localStorage "sqlviewer-tema") ou, sem escolha, o do sistema.
+const scriptTema = `try{var t=null;try{t=localStorage.getItem('sqlviewer-tema')}catch(e){}if(t==='escuro'||(t!=='claro'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
