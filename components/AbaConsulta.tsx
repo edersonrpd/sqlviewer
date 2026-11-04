@@ -112,10 +112,10 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
     <div className="flex h-full flex-col">
       <ResumoConsulta aba={aba} onTrocarPerfil={(perfilId) => dispatch({ tipo: "trocarPerfil", id: aba.id, perfilId })} />
 
-      <div className="relative z-10 flex flex-wrap items-center gap-2.5 px-3 py-3 sm:px-5 [@media(max-height:760px)]:py-2">
+      <div className="relative z-10 flex flex-wrap items-center gap-2.5 px-3 py-3 sm:px-5 baixa:py-2">
         <SeletorVisao visao={aba.visao} onTrocar={(visao) => atualizar({ visao })} />
 
-        <label className="flex h-10 w-72 max-w-full items-center gap-2 rounded-xl border border-zinc-900/[0.12] bg-white px-3 transition duration-200 focus-within:border-blue-500 focus-within:shadow-[0_0_0_4px_rgb(99_102_241/0.18),0_0_24px_-4px_rgb(99_102_241/0.45)] dark:border-white/[0.12] dark:bg-[#0a0c14]/70 dark:focus-within:border-blue-400/70">
+        <label className="flex h-10 w-72 max-w-full baixa:w-60 items-center gap-2 rounded-xl border border-zinc-900/[0.12] bg-white px-3 transition duration-200 focus-within:border-blue-500 focus-within:shadow-[0_0_0_4px_rgb(99_102_241/0.18),0_0_24px_-4px_rgb(99_102_241/0.45)] dark:border-white/[0.12] dark:bg-[#0a0c14]/70 dark:focus-within:border-blue-400/70">
           <span className="sr-only">Buscar em todas as colunas visíveis</span>
           <IconeBusca className="h-4 w-4 shrink-0 text-zinc-500 dark:text-[#8b92a5]" />
           <input
@@ -156,7 +156,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           </span>
         )}
 
-        <div className="ml-auto flex flex-wrap items-center gap-2 [&_.btn]:h-10 [&_.btn]:rounded-[10px] [&_.btn]:px-3.5 [&_.btn-destaque]:h-10 [&_.btn-destaque]:rounded-[10px] [&_.btn-destaque]:px-4">
+        <div className="ml-auto flex flex-wrap items-center gap-2 [&_.btn]:h-10 [&_.btn]:rounded-[10px] [&_.btn]:px-3.5 baixa:[&_.btn]:h-9 baixa:[&_.btn]:px-2.5 [&_.btn-destaque]:h-10 baixa:[&_.btn-destaque]:h-9 [&_.btn-destaque]:rounded-[10px] [&_.btn-destaque]:px-4">
           {aba.visao === "tabela" && (
             <button
               className={`btn ${aba.transposta ? "border-blue-400! bg-blue-50! text-blue-800! dark:border-blue-400/50! dark:bg-blue-500/20! dark:text-blue-100!" : ""}`}
@@ -164,7 +164,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
               title="Transpor: colunas viram linhas e cada registro vira uma coluna (bom para comparar poucos registros)"
               onClick={() => atualizar({ transposta: !aba.transposta })}
             >
-              <IconeTranspor /> Transpor
+              <IconeTranspor /> <span className="baixa:sr-only">Transpor</span>
             </button>
           )}
           <button
@@ -174,10 +174,10 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
             title={selecionadasVisiveis.length === 2 ? "Ver as colunas que diferem entre as 2 linhas marcadas" : "Marque 2 linhas na tabela para comparar"}
             onClick={() => setComparando([selecionadasVisiveis[0], selecionadasVisiveis[1]])}
           >
-            <IconeComparar /> Comparar
+            <IconeComparar /> <span className="baixa:sr-only">Comparar</span>
           </button>
-          <button className="btn" onClick={() => setSeletorAberto(true)}>
-            <IconeColunas /> Colunas
+          <button className="btn" title="Escolher as colunas visíveis" onClick={() => setSeletorAberto(true)}>
+            <IconeColunas /> <span className="baixa:sr-only">Colunas</span>
             <span className="text-xs text-zinc-500 tabular-nums">
               {visiveisCount} de {dados.colunas.length}
             </span>

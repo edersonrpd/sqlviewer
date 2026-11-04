@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* telas baixas (ex.: notebook 1366×768): topo compacto para sobrar espaço para a grade */
+@custom-variant baixa (@media (max-height: 760px));
 
 @theme {
   --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
