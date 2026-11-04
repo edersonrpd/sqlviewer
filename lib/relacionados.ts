@@ -1,4 +1,5 @@
 import type { Aba } from "./estado";
+import type { ResultadoParse } from "./tipos";
 import { buscarPerfil, chaveRelacao, ligacoesDoPerfil, linhasLigadas, type ChaveExtra } from "./perfis";
 
 /** Extras de um Relacionado no formato de `linhasLigadas`. */
@@ -128,4 +129,40 @@ export function cadastrosPendentes(aba: Aba, registro: number): CadastroPendente
     }
   }
   return res;
+}
+
+/**
+ * Dados do registro para a Tela, com as `colunasLigadas` do perfil trazidas da
+ * aba ligada (primeiro registro correspondente), ex.: medidas da DESSIT no item.
+ * Retorna um resultado de uma linha (o registro) — ou os dados originais quando
+ * não há nada a acrescentar.
+ */
+export function dadosComColunasLigadas(aba: Aba, registro: number, abas: Aba[]): { dados: ResultadoParse; registro: number } {
+  const perfil = buscarPerfil(aba.perfilId);
+  const original = { dados: aba.dados, registro };
+  if (!perfil?.colunasLigadas?.length || !aba.dados.linhas[registro]) return original;
+  const existentes = new Set(aba.dados.colunas.map((c) => c.nome));
+  const colunas = [...aba.dados.colunas];
+  const linha = [...aba.dados.linhas[registro]];
+  const rels = relacionadosDoRegistro(aba, registro, abas);
+  for (const { perfil: perfilLigado, colunas: nomes } of perfil.colunasLigadas) {
+    const faltam = nomes.filter((n) => !existentes.has(n));
+    if (faltam.length === 0) continue;
+    for (const rel of rels) {
+      const destino = abas.find((a) => a.id === rel.abaId);
+      if (destino?.perfilId !== perfilLigado || rel.chave === null) continue;
+      const [i] = linhasLigadas(rel.chave, destino.dados.linhas, rel.colunaDestino, extrasLigacao(rel.extras));
+      if (i === undefined) continue;
+      for (const n of faltam) {
+        const j = destino.dados.colunas.findIndex((c) => c.nome === n);
+        if (j < 0 || existentes.has(n)) continue;
+        existentes.add(n);
+        colunas.push(destino.dados.colunas[j]);
+        linha.push(destino.dados.linhas[i][j]);
+      }
+      break;
+    }
+  }
+  if (colunas.length === aba.dados.colunas.length) return original;
+  return { dados: { ...aba.dados, colunas, linhas: [linha] }, registro: 0 };
 }

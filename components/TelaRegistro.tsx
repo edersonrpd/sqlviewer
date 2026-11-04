@@ -12,6 +12,7 @@ import { sqlJoin } from "@/lib/join";
 import {
   cadastrosPendentes,
   extrasLigacao,
+  dadosComColunasLigadas,
   relacionadosDoRegistro,
   relacoesPendentes,
   type CadastroPendente,
@@ -68,7 +69,12 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
     return () => window.removeEventListener("keydown", teclas);
   }, [anterior, proximo, atualizar]);
 
-  const tela = useMemo(() => (registro === undefined ? null : montarTela(dados, registro, perfil)), [dados, registro, perfil]);
+  // com as colunas das abas ligadas (ex.: medidas da DESSIT na Tela do item)
+  const tela = useMemo(() => {
+    if (registro === undefined) return null;
+    const d = dadosComColunasLigadas(aba, registro, abas);
+    return montarTela(d.dados, d.registro, perfil);
+  }, [aba, abas, registro, perfil]);
   const diagnostico = useMemo(
     () => (registro === undefined || !temDiagnostico(aba.perfilId) ? null : diagnosticar(aba, registro, abas)),
     [aba, registro, abas],
