@@ -466,6 +466,10 @@ const TELA_CADITE: Tela = {
       campos: [
         { coluna: "ITE_PESOIT", rotulo: "Peso" },
         { coluna: "ITE_PESLIQ", rotulo: "Peso líquido" },
+        // medidas da DESSIT, copiadas para a aba do item na busca "Produto – CADITE"
+        { coluna: "ITE_EXPALT", rotulo: "Altura (DESSIT)" },
+        { coluna: "ITE_EXPLAR", rotulo: "Largura (DESSIT)" },
+        { coluna: "ITE_EXPPRO", rotulo: "Profundidade (DESSIT)" },
         { coluna: "ITE_EMBALA", rotulo: "Embalagem" },
         { coluna: "ITE_QTDEMB", rotulo: "Quantidade na embalagem" },
         { coluna: "ITE_MLTCOM", rotulo: "Múltiplo de compra" },
@@ -483,6 +487,47 @@ const TELA_CADITE: Tela = {
         { coluna: "ITE_CODOPE", rotulo: "Operador" },
         { coluna: "ITE_CODDEP", rotulo: "Departamento" },
         { coluna: "ITE_PESQUI", rotulo: "Texto de pesquisa", largo: true },
+      ],
+    },
+  ],
+};
+
+/* DESSIT: dados do item para o site (medidas, imagem, descrição); o peso fica na CADITE.ITE_PESLIQ. */
+const TELA_DESSIT: Tela = {
+  titulo: "Dados do item para o site",
+  subtitulo: [
+    { coluna: "ITE_NOMITE", rotulo: "Nome" },
+    { coluna: "ITE_DESTAQ", rotulo: "Destaque" },
+  ],
+  secoes: [
+    {
+      titulo: "Identificação",
+      campos: [
+        { coluna: "ITE_CODITE", rotulo: "Código do item" },
+        { coluna: "ITE_NOMITE", rotulo: "Nome", largo: true },
+        { coluna: "ITE_CODCAT", rotulo: "Categoria" },
+        { coluna: "ITE_DESTAQ", rotulo: "Destaque", valores: SIM_NAO },
+        { coluna: "ITE_ATZPRE", rotulo: "Atualiza preço", valores: SIM_NAO },
+        { coluna: "ITE_CRODOC", rotulo: "CRODOC", valores: SIM_NAO },
+        { coluna: "ITE_DESSIT", rotulo: "ITE_DESSIT" },
+      ],
+    },
+    {
+      titulo: "Medidas",
+      campos: [
+        { coluna: "ITE_EXPALT", rotulo: "Altura" },
+        { coluna: "ITE_EXPLAR", rotulo: "Largura" },
+        { coluna: "ITE_EXPPRO", rotulo: "Profundidade" },
+      ],
+    },
+    {
+      titulo: "Conteúdo",
+      campos: [
+        { coluna: "ITE_URLIMG", rotulo: "Imagem (URL)", largo: true },
+        { coluna: "ITE_DESITE", rotulo: "Descrição", largo: true },
+        { coluna: "ITE_APLITE", rotulo: "Aplicação", largo: true },
+        { coluna: "ITE_DADTEC", rotulo: "Dados técnicos", largo: true },
+        { coluna: "ITE_INCLUS", rotulo: "Itens inclusos", largo: true },
       ],
     },
   ],
@@ -723,7 +768,12 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
     perfil: "CADITE",
     coluna: "ITE_CODITE",
     exemplo: "00004",
-    joins: [{ perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" }],
+    joins: [
+      { perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" },
+      { perfil: "DESSIT", colunaOrigem: "ITE_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Dados para o site" },
+    ],
+    // medidas da DESSIT também na aba do item, ao lado do peso (ITE_PESLIQ)
+    copiarColunas: [{ perfil: "DESSIT", colunas: [{ coluna: "ITE_EXPALT" }, { coluna: "ITE_EXPLAR" }, { coluna: "ITE_EXPPRO" }] }],
   },
   // HUBCitel: o order_id fica sem o prefixo do marketplace (MLB_SHML… → SHML…)
   // o banco do HUB tem todos os clientes, separados por domínio
@@ -1135,8 +1185,27 @@ export const PERFIS: Perfil[] = [
     graficoSugerido: { modo: "contagem", categoria: "ITE_CODGRU" },
     rotulosInversos: { FATDOR: "Pedidos com o item" },
     // relação (não só cadastro): com a aba da CADMAR aberta, a ficha do item mostra a marca
-    relacoes: [{ perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" }],
+    relacoes: [
+      { perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" },
+      { perfil: "DESSIT", colunaOrigem: "ITE_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Dados para o site" },
+    ],
     tela: TELA_CADITE,
+  },
+  {
+    // complemento do item (mesma chave ITE_CODITE); só aparece pelo JOIN do produto, sem busca própria
+    id: "DESSIT",
+    nome: "Dados do item para o site",
+    // sem as medidas: elas também vão (copiadas) para a aba da CADITE no JOIN do produto
+    assinatura: ["ITE_CODITE", "ITE_NOMITE", "ITE_ATZPRE"],
+    colunasPadrao: [
+      "ITE_CODITE", "ITE_NOMITE", "ITE_EXPALT", "ITE_EXPLAR", "ITE_EXPPRO", "ITE_CODCAT",
+      "ITE_DESTAQ", "ITE_ATZPRE", "ITE_CRODOC", "ITE_DESSIT", "ITE_URLIMG",
+    ],
+    colunasFixas: ["ITE_CODITE"],
+    colunaTitulo: "ITE_CODITE",
+    chave: "ITE_CODITE",
+    rotulosInversos: { CADITE: "Cadastro do item" },
+    tela: TELA_DESSIT,
   },
   {
     id: "CADMAR",

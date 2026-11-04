@@ -79,12 +79,15 @@ describe("montar consulta", () => {
     expect(sql.endsWith(" WHERE t0.FGO_NUMDOC = '000001000001';")).toBe(true);
   });
 
-  it("produto com a marca (CADMAR), sem os pedidos do item", () => {
+  it("produto com a marca (CADMAR) e os dados do site (DESSIT), sem os pedidos do item", () => {
     const sql = montarConsulta(busca("produto"), ["00004"], true)!;
-    expect(sql.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR"]);
+    expect(sql.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR", ">>DESSIT"]);
     expect(sql).toContain("LEFT JOIN CADMAR t1\n       ON t1.MAR_CODMAR = t0.ITE_CODMAR AND t0.ITE_CODMAR <> ''");
+    expect(sql).toContain("LEFT JOIN DESSIT t2\n       ON t2.ITE_CODITE = t0.ITE_CODITE AND t0.ITE_CODITE <> ''");
+    // medidas da DESSIT também na aba do item, junto do peso
+    expect(sql).toContain("t0.*,\n       t2.ITE_EXPALT, t2.ITE_EXPLAR, t2.ITE_EXPPRO,");
     expect(sql.endsWith(" WHERE t0.ITE_CODITE = '00004';")).toBe(true);
-    expect(montarConsulta(busca("item"), ["00004"], true)!.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR", ">>FATDOR"]);
+    expect(montarConsulta(busca("item"), ["00004"], true)!.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR", ">>DESSIT", ">>FATDOR"]);
   });
 
   it("toda busca aponta para um perfil existente", () => {

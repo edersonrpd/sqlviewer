@@ -43,7 +43,7 @@ describe("sqlJoin", () => {
   it("a partir de um item não sobe de volta para as relações do pedido", () => {
     const d = parsearConsulta('"FDO_SEQGER"\t"FDO_CODITE"\t"AUTOINCREM"\n"00100000000000001001"\t"00004"\t"00100000000000555001"');
     const sql = sqlJoin(d, 0, "FATDOR")!;
-    expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>CADMAR", ">>FATGOR"]);
+    expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>CADMAR", ">>DESSIT", ">>FATGOR"]);
     // o item é identificado pelo AUTOINCREM, não pelo código do produto (que se repete em vários pedidos)
     expect(sql).toContain(" WHERE t0.AUTOINCREM = '00100000000000555001';");
   });
@@ -116,6 +116,20 @@ describe("produto com a marca", () => {
     expect(marca.dados.linhas).toHaveLength(1);
     expect(relacionadosDoRegistro(item, 0, s.abas)).toMatchObject([{ rotulo: "Marca", abaId: marca.id, quantidade: 1 }]);
     // com a aba aberta, a marca não aparece mais como consulta pendente
-    expect(relacoesPendentes(item, 0, s.abas).map((r) => r.perfilDestino)).toEqual(["FATDOR"]);
+    expect(relacoesPendentes(item, 0, s.abas).map((r) => r.perfilDestino)).toEqual(["DESSIT", "FATDOR"]);
+  });
+
+  it("ao colar o JOIN, a DESSIT vira aba própria ligada ao item", () => {
+    const texto = [
+      ['>>CADITE', 'ITE_CODITE', 'ITE_DESITE', 'ITE_CODGRU', 'ITE_PESLIQ', 'ITE_EXPALT', 'ITE_EXPLAR', 'ITE_EXPPRO', '>>DESSIT', 'ITE_CODITE', 'ITE_NOMITE', 'ITE_EXPALT', 'ITE_EXPLAR', 'ITE_EXPPRO', 'ITE_ATZPRE'],
+      ['', '01431', 'TERMINAL DIREC PASSAT', '003001', '0.350', '10.000', '5.000', '3.000', '', '01431', 'Terminal', '10.000', '5.000', '3.000', 'S'],
+    ]
+      .map((l) => l.map((v) => `"${v}"`).join("\t"))
+      .join("\n");
+    const partes = separarPorMarcadores(parsearConsulta(texto))!;
+    const s = reducer(estadoInicial, { tipo: "criarVarias", dados: partes.map((p) => p.dados) });
+    expect(s.abas.map((a) => a.perfilId)).toEqual(["CADITE", "DESSIT"]);
+    const [item, site] = s.abas;
+    expect(relacionadosDoRegistro(item, 0, s.abas)).toMatchObject([{ rotulo: "Dados para o site", abaId: site.id, quantidade: 1 }]);
   });
 });
