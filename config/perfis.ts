@@ -9,7 +9,8 @@
 
 /** Como o valor aparece na Tela. Sem formato, segue o tipo detectado da coluna. */
 /** "log": texto com várias entradas "dd/mm/aaaa hh:mm:ss - mensagem" resumido (mensagens iguais agrupadas). */
-export type FormatoCampo = "moeda" | "percentual" | "chaveAcesso" | "log";
+/** "json": texto JSON indentado (se não for JSON válido, aparece como veio). */
+export type FormatoCampo = "moeda" | "percentual" | "chaveAcesso" | "log" | "json";
 
 export type CorStatus = "verde" | "amarelo" | "vermelho" | "azul" | "cinza";
 
@@ -23,6 +24,11 @@ export type CampoTela = {
   valores?: Record<string, string>;
   /** ocupa 2 colunas do formulário (textos longos) */
   largo?: boolean;
+  /**
+   * valor tirado de dentro do JSON da `coluna`, pelo caminho (ex.: "customer.name");
+   * `*` percorre uma lista (ex.: "products.*.name"), um valor por linha
+   */
+  json?: string;
 };
 
 export type StatusTela = {
@@ -539,6 +545,122 @@ const TELA_DESSIT: Tela = {
   ],
 };
 
+/* HUBCIT_LOGPED (banco do Autcom): JSON do pedido recebido do HUB; os dados principais saem do LOG_JSON. */
+const LOG_JSON = (json: string, rotulo: string, extra: Partial<CampoTela> = {}): CampoTela => ({ coluna: "LOG_JSON", json, rotulo, ...extra });
+const VERDADEIRO_FALSO = { true: "Sim", false: "Não" };
+const TELA_HUBCIT_LOGPED: Tela = {
+  titulo: "Log do pedido",
+  subtitulo: [
+    { coluna: "LOG_DTAENT", rotulo: "Entrada" },
+    LOG_JSON("domain", "Domínio"),
+    LOG_JSON("origin", "Origem"),
+    { coluna: "LOG_CODEMP", rotulo: "Empresa" },
+  ],
+  status: [
+    {
+      coluna: "LOG_VERIFICADO",
+      rotulo: "Verificado",
+      valores: { S: { texto: "Sim (S)", cor: "verde" }, N: { texto: "Não (N)", cor: "amarelo" } },
+    },
+  ],
+  destaques: [
+    { coluna: "LOG_VLRCON", rotulo: "Valor do pedido", formato: "moeda" },
+    { coluna: "LOG_TOTPRO", rotulo: "Total dos produtos", formato: "moeda" },
+    LOG_JSON("totalReceivable", "A receber (JSON)", { formato: "moeda" }),
+  ],
+  secoes: [
+    {
+      titulo: "Registro",
+      campos: [
+        { coluna: "ID", rotulo: "ID" },
+        { coluna: "LOG_PEDIDO", rotulo: "Pedido (NUMPOK)" },
+        { coluna: "LOG_DTAENT", rotulo: "Entrada" },
+        { coluna: "LOG_VERIFICADO", rotulo: "Verificado", valores: SIM_NAO },
+        { coluna: "LOG_CODEMP", rotulo: "Empresa" },
+        { coluna: "LOG_VLRCON", rotulo: "Valor do pedido", formato: "moeda" },
+        { coluna: "LOG_TOTPRO", rotulo: "Total dos produtos", formato: "moeda" },
+      ],
+    },
+    {
+      titulo: "Pedido no marketplace (JSON)",
+      campos: [
+        LOG_JSON("domain", "Domínio"),
+        LOG_JSON("marketplaceOrderCode", "Pedido no marketplace"),
+        LOG_JSON("packId", "Pack"),
+        LOG_JSON("origin", "Origem"),
+        LOG_JSON("status", "Status"),
+        LOG_JSON("createdDate", "Criado em"),
+        LOG_JSON("deliveryMode", "Modo de entrega"),
+        LOG_JSON("isFulfillment", "Fulfillment", { valores: VERDADEIRO_FALSO }),
+        LOG_JSON("observation", "Observação"),
+        LOG_JSON("integrated", "Integrado"),
+        LOG_JSON("nfKey", "Chave da NF-e", { formato: "chaveAcesso", largo: true }),
+        LOG_JSON("errorMessage", "Mensagem de erro", { largo: true }),
+      ],
+    },
+    {
+      titulo: "Produtos (JSON)",
+      campos: [
+        LOG_JSON("products.*.externalCode", "Código do item"),
+        LOG_JSON("products.*.quantity", "Quantidade"),
+        LOG_JSON("products.*.totalUnitPrice", "Preço unitário", { formato: "moeda" }),
+        LOG_JSON("products.*.saleFee", "Tarifa de venda", { formato: "moeda" }),
+        LOG_JSON("products.*.advertisementType", "Tipo do anúncio"),
+        LOG_JSON("products.*.marketplaceCode", "Anúncio"),
+        LOG_JSON("products.*.name", "Nome", { largo: true }),
+      ],
+    },
+    {
+      titulo: "Valores (JSON)",
+      campos: [
+        LOG_JSON("totalProductsPrice", "Produtos", { formato: "moeda" }),
+        LOG_JSON("totalFreightPrice", "Frete", { formato: "moeda" }),
+        LOG_JSON("totalFreightPriceDebit", "Débito de frete", { formato: "moeda" }),
+        LOG_JSON("totalDiscountPrice", "Desconto", { formato: "moeda" }),
+        LOG_JSON("totalMarketplaceDiscount", "Desconto do marketplace", { formato: "moeda" }),
+        LOG_JSON("totalTax", "Impostos", { formato: "moeda" }),
+        LOG_JSON("totalPrice", "Total", { formato: "moeda" }),
+        LOG_JSON("totalReceivable", "A receber", { formato: "moeda" }),
+        LOG_JSON("payment.paymentType", "Pagamento"),
+        LOG_JSON("payment.installmentCount", "Parcelas"),
+        LOG_JSON("payment.totalValue", "Valor pago", { formato: "moeda" }),
+      ],
+    },
+    {
+      titulo: "Cliente (JSON)",
+      campos: [
+        LOG_JSON("customer.name", "Nome", { largo: true }),
+        LOG_JSON("customer.cpf_Cnpj", "CPF/CNPJ"),
+        LOG_JSON("customer.nickName", "Apelido"),
+        LOG_JSON("customer.stateRegistration", "Inscrição estadual"),
+        LOG_JSON("customer.email", "E-mail"),
+        LOG_JSON("customer.city", "Cidade"),
+        LOG_JSON("customer.state", "UF"),
+      ],
+    },
+    {
+      titulo: "Entrega (JSON)",
+      campos: [
+        LOG_JSON("shipping.shippingId", "Envio"),
+        LOG_JSON("shipping.shippingType", "Tipo de envio"),
+        LOG_JSON("shipping.deliveryProviderName", "Transportadora"),
+        LOG_JSON("trackingCode", "Rastreio"),
+        LOG_JSON("shipmentDueDate", "Prazo de envio"),
+        LOG_JSON("estimatedDeliveryDate", "Previsão de entrega"),
+        LOG_JSON("faturedAddress.receiverName", "Recebedor"),
+        LOG_JSON("deliveryAddress.addressName", "Endereço", { largo: true }),
+        LOG_JSON("deliveryAddress.number", "Número"),
+        LOG_JSON("deliveryAddress.district", "Bairro"),
+        LOG_JSON("deliveryAddress.city", "Cidade"),
+        LOG_JSON("deliveryAddress.state", "UF"),
+        LOG_JSON("deliveryAddress.zipCode", "CEP"),
+      ],
+    },
+    // JSON inteiro: por último e fechado (clique para ver)
+    { titulo: "JSON completo", campos: [{ coluna: "LOG_JSON", rotulo: "LOG_JSON", formato: "json", largo: true }], recolhida: true, noFim: true },
+  ],
+};
+
 /* Status do HUB com cor (texto original entre parênteses); os demais aparecem como vierem. */
 const STATUS_HUB_PEDIDO: StatusTela["valores"] = {
   paid: { texto: "Pago (paid)", cor: "verde" },
@@ -846,6 +968,7 @@ export const PERFIS: Perfil[] = [
       { perfil: "EXTGOR", colunaOrigem: "AUTOINCREM", colunaDestino: "FGO_SEQFGO", rotulo: "Extensão do pedido" },
       { perfil: "MOVCAR", colunaOrigem: "FGO_NUMPOK", colunaDestino: "MCA_NUMPOK", rotulo: "Movimentação de cartões" },
       { perfil: "HUBCIT_INFPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "INF_NUMPOK", rotulo: "Dados do pedido no HUB" },
+      { perfil: "HUBCIT_LOGPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "LOG_PEDIDO", rotulo: "Log do pedido recebido do HUB" },
       { perfil: "LOGNFE", colunaOrigem: "FGO_NUMFAT", colunaDestino: "NFE_NUMDOC", rotulo: "Log da NF-e" },
       // só os lançamentos deste pedido (crédito e o débito da emissão), não o extrato inteiro do cliente
       {
@@ -1003,6 +1126,20 @@ export const PERFIS: Perfil[] = [
     destaque: { coluna: "INF_NUMPOK", rotulo: "NUMPOK" },
     colunasPadrao: ["INF_NUMPOK", "INF_VALTAX"],
     rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
+  },
+  {
+    // tabela do Autcom (não do banco do HUB): cada pedido recebido do HUB, com o JSON original
+    id: "HUBCIT_LOGPED",
+    nome: "Log de pedidos do HUB",
+    assinatura: ["LOG_PEDIDO", "LOG_JSON", "LOG_VERIFICADO"],
+    destaque: { coluna: "LOG_PEDIDO", rotulo: "NUMPOK" },
+    colunasPadrao: ["ID", "LOG_PEDIDO", "LOG_DTAENT", "LOG_VLRCON", "LOG_TOTPRO", "LOG_VERIFICADO", "LOG_CODEMP", "LOG_JSON"],
+    colunasFixas: ["LOG_PEDIDO"],
+    colunaTitulo: "LOG_PEDIDO",
+    chave: "ID",
+    graficoSugerido: { modo: "contagem", categoria: "LOG_VERIFICADO" },
+    rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
+    tela: TELA_HUBCIT_LOGPED,
   },
   {
     id: "LOGNFE",

@@ -119,7 +119,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                 {tela.subtitulo.length > 0 && (
                   <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
                     {tela.subtitulo.map((c) => (
-                      <span key={c.j} title={c.nome}>
+                      <span key={`${c.j}-${c.nome}`} title={c.nome}>
                         <span className="text-zinc-400">{c.rotulo}:</span>{" "}
                         <span className="font-medium text-zinc-800 dark:text-zinc-200">{c.texto ?? "NULL"}</span>
                       </span>
@@ -182,7 +182,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
           {tela.destaques.length > 0 && (
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {tela.destaques.map((c) => (
-                <div key={c.j} className="painel p-3" title={c.nome}>
+                <div key={`${c.j}-${c.nome}`} className="painel p-3" title={c.nome}>
                   <p className="text-xs text-zinc-500">{c.rotulo}</p>
                   <p className={`mt-1 text-xl font-semibold tabular-nums ${c.vazio ? "text-zinc-400" : ""}`}>
                     {c.texto ?? <span className="valor-null text-base">NULL</span>}
@@ -262,7 +262,7 @@ function Indicador({ indicador: { campo: c, detalhes, cor } }: { indicador: Indi
       {detalhesVisiveis.length > 0 && (
         <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-zinc-600 dark:text-zinc-400">
           {detalhesVisiveis.map((d) => (
-            <span key={d.j} title={d.nome}>
+            <span key={`${d.j}-${d.nome}`} title={d.nome}>
               {d.rotulo}: <span className="font-medium text-zinc-800 dark:text-zinc-200">{d.texto}</span>
             </span>
           ))}
@@ -354,7 +354,7 @@ function Secao({
         <div className="border-t border-zinc-100 px-4 py-3 dark:border-zinc-800">
           <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             {visiveis.map((c) => (
-              <Campo key={c.j} campo={c} onCopiar={onCopiar} />
+              <Campo key={`${c.j}-${c.nome}`} campo={c} onCopiar={onCopiar} />
             ))}
           </div>
         </div>
@@ -370,7 +370,10 @@ function Campo({ campo: c, onCopiar }: { campo: CampoMontado; onCopiar: (rotulo:
         <label className="truncate text-xs font-medium text-zinc-600 dark:text-zinc-400" title={c.rotulo}>
           {c.rotulo}
         </label>
-        <span className="shrink-0 font-mono text-[10px] text-zinc-400">{c.nome}</span>
+        {/* campo de dentro do JSON: só a última parte do caminho (o caminho inteiro fica na dica) */}
+        <span className="shrink-0 font-mono text-[10px] text-zinc-400" title={c.nome}>
+          {c.nome.replace(/^.*\./, "")}
+        </span>
       </div>
       <div
         className={`relative mt-1 flex min-h-8 items-center rounded-md border px-2.5 py-1 text-sm ${
