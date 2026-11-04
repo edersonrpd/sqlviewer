@@ -67,6 +67,17 @@ describe("montar consulta", () => {
     expect(separarValores("   ")).toEqual([]);
   });
 
+  it("produto por marca: nome da marca (com espaço), CADMAR com os itens da CADITE", () => {
+    expect(separarValores("nakata, MOTUL BRASIL;'controil'", true)).toEqual(["nakata", "MOTUL BRASIL", "controil"]);
+    const b = busca("marca");
+    expect(b.rotulo).toBe("Produto – MARCA");
+    const sql = montarConsulta(b, ["NAKATA", "MOTUL BRASIL"], true)!;
+    expect(sql.match(/>>\w+/g)).toEqual([">>CADMAR", ">>CADITE"]);
+    expect(sql).toContain("LEFT JOIN CADITE t1\n       ON t1.ITE_CODMAR = t0.MAR_CODMAR AND t0.MAR_CODMAR <> ''");
+    expect(sql.endsWith(" WHERE t0.MAR_DESMAR IN ('NAKATA', 'MOTUL BRASIL');")).toBe(true);
+    expect(montarConsulta(b, ["NAKATA"], false)).toBe("SELECT * FROM CADMAR WHERE MAR_DESMAR = 'NAKATA';");
+  });
+
   it("SELECT simples, com = para um valor e IN para vários", () => {
     expect(montarConsulta(busca("item"), ["00004"], false)).toBe("SELECT * FROM CADITE WHERE ITE_CODITE = '00004';");
     expect(montarConsulta(busca("nf"), ["1", "2"], false)).toBe("SELECT * FROM FATGOR WHERE FGO_NUMFAT IN ('1', '2');");
