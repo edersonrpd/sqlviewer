@@ -160,3 +160,24 @@ describe("medidas da DESSIT na Tela do item", () => {
     expect(dadosComColunasLigadas(item, 1, [item]).dados).toBe(item.dados);
   });
 });
+
+describe("produtos de várias marcas", () => {
+  it("ao colar o JOIN da busca por marca, os itens ficam ligados à marca e com o nome dela", () => {
+    const texto = [
+      ['>>CADMAR', 'MAR_CODMAR', 'MAR_DESMAR', '>>CADITE', 'ITE_CODITE', 'ITE_DESITE', 'ITE_CODGRU', 'ITE_CODMAR', 'MAR_DESMAR'],
+      ['', '000067', 'NAKATA', '', '01431', 'TERMINAL', '003001', '000067', 'NAKATA'],
+      ['', '000067', 'NAKATA', '', '01467', 'BARRA', '003001', '000067', 'NAKATA'],
+      ['', '000124', 'CONTROIL', '', '02000', 'CILINDRO', '003002', '000124', 'CONTROIL'],
+    ]
+      .map((l) => l.map((v) => `"${v}"`).join("\t"))
+      .join("\n");
+    const partes = separarPorMarcadores(parsearConsulta(texto))!;
+    const s = reducer(estadoInicial, { tipo: "criarVarias", dados: partes.map((p) => p.dados) });
+    expect(s.abas.map((a) => a.perfilId)).toEqual(["CADMAR", "CADITE"]);
+    const [marcas, itens] = s.abas;
+    expect(marcas.dados.linhas).toHaveLength(2);
+    expect(relacionadosDoRegistro(marcas, 0, s.abas)).toMatchObject([{ rotulo: "Itens da marca", quantidade: 2 }]);
+    expect(relacionadosDoRegistro(marcas, 1, s.abas)).toMatchObject([{ quantidade: 1 }]);
+    expect(itens.dados.colunas.map((c) => c.nome)).toContain("MAR_DESMAR");
+  });
+});

@@ -30,7 +30,12 @@ export function condicaoValores(valores: string[]): string {
  * Colunas de uma tabela ligada que também entram junto da tabela principal no JOIN
  * (ex.: data do pedido na aba de itens, para filtrar e ordenar ali mesmo).
  */
-export type ColunasCopiadas = { perfil: string; colunas: { coluna: string; alias?: string }[] };
+export type ColunasCopiadas = {
+  perfil: string;
+  colunas: { coluna: string; alias?: string }[];
+  /** aba que recebe as colunas (padrão: a da tabela principal), ex.: nome da marca na aba dos itens */
+  para?: string;
+};
 
 /** Filtro a mais no WHERE da tabela principal (ex.: domínio do cliente no HUB). */
 export type FiltroExtra = { coluna: string; valores: string[] };
@@ -85,7 +90,9 @@ export function sqlJoinPor(
 
   const selects = [`'' AS \`${PREFIXO_MARCADOR}${perfil.id}\`, t0.*`];
   const joins: string[] = [];
-  const aliases = new Map<string, string>();
+  const aliases = new Map<string, string>([[perfil.id, "t0"]]);
+  // posição de cada tabela em `selects` (as colunas copiadas entram logo depois das dela)
+  const posicoes = new Map<string, number>([[perfil.id, 0]]);
   const incluidos = new Set([perfil.id, ...ligacoes.map((l) => l.perfilDestino)]);
   const juntar = (
     destinoId: string,
@@ -96,6 +103,7 @@ export function sqlJoinPor(
   ) => {
     const a = `t${joins.length + 1}`;
     aliases.set(destinoId, a);
+    posicoes.set(destinoId, selects.length);
     selects.push(`'' AS \`${PREFIXO_MARCADOR}${destinoId}\`, ${a}.*`);
     // a condição "<> ''" evita ligar registros pela chave vazia (ex.: pedido sem NUMPOK);
     // numa chave composta, as demais colunas também precisam ser iguais
@@ -118,11 +126,12 @@ export function sqlJoinPor(
   });
 
   // colunas da tabela ligada repetidas junto da principal (ficam na mesma aba ao separar)
-  const copiadas = copiar.flatMap((c) => {
+  for (const c of copiar) {
     const a = aliases.get(c.perfil);
-    return a ? c.colunas.map((x) => `${a}.${x.coluna}${x.alias ? ` AS ${x.alias}` : ""}`) : [];
-  });
-  if (copiadas.length) selects[0] += `,\n       ${copiadas.join(", ")}`;
+    const k = posicoes.get(c.para ?? perfil.id);
+    if (!a || k === undefined || c.colunas.length === 0) continue;
+    selects[k] += `,\n       ${c.colunas.map((x) => `${a}.${x.coluna}${x.alias ? ` AS ${x.alias}` : ""}`).join(", ")}`;
+  }
 
   return [
     `SELECT ${selects.join(",\n       ")}`,

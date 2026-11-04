@@ -440,6 +440,7 @@ const TELA_CADITE: Tela = {
     { coluna: "ITE_DESITE", rotulo: "Descrição" },
     { coluna: "ITE_CODGRU", rotulo: "Grupo" },
     { coluna: "ITE_CODMAR", rotulo: "Marca" },
+    { coluna: "MAR_DESMAR", rotulo: "Nome da marca" },
   ],
   secoes: [
     {
@@ -452,6 +453,7 @@ const TELA_CADITE: Tela = {
         { coluna: "ITE_CODEMP", rotulo: "Empresa do cadastro" },
         { coluna: "ITE_CODGRU", rotulo: "Grupo" },
         { coluna: "ITE_CODMAR", rotulo: "Marca" },
+        { coluna: "MAR_DESMAR", rotulo: "Nome da marca (CADMAR)" },
         { coluna: "ITE_CODUNI", rotulo: "Unidade" },
         { coluna: "ITE_CODSIM", rotulo: "Código do similar" },
         { coluna: "AUTOINCREM", rotulo: "Sequência (AUTOINCREM)" },
@@ -877,8 +879,11 @@ export type BuscaRapida = {
   separarSoPorVirgula?: boolean;
   /** segundo campo, opcional, que entra no WHERE com AND (ex.: domínio do cliente no HUB) */
   filtroExtra?: { coluna: string; rotulo: string; exemplo: string };
-  /** no JOIN, colunas da tabela ligada repetidas na aba da principal (para filtrar/ordenar ali) */
-  copiarColunas?: { perfil: string; colunas: { coluna: string; alias?: string }[] }[];
+  /**
+   * no JOIN, colunas de uma tabela repetidas na aba de outra (para filtrar/ordenar ali);
+   * padrão: na aba da tabela principal, ou na de `para`
+   */
+  copiarColunas?: { perfil: string; colunas: { coluna: string; alias?: string }[]; para?: string }[];
   /**
    * no JOIN, usa só estas ligações (no lugar das relações do perfil), ex.: produto
    * com a marca, sem trazer os pedidos do item
@@ -917,9 +922,12 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
     rotulo: "Produto – MARCA",
     perfil: "CADMAR",
     coluna: "MAR_DESMAR",
-    exemplo: "NAKATA",
+    exemplo: "NAKATA, CONTROIL",
+    // várias marcas: separadas por vírgula ou uma por linha (o espaço faz parte do nome)
     separarSoPorVirgula: true,
     joins: [{ perfil: "CADITE", colunaOrigem: "MAR_CODMAR", colunaDestino: "ITE_CODMAR", rotulo: "Itens da marca" }],
+    // nome da marca também na aba dos itens, para filtrar e agrupar por marca ali
+    copiarColunas: [{ perfil: "CADMAR", colunas: [{ coluna: "MAR_DESMAR" }], para: "CADITE" }],
   },
   // HUBCitel: o order_id fica sem o prefixo do marketplace (MLB_SHML… → SHML…)
   // o banco do HUB tem todos os clientes, separados por domínio
@@ -1349,7 +1357,8 @@ export const PERFIS: Perfil[] = [
     nome: "Cadastro de itens",
     assinatura: ["ITE_CODITE", "ITE_DESITE", "ITE_CODGRU"],
     colunasPadrao: [
-      "ITE_CODITE", "ITE_DESITE", "ITE_CODGRU", "ITE_CODMAR", "ITE_REFERE", "ITE_CODFAB",
+      // MAR_DESMAR: nome da marca, quando vem copiado no JOIN da busca "Produto – MARCA"
+      "ITE_CODITE", "ITE_DESITE", "ITE_CODGRU", "ITE_CODMAR", "MAR_DESMAR", "ITE_REFERE", "ITE_CODFAB",
       "ITE_CODBAR", "ITE_CODUNI", "ITE_CLAIPI", "ITE_CODFOR", "ITE_DTACAD", "ITE_ULTALT",
     ],
     colunasFixas: ["ITE_CODITE", "ITE_DESITE"],
