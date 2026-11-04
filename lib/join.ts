@@ -1,6 +1,6 @@
 import type { Perfil, Relacao } from "@/config/perfis";
 import { inferirTipo } from "./parser";
-import { buscarPerfil, chaveRelacao, ligacoesDoPerfil } from "./perfis";
+import { buscarPerfil, chaveRelacao, ligacoesDoPerfil, type LigacaoPerfil } from "./perfis";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
 
 /**
@@ -75,11 +75,11 @@ export function sqlJoinPor(
 ): string | null {
   const perfil = buscarPerfil(perfilId);
   if (!perfil || valores.length === 0) return null;
-  const todas = fixas
+  const todas: LigacaoPerfil[] = fixas
     ? fixas.map((r) => ({ perfilDestino: r.perfil, colunaOrigem: r.colunaOrigem, colunaDestino: r.colunaDestino, extras: r.extras ?? [], rotulo: r.rotulo }))
     : ligacoesDoPerfil(perfil.id);
   const ligacoes = todas
-    .filter((l) => existe(l.colunaOrigem))
+    .filter((l) => !l.foraDoJoin && existe(l.colunaOrigem))
     .map((l) => ({ ...l, extras: l.extras.filter((e) => existe(e.origem)) }));
   if (ligacoes.length === 0) return null;
 
@@ -111,7 +111,7 @@ export function sqlJoinPor(
     // só quando a ligação também desce, para não subir de volta e puxar tudo do pai
     if (fixas || !perfil.relacoes?.some((r) => r.perfil === l.perfilDestino)) return;
     for (const r of buscarPerfil(l.perfilDestino)?.relacoes ?? []) {
-      if (incluidos.has(r.perfil)) continue;
+      if (r.foraDoJoin || incluidos.has(r.perfil)) continue;
       incluidos.add(r.perfil);
       juntar(r.perfil, r.colunaDestino, a, r.colunaOrigem, r.extras);
     }

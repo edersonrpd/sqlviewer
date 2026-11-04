@@ -49,6 +49,8 @@ export type LigacaoPerfil = {
   /** demais colunas da chave composta (já no sentido desta ligação) */
   extras: { origem: string; destino: string }[];
   rotulo: string;
+  /** só no "Ver também", fora do JOIN (vale no sentido em que a relação foi declarada) */
+  foraDoJoin?: boolean;
 };
 
 /**
@@ -59,7 +61,14 @@ export function ligacoesDoPerfil(perfilId: string, perfis: Perfil[] = PERFIS): L
   const atual = buscarPerfil(perfilId, perfis);
   const ligacoes: LigacaoPerfil[] = [];
   for (const r of atual?.relacoes ?? []) {
-    ligacoes.push({ perfilDestino: r.perfil, colunaOrigem: r.colunaOrigem, colunaDestino: r.colunaDestino, extras: r.extras ?? [], rotulo: r.rotulo });
+    ligacoes.push({
+      perfilDestino: r.perfil,
+      colunaOrigem: r.colunaOrigem,
+      colunaDestino: r.colunaDestino,
+      extras: r.extras ?? [],
+      rotulo: r.rotulo,
+      ...(r.foraDoJoin ? { foraDoJoin: true } : {}),
+    });
   }
   for (const p of perfis) {
     if (p.id === perfilId) continue;

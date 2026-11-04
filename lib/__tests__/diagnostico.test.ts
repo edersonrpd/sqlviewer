@@ -45,11 +45,12 @@ describe("diagnóstico da FATGOR", () => {
     const fgo = L.map((l) => l.join("\t")).join("\n");
     const nfe = texto("exemplo-lognfe.txt");
     // a última NF do exemplo é autorizada; vira a fatura do pedido 1
-    const s1 = abrir(fgo, nfe.replace('"000000067471"', '"000000053684"'));
+    // (a NF-e é a da mesma fatura, cliente e empresa do pedido)
+    const s1 = abrir(fgo, nfe.replace('"000000067471"\t"IF"\t"002"\t"02048893"', '"000000053684"\t"IF"\t"001"\t"00000345"'));
     expect(titulos(s1, 0)).toContain("ok: NF-e 000000053684 autorizada em 02/01/2026 08:12:53");
     expect(titulos(s1, 1)[0]).toBe("alerta: Fatura 000000053685 sem registro na LOGNFE");
     // uma NF sem data de autorização nem retorno
-    const s2 = abrir(fgo, nfe.replace('"000000003014"', '"000000053684"'));
+    const s2 = abrir(fgo, nfe.replace('"000000003014"\t"NF"\t"101"\t"20109202"', '"000000053684"\t"NF"\t"001"\t"00000345"'));
     expect(titulos(s2, 0)[0]).toBe("alerta: NF-e 000000053684 sem autorização registrada");
   });
 
