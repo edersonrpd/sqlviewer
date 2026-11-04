@@ -70,9 +70,9 @@ describe("apoio", () => {
   it("relações pendentes quando a aba relacionada não está aberta", () => {
     const s = reducer(estadoInicial, { tipo: "criar", dados: fgo });
     const p = relacoesPendentes(s.abas[0], 2, s.abas);
-    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "LOGNFE", "ADTCLI", "FATAUT"]);
+    expect(p.map((r) => r.perfilDestino)).toEqual(["FATDOR", "EXTGOR", "MOVCAR", "HUBCIT_INFPED", "HUBCIT_LOGPED", "LOGNFE", "ADTCLI", "FATAUT"]);
     // sem NUMPOK e sem fatura: a relação aparece, mas sem chave para consultar
-    expect(p.filter((r) => r.chave === null).map((r) => r.colunaOrigem)).toEqual(["FGO_NUMPOK", "FGO_NUMPOK", "FGO_NUMFAT"]);
+    expect(p.filter((r) => r.chave === null).map((r) => r.colunaOrigem)).toEqual(["FGO_NUMPOK", "FGO_NUMPOK", "FGO_NUMPOK", "FGO_NUMFAT"]);
     expect(p[0]).toMatchObject({ tabela: "FATDOR", colunaDestino: "FDO_SEQGER", chave: "00100000000000004001" });
   });
 });
@@ -245,5 +245,54 @@ describe("ADTCLI (adiantamentos do cliente)", () => {
     expect(relacionadosDoRegistro(s.abas[0], 0, s.abas)[0].quantidade).toBe(0);
     expect(calcularSaldo(adtcli, [0, 1], buscarPerfil("ADTCLI")!.saldo!)).toEqual({ creditos: 231.63, debitos: 231.63, saldo: 0 });
     expect(calcularSaldo(adtcli, [0], buscarPerfil("ADTCLI")!.saldo!)).toEqual({ creditos: 231.63, debitos: 0, saldo: 231.63 });
+  });
+});
+
+describe("HUBCIT_LOGPED (log do pedido recebido do HUB, com o JSON)", () => {
+  const log = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-hubcit-logped.txt"), "utf-8"));
+  const perfil = buscarPerfil("HUBCIT_LOGPED");
+
+  it("é reconhecido pelas colunas e lê o JSON com aspas duplicadas", () => {
+    const s = reducer(estadoInicial, { tipo: "criarVarias", dados: [log] });
+    expect(s.abas[0].perfilId).toBe("HUBCIT_LOGPED");
+    expect(JSON.parse(log.linhas[0][6]!).marketplaceOrderCode).toBe("SHML48265349520");
+  });
+
+  it("a Tela tira cliente, produtos e totais de dentro do LOG_JSON", () => {
+    const t = montarTela(log, 1, perfil);
+    expect(t.titulo).toBe("Log do pedido MLB_SHML48417669111");
+    const campos = Object.fromEntries(t.secoes.flatMap((s) => s.campos).map((c) => [c.nome, c]));
+    expect(campos["LOG_JSON.customer.name"].texto).toBe("CLIENTE DE TESTE DOIS");
+    expect(campos["LOG_JSON.products.*.externalCode"].texto).toBe("46176");
+    expect(campos["LOG_JSON.products.*.quantity"].texto).toBe("2");
+    expect(campos["LOG_JSON.totalPrice"].texto).toMatch(/^R\$\s161,63$/);
+    expect(campos["LOG_JSON.isFulfillment"].texto).toBe("Não");
+    // null no JSON fica vazio (NULL)
+    expect(campos["LOG_JSON.trackingCode"].vazio).toBe(true);
+    expect(t.status[0]).toMatchObject({ texto: "Não (N)", cor: "amarelo" });
+    // JSON inteiro indentado, na última seção (fechada)
+    const ultima = t.secoes[t.secoes.length - 1];
+    expect(ultima).toMatchObject({ titulo: "JSON completo", recolhida: true });
+    expect(ultima.campos[0].texto).toContain('\n  "domain": "lojateste"');
+    expect(t.secoes.some((s) => s.titulo === "Outros campos")).toBe(false);
+  });
+
+  it("pedido (FATGOR) liga ao log pelo NUMPOK", () => {
+    const fat = parsearConsulta('"AUTOINCREM"\t"FGO_NUMDOC"\t"FGO_ESPDOC"\t"FGO_JAFATU"\t"FGO_NUMPOK"\n"1"\t"000001000001"\t"PD"\t"0"\t"MLB_SHML48417669111"');
+    const s = reducer(estadoInicial, { tipo: "criarVarias", dados: [fat, log] });
+    expect(s.abas.map((a) => a.perfilId)).toEqual(["FATGOR", "HUBCIT_LOGPED"]);
+    expect(relacionadosDoRegistro(s.abas[0], 0, s.abas)).toMatchObject([{ rotulo: "Log do pedido recebido do HUB", quantidade: 1 }]);
+  });
+});
+
+describe("valorJson", () => {
+  it("caminho com lista e texto que não é JSON", async () => {
+    const { valorJson } = await import("../tela");
+    const j = JSON.stringify({ a: { b: 1 }, l: [{ c: "x" }, { c: "y" }, { c: null }] });
+    expect(valorJson(j, "a.b")).toBe("1");
+    expect(valorJson(j, "l.*.c")).toBe("x\ny");
+    expect(valorJson(j, "nao.existe")).toBeNull();
+    expect(valorJson("texto", "a")).toBeUndefined();
+    expect(valorJson(null, "a")).toBeUndefined();
   });
 });

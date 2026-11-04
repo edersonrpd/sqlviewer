@@ -453,7 +453,7 @@ const ROTULOS = (() => {
     if (!o || typeof o !== "object") return;
     if (Array.isArray(o)) return o.forEach(visitar);
     const r = o as Record<string, unknown>;
-    if (typeof r.coluna === "string" && typeof r.rotulo === "string" && !m.has(r.coluna)) m.set(r.coluna, r.rotulo);
+    if (typeof r.coluna === "string" && typeof r.rotulo === "string" && r.json === undefined && !m.has(r.coluna)) m.set(r.coluna, r.rotulo);
     Object.values(r).forEach(visitar);
   };
   visitar(PERFIS.map((p) => p.tela));

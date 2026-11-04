@@ -53,6 +53,27 @@ function ehZero(v: string) {
   return /^-?0+(\.0+)?$/.test(v);
 }
 
+/** Valor de um campo do JSON em `texto`, pelo caminho ("a.b", "lista.*.c"). undefined = não é JSON. */
+export function valorJson(texto: Valor, caminho: string): Valor | undefined {
+  if (texto === null) return undefined;
+  let raiz: unknown;
+  try {
+    raiz = JSON.parse(texto);
+  } catch {
+    return undefined;
+  }
+  let atuais: unknown[] = [raiz];
+  for (const parte of caminho.split(".")) {
+    atuais = atuais.flatMap((v) => {
+      if (v === null || typeof v !== "object") return [];
+      if (parte === "*") return Array.isArray(v) ? v : Object.values(v);
+      return parte in v ? [(v as Record<string, unknown>)[parte]] : [];
+    });
+  }
+  const textos = atuais.filter((v) => v !== null && v !== undefined).map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v)));
+  return textos.length === 0 ? null : textos.join("\n");
+}
+
 export function montarCampo(dados: ResultadoParse, linha: Valor[], j: number, def?: Partial<CampoTela>): CampoMontado {
   const col = dados.colunas[j];
   const raw = linha[j];
@@ -67,6 +88,7 @@ export function montarCampo(dados: ResultadoParse, linha: Valor[], j: number, de
     else if (def?.formato === "chaveAcesso") texto = raw.replace(/(\d{4})(?=\d)/g, "$1 ");
     // log do robô: mensagens repetidas agrupadas (o original completo continua no "copiar")
     else if (def?.formato === "log") texto = textoResumoLog(raw) ?? formatarValor(raw, col.tipo);
+    else if (def?.formato === "json") texto = jsonIndentado(raw) ?? formatarValor(raw, col.tipo);
     else texto = formatarValor(raw, col.tipo);
   }
   if (def?.hora) {
@@ -93,6 +115,13 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
     (defs ?? []).flatMap((d) => {
       const j = porNome.get(d.coluna);
       if (j === undefined) return [];
+      // campo de dentro do JSON da coluna: não conta como "usada" (a coluna inteira pode ter seção própria)
+      if (d.json) {
+        const v = valorJson(linha[j], d.json);
+        if (v === undefined) return [];
+        const c = montarCampo(dados, linha.map((x, k) => (k === j ? v : x)), j, d);
+        return [{ ...c, nome: `${d.coluna}.${d.json}` }];
+      }
       if (marcar) {
         usadas.add(j);
         const jh = d.hora ? porNome.get(d.hora) : undefined;
@@ -154,6 +183,15 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   return { titulo, chave, indicadores, subtitulo, status, destaques, secoes };
 }
 
+function jsonIndentado(v: string): string | null {
+  try {
+    const o = JSON.parse(v);
+    return o !== null && typeof o === "object" ? JSON.stringify(o, null, 2) : null;
+  } catch {
+    return null;
+  }
+}
+
 function agruparPorTipo(dados: ResultadoParse, linha: Valor[], js: number[]): SecaoMontada[] {
   const grupos: Record<string, number[]> = { Identificação: [], "Datas e horas": [], Valores: [], Textos: [] };
   for (const j of js) {
@@ -183,7 +221,7 @@ export function resumoRegistro(
   const tela = perfil?.tela;
   for (const d of [...(tela?.subtitulo ?? []).slice(0, 1), ...(tela?.destaques ?? []).slice(0, 1)]) {
     const j = porNome.get(d.coluna);
-    if (j === undefined) continue;
+    if (j === undefined || d.json) continue;
     const c = montarCampo(dados, linha, j, d);
     if (c.texto) partes.push(c.texto);
   }
