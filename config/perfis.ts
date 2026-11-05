@@ -1154,7 +1154,8 @@ export const PERFIS: Perfil[] = [
     nome: "Movimentação de cartões",
     assinatura: ["MCA_NUMPOK"],
     destaque: { coluna: "MCA_NUMPOK", rotulo: "NUMPOK" },
-    colunasPadrao: ["MCA_NUMPOK", "MCA_VALTAX", "MCA_HIST01"],
+    colunasPadrao: ["MCA_NUMPOK", "MCA_VALORI", "MCA_VALDUP", "MCA_VALSTA", "MCA_VALTAX", "MCA_VALREC", "MCA_HIST01"],
+    colunasFixas: ["MCA_NUMPOK", "MCA_VALORI", "MCA_VALDUP", "MCA_VALSTA", "MCA_VALTAX", "MCA_VALREC"],
     rotulosInversos: { FATGOR: "Pedido (cabeçalho)" },
   },
   {
