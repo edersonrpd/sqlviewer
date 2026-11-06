@@ -159,6 +159,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                   <BotaoCopiarChamado
                     dados={dados}
                     tabela={perfil?.tabela}
+                    chave={perfil?.chave ?? perfil?.colunaTitulo}
                     linhas={[registro]}
                     colunas={exibidas}
                     rotulo="Copiar"

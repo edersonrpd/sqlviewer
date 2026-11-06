@@ -119,6 +119,45 @@ export function gerarInsert(dados: ResultadoParse, linhas: number[], colunas: nu
     .join("\n");
 }
 
+/** Condição de igualdade com o valor original (NULL vira IS NULL). */
+function condicaoSql(nome: string, v: Valor, c: Coluna): string {
+  return v === null ? `${nome} IS NULL` : `${nome} = ${numeroLiteral(v, c) ? v : literalSql(v)}`;
+}
+
+/**
+ * SELECT que busca de volta os registros copiados, para a programação analisar.
+ * Com a coluna-chave do perfil no resultado: `WHERE CHAVE IN (…)`. Sem ela, cada
+ * registro é identificado pelos valores das colunas copiadas (textos longos ficam de fora).
+ */
+export function gerarSelect(dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string, chave?: string): string {
+  const nomes = colunas.map((j) => dados.colunas[j].nome);
+  const cabeca = `SELECT ${nomes.length === dados.colunas.length ? "*" : nomes.join(", ")}\nFROM ${tabela}`;
+  const jChave = chave ? dados.colunas.findIndex((c) => c.nome.toUpperCase() === chave.toUpperCase()) : -1;
+  if (jChave >= 0) {
+    const c = dados.colunas[jChave];
+    const valores = [...new Set(linhas.map((i) => dados.linhas[i][jChave]))];
+    const naoNulos = valores.filter((v): v is string => v !== null).map((v) => (numeroLiteral(v, c) ? v : literalSql(v)));
+    const conds: string[] = [];
+    if (naoNulos.length === 1) conds.push(`${c.nome} = ${naoNulos[0]}`);
+    else if (naoNulos.length > 1) conds.push(`${c.nome} IN (${naoNulos.join(", ")})`);
+    if (valores.includes(null)) conds.push(`${c.nome} IS NULL`);
+    return `${cabeca}\nWHERE ${conds.join(" OR ")};`;
+  }
+  const filtros = [
+    ...new Set(
+      linhas.map((i) =>
+        colunas
+          .filter((j) => (dados.linhas[i][j] ?? "").length <= 100)
+          .map((j) => condicaoSql(dados.colunas[j].nome, dados.linhas[i][j], dados.colunas[j]))
+          .join(" AND "),
+      ),
+    ),
+  ].filter((f) => f !== "");
+  if (filtros.length === 0) return `${cabeca};`;
+  if (filtros.length === 1) return `${cabeca}\nWHERE ${filtros[0]};`;
+  return `${cabeca}\nWHERE (${filtros[0]})\n${filtros.slice(1).map((f) => `   OR (${f})`).join("\n")};`;
+}
+
 /** Tabela em texto com colunas alinhadas (como o resultado do cliente mysql no terminal). */
 export function gerarTextoTabela(dados: ResultadoParse, linhas: number[], colunas: number[]): string {
   const cols = colunas.map((j) => dados.colunas[j]);
@@ -136,7 +175,7 @@ export function gerarTextoTabela(dados: ResultadoParse, linhas: number[], coluna
   return [borda, linha(cols.map((c) => c.nome), true), borda, ...corpo.map((l) => linha(l, false)), borda].join("\n");
 }
 
-export type FormatoCopia = "tabulado" | "csv" | "json" | "markdown" | "insert" | "texto" | "lista";
+export type FormatoCopia = "tabulado" | "csv" | "json" | "markdown" | "insert" | "select" | "texto" | "lista";
 
 export const FORMATOS_COPIA: { id: FormatoCopia; rotulo: string; descricao: string }[] = [
   { id: "tabulado", rotulo: "Tabulado (Excel)", descricao: "Cabeçalho + linhas separadas por TAB" },
@@ -144,12 +183,13 @@ export const FORMATOS_COPIA: { id: FormatoCopia; rotulo: string; descricao: stri
   { id: "json", rotulo: "JSON", descricao: "Lista de objetos { COLUNA: valor }" },
   { id: "markdown", rotulo: "Markdown", descricao: "Tabela para chamados, wikis e GitHub" },
   { id: "insert", rotulo: "SQL INSERT", descricao: "Um INSERT por linha, valores originais" },
+  { id: "select", rotulo: "SQL SELECT", descricao: "Consulta que busca estes registros no banco" },
   { id: "texto", rotulo: "Texto alinhado", descricao: "Como o cliente mysql no terminal" },
   { id: "lista", rotulo: "Lista", descricao: "COLUNA: valor, um campo por linha" },
 ];
 
 /** Texto da seleção/resultado no formato escolhido. */
-export function gerarFormato(formato: FormatoCopia, dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string): string {
+export function gerarFormato(formato: FormatoCopia, dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string, chave?: string): string {
   switch (formato) {
     case "tabulado":
       return gerarTabulado(dados, linhas, colunas);
@@ -161,6 +201,8 @@ export function gerarFormato(formato: FormatoCopia, dados: ResultadoParse, linha
       return gerarMarkdown(dados, linhas, colunas);
     case "insert":
       return gerarInsert(dados, linhas, colunas, tabela);
+    case "select":
+      return gerarSelect(dados, linhas, colunas, tabela, chave);
     case "texto":
       return gerarTextoTabela(dados, linhas, colunas);
     case "lista":

@@ -14,13 +14,15 @@ type Props = {
   ret: Retangulo | null;
   /** nome da tabela para o INSERT */
   tabela: string;
+  /** coluna que identifica o registro, para o SELECT */
+  chave?: string;
   verValor: boolean;
   onVerValor: () => void;
   onAviso: (msg: string) => void;
 };
 
 /** Barra embaixo da tabela: agregados da seleção (como no rodapé do DataGrip/Excel) e "Copiar como". */
-export function BarraSelecao({ dados, indices, colunas, ret, tabela, verValor, onVerValor, onAviso }: Props) {
+export function BarraSelecao({ dados, indices, colunas, ret, tabela, chave, verValor, onVerValor, onAviso }: Props) {
   const ag = useMemo(() => (ret ? agregarSelecao(dados, indices, colunas, ret) : null), [dados, indices, colunas, ret]);
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -36,7 +38,7 @@ export function BarraSelecao({ dados, indices, colunas, ret, tabela, verValor, o
     if (!ret) return;
     const linhas = indices.slice(ret.r0, ret.r1 + 1);
     const cols = colunas.slice(ret.c0, ret.c1 + 1);
-    const ok = await copiarTexto(gerarFormato(formato, dados, linhas, cols, tabela));
+    const ok = await copiarTexto(gerarFormato(formato, dados, linhas, cols, tabela, chave));
     const nome = FORMATOS_COPIA.find((f) => f.id === formato)!.rotulo;
     onAviso(ok ? `Copiado como ${nome}: ${linhas.length} linha(s) × ${cols.length} coluna(s)` : "Não foi possível copiar");
   };

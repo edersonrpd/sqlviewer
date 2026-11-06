@@ -6,7 +6,7 @@ import type { ResultadoParse } from "@/lib/tipos";
 import { IconeCopiar, IconeDownload, IconeSeta } from "./Icones";
 import { baixarArquivo, copiarTexto, useAviso } from "./util";
 
-type Base = { dados: ResultadoParse; linhas: number[]; colunas: number[]; /** nome da tabela para o SQL INSERT */ tabela?: string };
+type Base = { dados: ResultadoParse; linhas: number[]; colunas: number[]; /** nome da tabela para o SQL INSERT */ tabela?: string; /** coluna que identifica o registro, para o SQL SELECT */ chave?: string };
 
 // downloads além de CSV e Excel
 const ARQUIVOS: { formato: FormatoCopia; rotulo: string; descricao: string; extensao: string; tipo: string }[] = [
@@ -129,6 +129,7 @@ export function BotaoCopiarChamado({
   semLinhas,
   destaque,
   tabela = "TABELA",
+  chave,
 }: Base & { rotulo: string; semLinhas: string; /** botão principal da barra (índigo, com brilho) */ destaque?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [aviso, setAviso] = useAviso();
@@ -138,7 +139,7 @@ export function BotaoCopiarChamado({
 
   const copiar = async (formato: FormatoCopia) => {
     setAberto(false);
-    const ok = await copiarTexto(gerarFormato(formato, dados, linhas, colunas, tabela));
+    const ok = await copiarTexto(gerarFormato(formato, dados, linhas, colunas, tabela, chave));
     setAviso(ok ? `Copiado: ${linhas.length} registro(s)` : "Não foi possível copiar");
   };
 
