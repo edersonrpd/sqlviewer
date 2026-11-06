@@ -57,7 +57,9 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
   const ret = useMemo(() => (selecao ? retangulo(selecao) : null), [selecao]);
   const [verValor, setVerValor] = useState(false);
   const [aviso, setAviso] = useAviso(2500);
-  const tabelaSql = buscarPerfil(aba.perfilId)?.tabela ?? aba.nome.replace(/\W+/g, "_");
+  const perfilAba = buscarPerfil(aba.perfilId);
+  const tabelaSql = perfilAba?.tabela ?? aba.nome.replace(/\W+/g, "_");
+  const chaveSql = perfilAba?.chave ?? perfilAba?.colunaTitulo;
   const copiarSelecao = useCallback(async () => {
     if (!ret) return;
     const linhas = indices.slice(ret.r0, ret.r1 + 1);
@@ -186,6 +188,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           <BotaoCopiarChamado
             destaque
             tabela={tabelaSql}
+            chave={chaveSql}
             dados={dados}
             linhas={selecionadasVisiveis}
             colunas={exibidas}
@@ -314,6 +317,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
                   colunas={exibidas}
                   ret={ret}
                   tabela={tabelaSql}
+                  chave={chaveSql}
                   verValor={verValor}
                   onVerValor={() => setVerValor(!verValor)}
                   onAviso={setAviso}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gerarFormato, gerarInsert, gerarJSON, gerarMarkdown, gerarTabulado, gerarTextoTabela } from "../exportar";
+import { gerarFormato, gerarInsert, gerarSelect, gerarJSON, gerarMarkdown, gerarTabulado, gerarTextoTabela } from "../exportar";
 import { alternarOrdenacao, CHAVE_NULL, filtrarOrdenar, listaOrdenacao, valoresDistintos, type Criterios } from "../filtragem";
 import { parsearConsulta } from "../parser";
 import { agregarSelecao, limitarSelecao, retangulo } from "../selecao";
@@ -85,6 +85,14 @@ describe("formatos de cópia", () => {
   it("INSERT com aspas escapadas e NULL", () => {
     expect(gerarInsert(t, [3, 1], [0, 3], "T")).toBe("INSERT INTO T (UF, OBS) VALUES ('RJ', 'it''s');\nINSERT INTO T (UF, OBS) VALUES ('RJ', NULL);");
     expect(gerarInsert(t, [0], [1, 2], "T")).toBe("INSERT INTO T (COD, VALOR) VALUES ('010', 10.50);");
+  });
+  it("SELECT pela coluna-chave", () => {
+    expect(gerarSelect(t, [0, 1, 2], [0, 3], "T", "cod")).toBe("SELECT UF, OBS\nFROM T\nWHERE COD IN ('010', '002', '001');");
+    expect(gerarSelect(t, [0], [0, 1, 2, 3], "T", "COD")).toBe("SELECT *\nFROM T\nWHERE COD = '010';");
+  });
+  it("SELECT sem chave: identifica cada registro pelos valores", () => {
+    expect(gerarSelect(t, [1], [0, 3], "T")).toBe("SELECT UF, OBS\nFROM T\nWHERE UF = 'RJ' AND OBS IS NULL;");
+    expect(gerarFormato("select", t, [0, 3], [0, 2], "T")).toBe("SELECT UF, VALOR\nFROM T\nWHERE (UF = 'SP' AND VALOR = 10.50)\n   OR (UF = 'RJ' AND VALOR = 9.00);");
   });
   it("texto alinhado como o cliente mysql", () => {
     expect(gerarTextoTabela(t, L, [0, 2])).toBe(
