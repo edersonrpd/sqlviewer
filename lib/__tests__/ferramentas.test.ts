@@ -7,7 +7,7 @@ import { estadoInicial, reducer } from "../estado";
 import { montarConsulta, separarValores, temJoin } from "../montar";
 import { parsearConsulta } from "../parser";
 import { buscarPerfil } from "../perfis";
-import { lerSessao, nomeArquivoSessao, serializarSessao } from "../sessao";
+import { lerSessao, nomeArquivoEscolhido, nomeArquivoSessao, serializarSessao } from "../sessao";
 
 const fgo = parsearConsulta(readFileSync(join(__dirname, "../../fixtures/exemplo-fgo.txt"), "utf-8"));
 const busca = (id: string) => BUSCAS_RAPIDAS.find((b) => b.id === id)!;
@@ -58,6 +58,14 @@ describe("sessão em arquivo", () => {
 
   it("nome do arquivo com data e hora", () => {
     expect(nomeArquivoSessao(new Date(2026, 9, 30, 14, 5))).toBe("sqlviewer-sessao-20261030-1405.json");
+  });
+
+  it("nome do arquivo escolhido pelo usuário", () => {
+    const d = new Date(2026, 9, 30, 14, 5);
+    expect(nomeArquivoEscolhido("pedido 13348", d)).toBe("pedido 13348.json");
+    expect(nomeArquivoEscolhido("  conferencia.JSON ", d)).toBe("conferencia.json");
+    expect(nomeArquivoEscolhido("cliente/rezende: 05?", d)).toBe("cliente-rezende- 05.json");
+    expect(nomeArquivoEscolhido("   ", d)).toBe("sqlviewer-sessao-20261030-1405.json");
   });
 });
 
