@@ -60,3 +60,16 @@ export function nomeArquivoSessao(agora = new Date()): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `sqlviewer-sessao-${agora.getFullYear()}${p(agora.getMonth() + 1)}${p(agora.getDate())}-${p(agora.getHours())}${p(agora.getMinutes())}.json`;
 }
+
+/**
+ * Nome digitado para o arquivo da sessão: sem caracteres inválidos em nome de arquivo,
+ * sempre terminando em .json; vazio = nome padrão com data e hora.
+ */
+export function nomeArquivoEscolhido(texto: string, agora = new Date()): string {
+  const base = texto
+    .trim()
+    .replace(/\.json$/i, "")
+    .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "-")
+    .replace(/^[.\s-]+|[.\s-]+$/g, "");
+  return base ? `${base}.json` : nomeArquivoSessao(agora);
+}

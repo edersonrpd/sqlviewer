@@ -4,7 +4,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { estadoInicial, reducer, type Acao } from "@/lib/estado";
 import { separarPorMarcadores } from "@/lib/join";
 import { parsearConsulta } from "@/lib/parser";
-import { lerSessao, nomeArquivoSessao, serializarSessao } from "@/lib/sessao";
+import { lerSessao, nomeArquivoEscolhido, nomeArquivoSessao, serializarSessao } from "@/lib/sessao";
 import { analisarProcedure, pareceProcedure } from "@/lib/procedure";
 import { AbaConsulta } from "./AbaConsulta";
 import { AbaProcedure } from "./AbaProcedure";
@@ -233,6 +233,21 @@ function BarraAbas({ estado, dispatch }: { estado: typeof estadoInicial; dispatc
 function BotoesSessao({ estado, dispatch }: { estado: typeof estadoInicial; dispatch: React.Dispatch<Acao> }) {
   const arquivo = useRef<HTMLInputElement>(null);
   const [aviso, setAviso] = useAviso(4000);
+  // nome do arquivo sendo escolhido (null = caixa fechada)
+  const [nome, setNome] = useState<string | null>(null);
+  const campoNome = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (nome !== null) campoNome.current?.select();
+    // só ao abrir a caixa
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nome !== null]);
+
+  const salvar = () => {
+    const final = nomeArquivoEscolhido(nome ?? "");
+    baixarArquivo(serializarSessao(estado), final, "application/json");
+    setNome(null);
+    setAviso(`Sessão salva: ${final}`);
+  };
 
   const abrir = async (f: File) => {
     try {
@@ -257,13 +272,47 @@ function BotoesSessao({ estado, dispatch }: { estado: typeof estadoInicial; disp
         aria-label="Salvar sessão"
         style={{ opacity: estado.abas.length === 0 ? 0.4 : undefined }}
         disabled={estado.abas.length === 0}
-        onClick={() => {
-          baixarArquivo(serializarSessao(estado), nomeArquivoSessao(), "application/json");
-          setAviso("Sessão salva");
-        }}
+        aria-expanded={nome !== null}
+        onClick={() => setNome((n) => (n === null ? nomeArquivoSessao().replace(/\.json$/, "") : null))}
       >
         <IconeSalvar className="h-4 w-4" />
       </button>
+      {nome !== null && (
+        <form
+          className="absolute top-full right-0 z-30 mt-2 flex w-80 animate-surgir flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-zinc-900"
+          onSubmit={(e) => {
+            e.preventDefault();
+            salvar();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setNome(null);
+          }}
+        >
+          <label htmlFor="nome-sessao" className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            Nome do arquivo da sessão
+          </label>
+          <div className="flex items-center rounded-lg border border-zinc-300 focus-within:border-blue-400 dark:border-white/15">
+            <input
+              id="nome-sessao"
+              ref={campoNome}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="min-w-0 flex-1 bg-transparent px-2 py-1.5 text-sm outline-none"
+              spellCheck={false}
+              autoComplete="off"
+            />
+            <span className="pr-2 text-sm text-zinc-400">.json</span>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" className="rounded-lg px-3 py-1 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10" onClick={() => setNome(null)}>
+              Cancelar
+            </button>
+            <button type="submit" className="rounded-lg bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700">
+              Salvar
+            </button>
+          </div>
+        </form>
+      )}
       <button
         className="btn-icone h-9 w-9 rounded-lg border border-zinc-200 dark:border-white/10"
         title="Abrir sessão salva (.json)"
