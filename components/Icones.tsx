@@ -32,3 +32,4 @@ export const IconeComparar = svg(<path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 1
 export const IconeFunil = svg(<path d="M3 4h18l-7 8.5V19l-4 2v-8.5L3 4Z" />);
 export const IconeTranspor = svg(<><path d="M4 4h7v7H4zM13 13h7v7h-7z" /><path d="M15 4h3a2 2 0 0 1 2 2v3M9 20H6a2 2 0 0 1-2-2v-3" /></>);
 export const IconePainel = svg(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></>);
+export const IconeRelacoes = svg(<><rect x="2" y="3" width="7" height="6" rx="1.5" /><rect x="15" y="3" width="7" height="6" rx="1.5" /><rect x="15" y="15" width="7" height="6" rx="1.5" /><path d="M9 6h6M12 6v12h3" /></>);
