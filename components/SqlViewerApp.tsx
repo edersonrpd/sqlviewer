@@ -9,7 +9,8 @@ import { analisarProcedure, pareceProcedure } from "@/lib/procedure";
 import { AbaConsulta } from "./AbaConsulta";
 import { AbaProcedure } from "./AbaProcedure";
 import { EntradaConsulta } from "./EntradaConsulta";
-import { IconeBanco, IconeLua, IconeMais, IconePasta, IconeSalvar, IconeSol, IconeX } from "./Icones";
+import { MapaRelacoes } from "./MapaRelacoes";
+import { IconeBanco, IconeLua, IconeRelacoes, IconeMais, IconePasta, IconeSalvar, IconeSol, IconeX } from "./Icones";
 import { baixarArquivo, useAviso } from "./util";
 
 export function SqlViewerApp() {
@@ -47,6 +48,8 @@ export function SqlViewerApp() {
   const descartarFechada = useCallback(() => dispatch({ tipo: "descartarFechada" }), []);
 
   const ativa = estado.abas.find((a) => a.id === estado.ativa) ?? null;
+  const [mapaAberto, setMapaAberto] = useState(false);
+  const fecharMapa = useCallback(() => setMapaAberto(false), []);
 
   return (
     <div className="flex h-dvh flex-col">
@@ -61,6 +64,14 @@ export function SqlViewerApp() {
           SQL Viewer
         </h1>
         <BarraAbas estado={estado} dispatch={dispatch} />
+        <button
+          className="btn-icone h-9 w-9 shrink-0 rounded-lg border border-zinc-200 dark:border-white/10"
+          title="Relações entre tabelas"
+          aria-label="Relações entre tabelas"
+          onClick={() => setMapaAberto(true)}
+        >
+          <IconeRelacoes className="h-4 w-4" />
+        </button>
         <BotoesSessao estado={estado} dispatch={dispatch} />
         <BotaoTema />
       </header>
@@ -77,6 +88,8 @@ export function SqlViewerApp() {
           />
         )}
       </main>
+
+      {mapaAberto && <MapaRelacoes abertos={new Set(estado.abas.map((a) => a.perfilId ?? ""))} onFechar={fecharMapa} />}
 
       {estado.fechada && (
         <AvisoDesfazer

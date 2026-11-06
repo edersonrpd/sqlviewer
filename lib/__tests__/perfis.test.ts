@@ -99,3 +99,33 @@ describe("ligacoesDoPerfil", () => {
     ]);
   });
 });
+
+describe("mapa de relações", () => {
+  it("liga as tabelas pelos perfis, em camadas a partir do pedido", async () => {
+    const { montarMapa, condicaoJoin } = await import("../mapaRelacoes");
+    const m = montarMapa();
+    const no = (id: string) => m.nos.find((n) => n.id === id)!;
+    const fatdor = m.arestas.find((a) => a.de === "FATGOR" && a.para === "FATDOR")!;
+    expect(condicaoJoin(no("FATGOR"), no("FATDOR"), fatdor.ligacoes[0])).toBe("FATGOR.AUTOINCREM = FATDOR.FDO_SEQGER");
+    expect(no("FATDOR").x).toBeGreaterThan(no("FATGOR").x);
+    expect(no("CADITE").x).toBeGreaterThan(no("FATDOR").x);
+    // chave composta sai com AND; tabela do outro banco com o nome real
+    const hub = m.arestas.find((a) => a.de === "HUB_PEDIDOS")!;
+    expect(condicaoJoin(no("HUB_PEDIDOS"), no("HUB_ITENS_PEDIDOS"), hub.ligacoes[0])).toBe(
+      "pedidos.order_id = itens_pedidos.order_id AND pedidos.dominio = itens_pedidos.dominio",
+    );
+    // sem sobreposição de caixas
+    const pos = new Set(m.nos.map((n) => `${n.x},${n.y}`));
+    expect(pos.size).toBe(m.nos.length);
+    expect(m.nos.some((n) => n.cadastro)).toBe(false);
+  });
+  it("cadastros opcionais: CADOPE vira uma caixa, CADCLI usa a do perfil", async () => {
+    const { montarMapa } = await import("../mapaRelacoes");
+    const m = montarMapa(undefined, { cadastros: true });
+    expect(m.nos.filter((n) => n.tabela === "CADCLI")).toHaveLength(1);
+    const ope = m.arestas.find((a) => a.de === "FATGOR" && a.para === "CADOPE")!;
+    expect(ope.ligacoes.length).toBeGreaterThan(3);
+    // Cliente declarado como relação e como cadastro: uma ligação só
+    expect(m.arestas.find((a) => a.de === "FATGOR" && a.para === "CADCLI")!.ligacoes).toHaveLength(1);
+  });
+});
