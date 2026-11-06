@@ -90,7 +90,7 @@ describe("montar consulta", () => {
 
   it("JOIN completo do pedido pelo número do documento", () => {
     const sql = montarConsulta(busca("pedido"), ["000001000001"], true)!;
-    expect(sql.match(/>>\w+/g)).toEqual([">>FATGOR", ">>FATDOR", ">>CADITE", ">>EXTGOR", ">>MOVCAR", ">>HUBCIT_INFPED", ">>HUBCIT_LOGPED", ">>ADTCLI", ">>FATAUT"]);
+    expect(sql.match(/>>\w+/g)).toEqual([">>FATGOR", ">>FATDOR", ">>CADITE", ">>EXTGOR", ">>CADCLI", ">>MOVCAR", ">>HUBCIT_INFPED", ">>HUBCIT_LOGPED", ">>ADTCLI", ">>FATAUT"]);
     expect(sql.endsWith(" WHERE t0.FGO_NUMDOC = '000001000001';")).toBe(true);
   });
 

@@ -992,6 +992,9 @@ export const PERFIS: Perfil[] = [
     relacoes: [
       { perfil: "FATDOR", colunaOrigem: "AUTOINCREM", colunaDestino: "FDO_SEQGER", rotulo: "Itens do pedido" },
       { perfil: "EXTGOR", colunaOrigem: "AUTOINCREM", colunaDestino: "FGO_SEQFGO", rotulo: "Extensão do pedido" },
+      // cliente no JOIN do pedido: a procedure do faturamento automático exige o cadastro (INNER JOIN CADCLI)
+      // e algumas regras usam colunas dele (ex.: CLI_CGCCPF)
+      { perfil: "CADCLI", colunaOrigem: "FGO_CODCLI", colunaDestino: "CLI_CODCLI", rotulo: "Cliente" },
       { perfil: "MOVCAR", colunaOrigem: "FGO_NUMPOK", colunaDestino: "MCA_NUMPOK", rotulo: "Movimentação de cartões" },
       { perfil: "HUBCIT_INFPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "INF_NUMPOK", rotulo: "Dados do pedido no HUB" },
       { perfil: "HUBCIT_LOGPED", colunaOrigem: "FGO_NUMPOK", colunaDestino: "LOG_PEDIDO", rotulo: "Log do pedido recebido do HUB" },
@@ -1400,6 +1403,16 @@ export const PERFIS: Perfil[] = [
     colunaTitulo: "MAR_CODMAR",
     chave: "MAR_CODMAR",
     rotulosInversos: { CADITE: "Itens da marca" },
+  },
+  {
+    id: "CADCLI",
+    nome: "Cadastro de clientes",
+    assinatura: ["CLI_CODCLI", "CLI_CGCCPF"],
+    colunasPadrao: ["CLI_CODCLI", "CLI_NOMCLI", "CLI_CGCCPF"],
+    colunasFixas: ["CLI_CODCLI"],
+    colunaTitulo: "CLI_CODCLI",
+    chave: "CLI_CODCLI",
+    rotulosInversos: { FATGOR: "Pedidos do cliente" },
   },
   {
     // HUBCitel (banco do HUB, não do ERP): cabeçalho do pedido, pelo order_id sem prefixo

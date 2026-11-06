@@ -5,8 +5,10 @@ import {
   apelidosDaEtapa,
   avaliarCondicao,
   type AnaliseProcedure,
+  type BuscarRegistros,
   type BuscarValores,
   type Etapa,
+  type RegistroLigado,
   type ResultadoRegra,
 } from "./procedure";
 import { extrasLigacao, relacionadosDoRegistro } from "./relacionados";
@@ -44,7 +46,37 @@ export function buscadorDoPedido(pedido: Aba, registro: number, abas: Aba[]) {
   };
   /** registros ligados ao pedido na tabela (undefined = aba não aberta) */
   const ligados = (tabela: string): number | undefined => ligadas.find((l) => nomeTabela(l.aba) === tabela.toUpperCase())?.linhas.length;
-  return { buscar, ligados };
+  /** cada registro ligado ao pedido na tabela (ex.: cada item da FATDOR), com os registros ligados a ele (ex.: CADITE) */
+  const registros: BuscarRegistros = (tabela) => {
+    const l = ligadas.find((x) => nomeTabela(x.aba) === tabela.toUpperCase());
+    return l?.linhas.map((i) => registroDaAba(l.aba, i, abas, pedido));
+  };
+  return { buscar, ligados, registros };
+}
+
+/** Valores de um registro de uma aba e dos registros ligados a ele nas outras abas (fora o pedido). */
+function registroDaAba(aba: Aba, i: number, abas: Aba[], pedido: Aba): RegistroLigado {
+  const ligadas = relacionadosDoRegistro(aba, i, abas)
+    .filter((r) => r.abaId !== pedido.id)
+    .map((r) => {
+      const destino = abas.find((a) => a.id === r.abaId)!;
+      return { aba: destino, linhas: r.chave === null ? [] : linhasLigadas(r.chave, destino.dados.linhas, r.colunaDestino, extrasLigacao(r.extras)) };
+    });
+  const tabela = nomeTabela(aba);
+  const proprio = (coluna: string): Valor[] | undefined => {
+    const j = aba.dados.colunas.findIndex((c) => c.nome === coluna);
+    return j < 0 ? undefined : [aba.dados.linhas[i]?.[j] ?? null];
+  };
+  return {
+    buscar: (t, coluna) => {
+      if (!t || t.toUpperCase() === tabela) return proprio(coluna);
+      const l = ligadas.find((x) => nomeTabela(x.aba) === t.toUpperCase());
+      if (!l) return undefined;
+      const j = l.aba.dados.colunas.findIndex((c) => c.nome === coluna);
+      return j < 0 ? undefined : l.linhas.map((x) => l.aba.dados.linhas[x][j]);
+    },
+    ligados: (t) => ligadas.find((x) => nomeTabela(x.aba) === t.toUpperCase())?.linhas.length,
+  };
 }
 
 export type ConferenciaEtapa = {
@@ -57,7 +89,7 @@ export type ConferenciaProcedure = { etapas: ConferenciaEtapa[]; barrou: number;
 
 /** Confere cada regra da procedure com o pedido (ok: true = atende, false = barra, null = sem dados nas abas). */
 export function conferirProcedure(analise: AnaliseProcedure, pedido: Aba, registro: number, abas: Aba[]): ConferenciaProcedure {
-  const { buscar, ligados } = buscadorDoPedido(pedido, registro, abas);
+  const { buscar, ligados, registros } = buscadorDoPedido(pedido, registro, abas);
   const etapas = analise.etapas.map((e: Etapa): ConferenciaEtapa => {
     const apelidos = apelidosDaEtapa(e);
     return {
@@ -68,7 +100,7 @@ export function conferirProcedure(analise: AnaliseProcedure, pedido: Aba, regist
         if (n === undefined) return null;
         return { ok: n > 0, motivo: n > 0 ? `${n} registro(s) em ${j.tabela}` : `nenhum registro em ${j.tabela} ligado ao pedido` };
       }),
-      condicoes: e.condicoes.map((c) => avaliarCondicao(c.sql, buscar, apelidos)),
+      condicoes: e.condicoes.map((c) => avaliarCondicao(c.sql, buscar, apelidos, registros)),
       // "retira": a regra barra quando algum registro bate (ex.: item com lote 'A DEFINIR')
       retiraSe: e.retiraSe.map((c) => {
         const r = algumRegistroBate(c.sql, buscar, apelidos);

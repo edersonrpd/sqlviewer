@@ -367,6 +367,14 @@ function analisarComando(tk: Token[], apelidosGlobais: Map<string, string>): Eta
         const nota = notaDe(comentarios.filter((c) => !condicaoComentada(c.v)), parte[0].linha, parte.at(-1)!.linhaFim);
         condicoes.push({ sql, descricao: descreverCondicao(sql, apelidos), nota, requisitos: requisitos(nota ?? "") });
       }
+      // subconsultas dentro do WHERE (ex.: (SELECT COUNT(0) FROM FATDOR X WHERE …) = 1) fazem parte
+      // da condição: o FROM/JOIN/WHERE delas não são regras próprias; só as tabelas contam como lidas
+      for (let y = k + 1; y < fim; y++) {
+        if (!P(corpo[y], "FROM", "JOIN") || corpo[y + 1]?.t !== "palavra") continue;
+        const tabela = corpo[y + 1].v;
+        if (!TEMPORARIA.test(tabela) && !origens.includes(tabela) && tabela.toUpperCase() !== alvo.toUpperCase()) origens.push(tabela);
+      }
+      k = fim - 1;
     }
     if (u === "GROUP" && corpo[k + 1] && P(corpo[k + 1], "BY")) {
       const fim = fimClausula(corpo, prof, k + 2, prof[k], ["HAVING", "ORDER", "LIMIT", "UNION"]);
@@ -566,6 +574,10 @@ export function descreverCondicao(sql: string, apelidos: Map<string, string> = n
  */
 export type BuscarValores = (tabela: string | null, coluna: string) => Valor[] | undefined;
 export type ResultadoRegra = { ok: boolean | null; motivo: string };
+/** Um registro ligado ao pedido (ex.: um item da FATDOR), para conferir subconsultas por linha. */
+export type RegistroLigado = { buscar: BuscarValores; ligados: (tabela: string) => number | undefined };
+/** Registros ligados ao pedido numa tabela (undefined = aba não aberta). */
+export type BuscarRegistros = (tabela: string) => RegistroLigado[] | undefined;
 
 const valorLiteral = (v: string) => v.replace(/^'([\s\S]*)'$/, "$1").replace(/''/g, "'");
 const ehNumero = (v: string) => /^-?\d+(\.\d+)?$/.test(v.trim());
@@ -592,11 +604,16 @@ function comparar(a: string, op: string, b: string): boolean {
 }
 
 /** Confere uma condição com os valores do registro. ok = null quando não dá para saber com as abas abertas. */
-export function avaliarCondicao(sql: string, buscar: BuscarValores, apelidos: Map<string, string> = new Map()): ResultadoRegra {
+export function avaliarCondicao(
+  sql: string,
+  buscar: BuscarValores,
+  apelidos: Map<string, string> = new Map(),
+  registros?: BuscarRegistros,
+): ResultadoRegra {
   const s = tirarParenteses(sql);
   const ors = dividirLogico(s, "OR");
   if (ors.length > 1) {
-    const rs = ors.map((p) => avaliarCondicao(p, buscar, apelidos));
+    const rs = ors.map((p) => avaliarCondicao(p, buscar, apelidos, registros));
     const v = rs.find((r) => r.ok === true);
     if (v) return { ok: true, motivo: v.motivo };
     if (rs.every((r) => r.ok === false)) return { ok: false, motivo: rs.map((r) => r.motivo).join("; ") };
@@ -604,11 +621,29 @@ export function avaliarCondicao(sql: string, buscar: BuscarValores, apelidos: Ma
   }
   const ands = dividirLogico(s, "AND");
   if (ands.length > 1 && !/\bBETWEEN\b/i.test(s)) {
-    const rs = ands.map((p) => avaliarCondicao(p, buscar, apelidos));
+    const rs = ands.map((p) => avaliarCondicao(p, buscar, apelidos, registros));
     const f = rs.find((r) => r.ok === false);
     if (f) return f;
     return { ok: rs.every((r) => r.ok === true) ? true : null, motivo: rs.map((r) => r.motivo).join("; ") };
   }
+  if (/^(TRUE|1)$/i.test(s)) return { ok: true, motivo: "TRUE" };
+  if (/^(FALSE|0)$/i.test(s)) return { ok: false, motivo: "FALSE" };
+  // IF(condição, se verdadeira, se falsa)
+  const se = argumentosIf(s);
+  if (se) {
+    const c = avaliarCondicao(se[0], buscar, apelidos, registros);
+    if (c.ok !== null) {
+      const r = avaliarCondicao(se[c.ok ? 1 : 2], buscar, apelidos, registros);
+      return { ok: r.ok, motivo: `${c.motivo} → ${c.ok ? "vale" : "senão"}: ${r.motivo}` };
+    }
+    // condição sem dados: se os dois lados dão o mesmo resultado, ele vale
+    const [a, b] = [avaliarCondicao(se[1], buscar, apelidos, registros), avaliarCondicao(se[2], buscar, apelidos, registros)];
+    if (a.ok !== null && a.ok === b.ok) return { ok: a.ok, motivo: `${a.motivo} (nos dois casos)` };
+    return { ok: null, motivo: c.motivo };
+  }
+  // (SELECT COUNT(0) FROM FATDOR X … WHERE X.FDO_SEQGER = FATGOR.AUTOINCREM …) = 1
+  const sub = contagemSubconsulta(s);
+  if (sub) return avaliarContagem(sub, buscar, registros);
   const col = (nome: string) => {
     const [pref, c] = nome.includes(".") ? [nome.split(".")[0], semPrefixo(nome)] : [null, nome];
     const tabela = pref ? (apelidos.get(pref.toUpperCase()) ?? pref) : null;
@@ -666,6 +701,134 @@ export function avaliarCondicao(sql: string, buscar: BuscarValores, apelidos: Ma
     return { ok: comparar(u.v, m[2], lit), motivo: `${c.coluna} = ${mostrar(u.v)}` };
   }
   return { ok: null, motivo: "regra complexa: confira pelo SQL" };
+}
+
+/** Fecha-parêntese que corresponde ao "(" em `ini` (fora de textos); -1 se não fecha. */
+function fechaParentese(s: string, ini: number): number {
+  let d = 0;
+  let aspas = false;
+  for (let i = ini; i < s.length; i++) {
+    const c = s[i];
+    if (c === "'") aspas = !aspas;
+    if (aspas) continue;
+    if (c === "(") d++;
+    if (c === ")" && --d === 0) return i;
+  }
+  return -1;
+}
+/** Divide nas vírgulas de nível zero (fora de textos). */
+function dividirVirgulas(s: string): string[] {
+  const partes: string[] = [];
+  let d = 0;
+  let aspas = false;
+  let ini = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "'") aspas = !aspas;
+    if (aspas) continue;
+    if (c === "(") d++;
+    if (c === ")") d--;
+    if (c === "," && d === 0) {
+      partes.push(s.slice(ini, i));
+      ini = i + 1;
+    }
+  }
+  partes.push(s.slice(ini));
+  return partes.map((p) => p.trim());
+}
+/** Os três argumentos de `IF(cond, a, b)` quando a condição toda é um IF. */
+function argumentosIf(s: string): [string, string, string] | null {
+  const m = /^IF\s*\(/i.exec(s);
+  if (!m) return null;
+  const abre = m[0].length - 1;
+  if (fechaParentese(s, abre) !== s.length - 1) return null;
+  const args = dividirVirgulas(s.slice(abre + 1, -1));
+  return args.length === 3 ? [args[0], args[1], args[2]] : null;
+}
+
+type Subconsulta = {
+  tabela: string;
+  /** nomes que apontam para cada tabela da subconsulta (apelido e o próprio nome) */
+  apelidos: Map<string, string>;
+  juncoes: { tipo: string; tabela: string }[];
+  condicoes: string[];
+  op: string;
+  valor: string;
+};
+const PALAVRA_ESTRUTURA = /^(ON|WHERE|LEFT|INNER|RIGHT|CROSS|JOIN|OUTER|AS)$/i;
+/** Lê `(SELECT COUNT(…) FROM T [a] [LEFT JOIN T2 b ON …] WHERE …) op N`. */
+function contagemSubconsulta(s: string): Subconsulta | null {
+  if (!s.startsWith("(")) return null;
+  const fecha = fechaParentese(s, 0);
+  if (fecha < 0) return null;
+  const cmp = /^\s*(=|<>|!=|>=|<=|>|<)\s*(-?\d+)$/.exec(s.slice(fecha + 1));
+  if (!cmp) return null;
+  const dentro = tirarParenteses(s.slice(0, fecha + 1));
+  const m = /^SELECT\s+COUNT\(\s*(?:0|1|\*|[\w.]+)\s*\)\s+FROM\s+([\s\S]+)$/i.exec(dentro);
+  if (!m || /\b(GROUP|HAVING|UNION|LIMIT)\b/i.test(m[1])) return null;
+  const [de, where = ""] = dividirPalavra(m[1], "WHERE");
+  const pedacos = de.split(/\s+(?:(LEFT|INNER|RIGHT|CROSS)\s+)?(?:OUTER\s+)?JOIN\s+/i);
+  const apelidos = new Map<string, string>();
+  const nomear = (texto: string) => {
+    const [tabela, a1, a2] = texto.trim().split(/\s+/);
+    const apelido = a1 && /^AS$/i.test(a1) ? a2 : a1 && !PALAVRA_ESTRUTURA.test(a1) ? a1 : null;
+    apelidos.set(tabela.toUpperCase(), tabela);
+    if (apelido) apelidos.set(apelido.toUpperCase(), tabela);
+    return tabela;
+  };
+  const tabela = nomear(pedacos[0]);
+  const juncoes: Subconsulta["juncoes"] = [];
+  for (let k = 1; k < pedacos.length; k += 2) {
+    const [antes] = dividirPalavra(pedacos[k + 1] ?? "", "ON");
+    juncoes.push({ tipo: (pedacos[k] ?? "INNER").toUpperCase(), tabela: nomear(antes) });
+  }
+  return { tabela, apelidos, juncoes, condicoes: where ? dividirLogico(where, "AND") : [], op: cmp[1], valor: cmp[2] };
+}
+/** Divide no primeiro `palavra` de nível zero: [antes, depois]. */
+function dividirPalavra(s: string, palavra: string): [string, string?] {
+  let d = 0;
+  let aspas = false;
+  const re = new RegExp(`^\\s${palavra}\\s`, "i");
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "'") aspas = !aspas;
+    if (aspas) continue;
+    if (c === "(") d++;
+    if (c === ")") d--;
+    if (d === 0 && re.test(s.slice(i, i + palavra.length + 2))) return [s.slice(0, i).trim(), s.slice(i + palavra.length + 2).trim()];
+  }
+  return [s.trim()];
+}
+
+/**
+ * Conta os registros ligados ao pedido que atendem a subconsulta. A ligação com o
+ * pedido (ex.: X.FDO_SEQGER = FATGOR.AUTOINCREM) é a própria ligação entre as abas;
+ * as demais condições são conferidas registro a registro.
+ */
+function avaliarContagem(sub: Subconsulta, buscar: BuscarValores, registros?: BuscarRegistros): ResultadoRegra {
+  const regs = registros?.(sub.tabela);
+  if (!regs) return { ok: null, motivo: `${sub.tabela} não está nas abas abertas` };
+  const daSub = (nome: string) => !nome.includes(".") || sub.apelidos.has(nome.split(".")[0].toUpperCase());
+  // condição que cita tabela de fora da subconsulta = ligação com o pedido
+  const filtros = sub.condicoes.filter((c) => [...c.matchAll(/\b([A-Za-z_]\w*)\.[A-Za-z_]\w*/g)].every((x) => daSub(x[0])));
+  let atendem = 0;
+  const semDados: string[] = [];
+  for (const r of regs) {
+    // apelidos da subconsulta; demais tabelas (do pedido) caem no buscador do pedido
+    const b: BuscarValores = (t, c) => r.buscar(t, c) ?? (t && !sub.apelidos.has(t.toUpperCase()) ? buscar(t, c) : undefined);
+    if (sub.juncoes.some((j) => j.tipo === "INNER" && r.ligados(j.tabela) === 0)) continue;
+    const rs = filtros.map((c) => avaliarCondicao(c, b, sub.apelidos));
+    if (rs.some((x) => x.ok === false)) continue;
+    const n = rs.find((x) => x.ok === null);
+    if (n) semDados.push(n.motivo);
+    else atendem++;
+  }
+  const lido = `${atendem} de ${regs.length} registro(s) em ${sub.tabela}${filtros.length ? " atendem" : ""}`;
+  if (semDados.length) {
+    // mesmo sem saber dos que faltam, o resultado pode já estar decidido? (só confere o caso exato)
+    return { ok: null, motivo: `${lido}; ${[...new Set(semDados)].join("; ")}` };
+  }
+  return { ok: comparar(String(atendem), sub.op, sub.valor), motivo: `${lido} (precisa ${sub.op} ${sub.valor})` };
 }
 
 /** Para as regras de "retira": algum registro ligado (pedido ou itens) bate com a comparação? */

@@ -116,3 +116,60 @@ describe("conferência com o pedido aberto", () => {
     expect(c.barrou).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("regras com IF e subconsulta (SELECT COUNT…)", () => {
+  const procIf = `CREATE PROCEDURE esp_InserePedidosFATAUT()
+BEGIN
+  CREATE TABLE TMP_FGO_ROBO
+  SELECT FATGOR.AUTOINCREM AS AUTO_FATGOR, FGO_NUMDOC
+    FROM FATGOR
+    INNER JOIN FATDOR ON FATGOR.AUTOINCREM = FDO_SEQGER
+    INNER JOIN CADCLI ON FATGOR.FGO_CODCLI = CLI_CODCLI
+   WHERE TRUE
+     AND FGO_ESPDOC = 'PD'
+     AND IF( (SELECT COUNT(0) FROM FATDOR X WHERE X.FDO_SEQGER = FATGOR.AUTOINCREM) = 1, FGO_PESBRU <= 30, FGO_PESBRU <= 15 ) # REQ 312866
+     AND IF( (SELECT COUNT(0) FROM FATDOR Y LEFT JOIN CADITE I ON I.ITE_CODITE = Y.FDO_CODITE
+               WHERE Y.FDO_SEQGER = FATGOR.AUTOINCREM AND Y.FDO_IDEPRO = 'NOR' AND I.ITE_ITEBAS = 'S') > 0, TRUE, FALSE )
+     AND IF( FGO_ESTADO <> 'SP' AND CLI_CGCCPF = 1, FALSE, TRUE );
+END`;
+  const an = analisarProcedure(procIf);
+  const tsv = (linhas: string[][]) => parsearConsulta(linhas.map((l) => l.map((v) => `"${v}"`).join("\t")).join("\n"));
+  const abrir = (itens: string[][], cadite: string[][], cadcli: string[][] | null) => {
+    let s = reducer(estadoInicial, {
+      tipo: "criar",
+      dados: tsv([["AUTOINCREM", "FGO_NUMDOC", "FGO_ESPDOC", "FGO_JAFATU", "FGO_CODCLI", "FGO_ESTADO", "FGO_PESBRU"], ["P1", "000000013348", "PD", "0", "C1", "RJ", "3.650"]]),
+    });
+    s = reducer(s, { tipo: "criar", dados: tsv([["AUTOINCREM", "FDO_SEQGER", "FDO_CODITE", "FDO_IDEPRO"], ...itens]) });
+    s = reducer(s, { tipo: "criar", dados: tsv([["ITE_CODITE", "ITE_DESITE", "ITE_CODGRU", "ITE_ITEBAS"], ...cadite]) });
+    if (cadcli) s = reducer(s, { tipo: "criar", dados: tsv([["CLI_CODCLI", "CLI_CGCCPF"], ...cadcli]) });
+    return s.abas;
+  };
+
+  it("o WHERE de dentro da subconsulta não vira regra solta", () => {
+    const e = an.etapas[0];
+    expect(e.condicoes.map((c) => c.sql)).toHaveLength(4);
+    expect(e.condicoes.some((c) => /^[XYI]\./.test(c.sql))).toBe(false);
+    expect(e.juncoes.map((j) => j.tabela)).toEqual(["FATDOR", "CADCLI"]);
+    expect(an.le).toContain("CADITE");
+  });
+
+  it("confere IF, COUNT na FATDOR, item ligado à CADITE e o cliente", () => {
+    const abas = abrir([["I1", "P1", "18769", "NOR"]], [["18769", "TINTA", "012", "S"]], [["C1", "0"]]);
+    expect(abas.map((x) => x.perfilId)).toEqual(["FATGOR", "FATDOR", "CADITE", "CADCLI"]);
+    const c = conferirProcedure(an, abas[0], 0, abas).etapas[0];
+    expect(c.condicoes.map((r) => r.ok)).toEqual([true, true, true, true]);
+    expect(c.condicoes[1].motivo).toContain("1 de 1 registro(s) em FATDOR");
+    expect(c.condicoes[1].motivo).toContain("FGO_PESBRU = 3.650");
+    expect(c.juncoes[1]).toEqual({ ok: true, motivo: "1 registro(s) em CADCLI" });
+  });
+
+  it("barra quando a regra não atende e fica '?' sem a aba da CADCLI", () => {
+    // dois itens: limite de 15 kg; item não é básico (ITE_ITEBAS = N)
+    const abas = abrir([["I1", "P1", "18769", "NOR"], ["I2", "P1", "36256", "NOR"]], [["18769", "TINTA", "012", "N"], ["36256", "BASE", "012", "N"]], null);
+    const c = conferirProcedure(an, abas[0], 0, abas).etapas[0];
+    expect(c.condicoes[1].ok).toBe(true); // 3,65 <= 15
+    expect(c.condicoes[2].ok).toBe(false);
+    expect(c.condicoes[2].motivo).toContain("0 de 2 registro(s) em FATDOR atendem");
+    expect(c.condicoes[3]).toEqual({ ok: null, motivo: "FGO_ESTADO = RJ; CLI_CGCCPF não está nas abas abertas" });
+  });
+});
