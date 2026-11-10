@@ -67,7 +67,11 @@ function registroDaAba(aba: Aba, i: number, abas: Aba[], pedido: Aba): RegistroL
     const j = aba.dados.colunas.findIndex((c) => c.nome === coluna);
     return j < 0 ? undefined : [aba.dados.linhas[i]?.[j] ?? null];
   };
+  // identifica o registro pelo código do item, quando houver (ex.: FDO_CODITE)
+  const jItem = aba.dados.colunas.findIndex((c) => /_CODITE$/i.test(c.nome));
+  const codItem = jItem >= 0 ? aba.dados.linhas[i]?.[jItem] : null;
   return {
+    rotulo: codItem ? `item ${codItem}` : undefined,
     buscar: (t, coluna) => {
       if (!t || t.toUpperCase() === tabela) return proprio(coluna);
       const l = ligadas.find((x) => nomeTabela(x.aba) === t.toUpperCase());

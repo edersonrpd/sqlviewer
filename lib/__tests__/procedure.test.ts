@@ -172,4 +172,18 @@ END`;
     expect(c.condicoes[2].motivo).toContain("0 de 2 registro(s) em FATDOR atendem");
     expect(c.condicoes[3]).toEqual({ ok: null, motivo: "FGO_ESTADO = RJ; CLI_CGCCPF não está nas abas abertas" });
   });
+
+  it("regra de item base: descrição legível e o valor de cada item na conferência", () => {
+    const procBase = procIf.replace("> 0, TRUE, FALSE )", ">= 1, FALSE, TRUE )");
+    const anBase = analisarProcedure(procBase);
+    const [, peso, base, cliente] = anBase.etapas[0].condicoes.map((c) => c.descricao);
+    expect(peso).toBe("Se Qtde. de registros em FATDOR igual a 1: FGO_PESBRU (Peso bruto) menor ou igual a 30; senão: FGO_PESBRU (Peso bruto) menor ou igual a 15");
+    expect(base).toBe("Nenhum registro em FATDOR com FDO_IDEPRO (Tipo do item) igual a NOR e CADITE.ITE_ITEBAS (Item base) igual a S");
+    expect(cliente).toBe("Não pode: FGO_ESTADO (UF) diferente de SP; e CLI_CGCCPF (Pessoa: 1 = CNPJ, 2 = CPF) igual a 1");
+
+    const abas = abrir([["I1", "P1", "18769", "NOR"]], [["18769", "TINTA", "012", "S"]], [["C1", "2"]]);
+    const r = conferirProcedure(anBase, abas[0], 0, abas).etapas[0].condicoes[2];
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toContain("[item 18769: FDO_IDEPRO = NOR, ITE_ITEBAS = S]");
+  });
 });

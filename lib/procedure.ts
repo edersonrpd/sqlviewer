@@ -468,9 +468,15 @@ const ROTULOS = (() => {
   return m;
 })();
 
+/** Colunas usadas nas regras das procedures que não aparecem nas Telas dos perfis. */
+const ROTULOS_REGRAS: Record<string, string> = {
+  ITE_ITEBAS: "Item base",
+  FDO_IDEPRO: "Tipo do item",
+  CLI_CGCCPF: "Pessoa: 1 = CNPJ, 2 = CPF",
+};
 const semPrefixo = (col: string) => col.replace(/^.*\./, "");
 function nomeColuna(col: string): string {
-  const r = ROTULOS.get(semPrefixo(col));
+  const r = ROTULOS.get(semPrefixo(col)) ?? ROTULOS_REGRAS[semPrefixo(col).toUpperCase()];
   return r ? `${col} (${r})` : col;
 }
 function literal(v: string): string {
@@ -534,6 +540,18 @@ export function descreverCondicao(sql: string, apelidos: Map<string, string> = n
   }
   const ands = dividirLogico(s, "AND");
   if (ands.length > 1 && !/\bBETWEEN\b/i.test(s)) return ands.map((p) => descreverCondicao(p, apelidos) ?? p).join("; e ");
+  if (/^(TRUE|1)$/i.test(s)) return "verdadeiro";
+  if (/^(FALSE|0)$/i.test(s)) return "falso";
+  // IF(condição, TRUE, FALSE) = a condição; IF(condição, FALSE, TRUE) = a condição não pode acontecer
+  const se = argumentosIf(s);
+  if (se) {
+    const [v1, v2] = [se[1], se[2]].map((x) => (/^(TRUE|1)$/i.test(x) ? true : /^(FALSE|0)$/i.test(x) ? false : null));
+    if (v1 !== null && v1 === !v2) return v1 ? descreverCondicao(se[0], apelidos) : negarDescricao(se[0], apelidos);
+    const d = (x: string) => descreverCondicao(x, apelidos) ?? x;
+    return `Se ${d(se[0])}: ${d(se[1])}; senão: ${d(se[2])}`;
+  }
+  const sub = contagemSubconsulta(s);
+  if (sub) return descreverContagem(sub);
   let m: RegExpExecArray | null;
   if ((m = new RegExp(String.raw`^IFNULL\(\s*${COL}\s*,\s*''\s*\)\s*(<>|!=)\s*''$`, "i").exec(s))) return `${nomeColuna(m[1])} preenchido (nem vazio nem NULL)`;
   if ((m = new RegExp(String.raw`^IFNULL\(\s*${COL}\s*,\s*''\s*\)\s*=\s*''$`, "i").exec(s))) return `${nomeColuna(m[1])} vazio ou NULL`;
@@ -564,6 +582,34 @@ export function descreverCondicao(sql: string, apelidos: Map<string, string> = n
   return null;
 }
 
+/** "Não pode: …" — para contagens, "Nenhum registro em T com …". */
+function negarDescricao(sql: string, apelidos: Map<string, string>): string {
+  const sub = contagemSubconsulta(tirarParenteses(sql));
+  const existe = sub && ((sub.op === ">=" && sub.valor === "1") || ((sub.op === ">" || sub.op === "<>" || sub.op === "!=") && sub.valor === "0"));
+  if (sub && existe) {
+    const f = filtrosDescritos(sub);
+    return `Nenhum registro em ${sub.tabela}${f ? ` com ${f}` : ""}`;
+  }
+  return `Não pode: ${descreverCondicao(sql, apelidos) ?? sql}`;
+}
+/** As condições próprias da subconsulta, com os apelidos trocados pelo nome da tabela. */
+function filtrosDescritos(sub: Subconsulta): string {
+  return filtrosDaSubconsulta(sub)
+    .map((c) => {
+      // coluna da tabela principal fica sem prefixo; das junções, com o nome da tabela
+      const t = c.replace(/\b([A-Za-z_]\w*)\.(?=[A-Za-z_])/g, (_, a: string) => {
+        const tab = sub.apelidos.get(a.toUpperCase()) ?? a;
+        return tab.toUpperCase() === sub.tabela.toUpperCase() ? "" : `${tab}.`;
+      });
+      return descreverCondicao(t) ?? t;
+    })
+    .join(" e ");
+}
+function descreverContagem(sub: Subconsulta): string {
+  const f = filtrosDescritos(sub);
+  return `Qtde. de registros em ${sub.tabela}${f ? ` com ${f}` : ""} ${OPS[sub.op] ?? sub.op} ${sub.valor}`;
+}
+
 // ---------------------------------------------------------------------------
 // conferência com um pedido
 
@@ -575,7 +621,7 @@ export function descreverCondicao(sql: string, apelidos: Map<string, string> = n
 export type BuscarValores = (tabela: string | null, coluna: string) => Valor[] | undefined;
 export type ResultadoRegra = { ok: boolean | null; motivo: string };
 /** Um registro ligado ao pedido (ex.: um item da FATDOR), para conferir subconsultas por linha. */
-export type RegistroLigado = { buscar: BuscarValores; ligados: (tabela: string) => number | undefined };
+export type RegistroLigado = { buscar: BuscarValores; ligados: (tabela: string) => number | undefined; rotulo?: string };
 /** Registros ligados ao pedido numa tabela (undefined = aba não aberta). */
 export type BuscarRegistros = (tabela: string) => RegistroLigado[] | undefined;
 
@@ -805,25 +851,32 @@ function dividirPalavra(s: string, palavra: string): [string, string?] {
  * pedido (ex.: X.FDO_SEQGER = FATGOR.AUTOINCREM) é a própria ligação entre as abas;
  * as demais condições são conferidas registro a registro.
  */
+/** Condições da subconsulta, sem a ligação com o pedido (condição que cita tabela de fora dela). */
+function filtrosDaSubconsulta(sub: Subconsulta): string[] {
+  const daSub = (nome: string) => !nome.includes(".") || sub.apelidos.has(nome.split(".")[0].toUpperCase());
+  return sub.condicoes.filter((c) => [...c.matchAll(/\b([A-Za-z_]\w*)\.[A-Za-z_]\w*/g)].every((x) => daSub(x[0])));
+}
 function avaliarContagem(sub: Subconsulta, buscar: BuscarValores, registros?: BuscarRegistros): ResultadoRegra {
   const regs = registros?.(sub.tabela);
   if (!regs) return { ok: null, motivo: `${sub.tabela} não está nas abas abertas` };
-  const daSub = (nome: string) => !nome.includes(".") || sub.apelidos.has(nome.split(".")[0].toUpperCase());
-  // condição que cita tabela de fora da subconsulta = ligação com o pedido
-  const filtros = sub.condicoes.filter((c) => [...c.matchAll(/\b([A-Za-z_]\w*)\.[A-Za-z_]\w*/g)].every((x) => daSub(x[0])));
+  const filtros = filtrosDaSubconsulta(sub);
   let atendem = 0;
   const semDados: string[] = [];
-  for (const r of regs) {
+  /** o que cada registro tem nas colunas das condições (ex.: item 18769: FDO_IDEPRO = NOR, ITE_ITEBAS = S) */
+  const detalhes: string[] = [];
+  for (const [k, r] of regs.entries()) {
     // apelidos da subconsulta; demais tabelas (do pedido) caem no buscador do pedido
     const b: BuscarValores = (t, c) => r.buscar(t, c) ?? (t && !sub.apelidos.has(t.toUpperCase()) ? buscar(t, c) : undefined);
     if (sub.juncoes.some((j) => j.tipo === "INNER" && r.ligados(j.tabela) === 0)) continue;
     const rs = filtros.map((c) => avaliarCondicao(c, b, sub.apelidos));
+    if (rs.length) detalhes.push(`${r.rotulo ?? `registro ${k + 1}`}: ${rs.map((x) => x.motivo).join(", ")}`);
     if (rs.some((x) => x.ok === false)) continue;
     const n = rs.find((x) => x.ok === null);
     if (n) semDados.push(n.motivo);
     else atendem++;
   }
-  const lido = `${atendem} de ${regs.length} registro(s) em ${sub.tabela}${filtros.length ? " atendem" : ""}`;
+  const vistos = detalhes.slice(0, 5).join("; ") + (detalhes.length > 5 ? `; e mais ${detalhes.length - 5}` : "");
+  const lido = `${atendem} de ${regs.length} registro(s) em ${sub.tabela}${filtros.length ? " atendem" : ""}${vistos ? ` [${vistos}]` : ""}`;
   if (semDados.length) {
     // mesmo sem saber dos que faltam, o resultado pode já estar decidido? (só confere o caso exato)
     return { ok: null, motivo: `${lido}; ${[...new Set(semDados)].join("; ")}` };
