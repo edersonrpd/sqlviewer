@@ -28,7 +28,7 @@ export const MARKETPLACES: Marketplace[] = [
   {
     id: "ifood",
     nome: "iFood",
-    prefixo: "IFOOD_",
+    prefixo: "IFD_",
     padrao: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     exemplo: "2b349cf8-4ada-45c8-8002-009f87698874",
     minusculo: true,

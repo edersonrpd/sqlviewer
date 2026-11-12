@@ -9,15 +9,15 @@ describe("marketplace pelo NUMPOK", () => {
     expect(normalizarNumpok("2610314CV1MKT2")).toBe("SHP_2610314CV1MKT2");
     expect(normalizarNumpok("702-8724657-3393834")).toBe("AMZ_702-8724657-3393834");
     expect(normalizarNumpok("LU-1582670110102560-1")).toBe("MGL_LU-1582670110102560-1");
-    expect(normalizarNumpok("2b349cf8-4ada-45c8-8002-009f87698874")).toBe("IFOOD_2b349cf8-4ada-45c8-8002-009f87698874");
+    expect(normalizarNumpok("2b349cf8-4ada-45c8-8002-009f87698874")).toBe("IFD_2b349cf8-4ada-45c8-8002-009f87698874");
   });
 
   it("iFood: UUID em minúsculas, prefixo em maiúsculas, sem duplicar", () => {
-    expect(normalizarNumpok("2B349CF8-4ADA-45C8-8002-009F87698874")).toBe("IFOOD_2b349cf8-4ada-45c8-8002-009f87698874");
-    expect(normalizarNumpok("ifood_2b349cf8-4ada-45c8-8002-009f87698874")).toBe("IFOOD_2b349cf8-4ada-45c8-8002-009f87698874");
-    expect(identificarMarketplace("IFOOD_2b349cf8-4ada-45c8-8002-009f87698874")?.nome).toBe("iFood");
+    expect(normalizarNumpok("2B349CF8-4ADA-45C8-8002-009F87698874")).toBe("IFD_2b349cf8-4ada-45c8-8002-009f87698874");
+    expect(normalizarNumpok("ifd_2b349cf8-4ada-45c8-8002-009f87698874")).toBe("IFD_2b349cf8-4ada-45c8-8002-009f87698874");
+    expect(identificarMarketplace("IFD_2b349cf8-4ada-45c8-8002-009f87698874")?.nome).toBe("iFood");
     expect(identificarMarketplace("2b349cf8-4ada-45c8-8002-009f87698874")?.nome).toBe("iFood");
-    expect(removerPrefixoMarketplace("IFOOD_2b349cf8-4ada-45c8-8002-009f87698874")).toBe("2b349cf8-4ada-45c8-8002-009f87698874");
+    expect(removerPrefixoMarketplace("IFD_2b349cf8-4ada-45c8-8002-009f87698874")).toBe("2b349cf8-4ada-45c8-8002-009f87698874");
   });
 
   it("não duplica o prefixo, padroniza maiúsculas e deixa os demais como estão", () => {
