@@ -4,6 +4,7 @@ const CORES: Record<IdMarketplace, string> = {
   mercadolivre: "bg-yellow-300 text-[#2d3277] ring-yellow-400 dark:bg-yellow-300/90 dark:ring-yellow-300",
   shopee: "bg-orange-500 text-white ring-orange-600 dark:bg-orange-500/90 dark:ring-orange-400",
   amazon: "bg-[#232f3e] text-[#ff9900] ring-[#131a22] dark:bg-[#ff9900] dark:text-[#131a22] dark:ring-[#ff9900]",
+  ifood: "bg-[#ea1d2c] text-white ring-[#c41824] dark:bg-[#ea1d2c]/90 dark:ring-[#ff4d58]",
   magalu: "bg-[#0086ff] text-white ring-[#0070d6] dark:bg-[#0086ff]/90 dark:ring-[#3aa0ff]",
 };
 
