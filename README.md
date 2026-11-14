@@ -33,6 +33,20 @@ npm test
 npm run build
 ```
 
+## Segurança
+
+- **Content-Security-Policy** ([`next.config.ts`](next.config.ts)): o navegador só carrega
+  e só se conecta à própria aplicação. Mesmo que um script tentasse, não há origem externa
+  permitida para enviar os dados colados.
+- **CSV**: textos que o Excel executaria como fórmula (começando com `=`, `+`, `-`, `@`)
+  saem com um apóstrofo na frente. Números negativos não mudam.
+- **Sessão**: o arquivo `.json` é conferido ao abrir; o que não bater com os dados volta ao padrão.
+
+## CI
+
+A cada pull request (e push na branch publicada) o GitHub Actions roda lint, checagem de
+tipos, testes e build ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
 ## Deploy na Vercel
 
 1. Envie o repositório para o GitHub.
@@ -125,7 +139,19 @@ devolve achados. Para criar uma regra nova, copie uma existente e acrescente um 
   cabeçalho do pedido no JOIN; nas duas, o campo **Domínio** (opcional) filtra o cliente), digite um ou vários valores e copie o `SELECT` — ou o JOIN completo, com
   as tabelas relacionadas. Os tipos ficam em `BUSCAS_RAPIDAS`, em `config/perfis.ts`.
 - **Comparar**: marque 2 linhas na tabela e clique em **Comparar** para ver só as colunas
-  que diferem (com o rótulo da Tela ao lado do nome técnico).
+  que diferem (com o rótulo da Tela ao lado do nome técnico). **UPDATE B ← A** / **A ← B**
+  copia o `UPDATE` que leva os valores de um registro para o outro, nas colunas diferentes
+  listadas (o filtro de colunas restringe quais entram); o registro é identificado pela
+  `chave` do perfil ou, sem ela, pelos valores atuais.
+- **Comparar abas**: com duas abas da mesma tabela abertas (antes × depois de uma correção,
+  produção × homologação), casa os registros por uma chave (uma ou duas colunas) e mostra
+  os iguais, os diferentes (coluna a coluna), os que só existem em A e os que só existem em
+  B. Dá para ignorar colunas pelo nome (ex.: datas de alteração) e copiar o `UPDATE` de
+  todos os diferentes, em qualquer sentido, ou o `INSERT` dos que faltam em B.
+- **Resumo** (na Tela): copia um texto pronto para o chamado, com a identificação do
+  registro, situação, valores, o resultado do diagnóstico e os registros ligados.
+
+Os SQL de correção (`UPDATE`/`INSERT`) são rascunhos: revise antes de executar.
 - **Salvar/abrir sessão** (ícones no topo): baixa um arquivo `.json` com as abas abertas
   (dados, colunas, filtros e seleção) e o abre de novo depois, acrescentando as abas às
   abertas. O arquivo contém os dados das consultas: guarde-o com o mesmo cuidado. Nada é
@@ -194,6 +220,9 @@ lib/estado.ts        estado das abas (useReducer)
 lib/filtragem.ts     busca, filtros e ordenação
 lib/graficos.ts      candidatas e agregação dos gráficos
 lib/exportar.ts      CSV, Excel e "copiar para chamado"
+lib/compararAbas.ts  comparação de duas abas pela chave
+lib/update.ts        UPDATE de correção a partir das comparações
+lib/resumoChamado.ts resumo do registro para o chamado
 fixtures/            exemplos de resultado (FATGOR, LOGNFE, CADITE e ADTCLI, este com nome fictício)
 ```
 

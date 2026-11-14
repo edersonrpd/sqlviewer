@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - claude/optimistic-edison-jo5n3q
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # o package-lock.json não traz o xlsx (vem do CDN do SheetJS); npm ci recusaria
+      - name: Dependências
+        run: npm install --no-audit --no-fund --no-package-lock
+      - name: Lint
+        run: npm run lint
+      - name: Tipos
+        run: npx tsc --noEmit
+      - name: Testes
+        run: npm test
+      - name: Build
+        run: npm run build

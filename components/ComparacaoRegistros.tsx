@@ -6,7 +6,9 @@ import type { Aba } from "@/lib/estado";
 import { formatarValor } from "@/lib/formatacao";
 import { buscarPerfil } from "@/lib/perfis";
 import { resumoRegistro } from "@/lib/tela";
-import { IconeX } from "./Icones";
+import { updateEntreRegistros } from "@/lib/update";
+import { IconeCopiar, IconeX } from "./Icones";
+import { copiarTexto, useAviso } from "./util";
 
 /** Dois registros lado a lado, só com as colunas que diferem (ou todas). */
 export function ComparacaoRegistros({ aba, a, b, onFechar }: { aba: Aba; a: number; b: number; onFechar: () => void }) {
@@ -29,6 +31,18 @@ export function ComparacaoRegistros({ aba, a, b, onFechar }: { aba: Aba; a: numb
       (d) => (mostrarIguais || !d.igual) && (!t || d.nome.toLowerCase().includes(t) || (d.rotulo ?? "").toLowerCase().includes(t)),
     );
   }, [todas, mostrarIguais, filtro]);
+
+  // UPDATE com as colunas diferentes que estão listadas (o filtro restringe quais entram)
+  const [aviso, setAviso] = useAviso(2500);
+  const tabela = perfil?.tabela ?? perfil?.id ?? aba.nome.replace(/\W+/g, "_");
+  const chave = perfil?.chave ?? perfil?.colunaTitulo;
+  const listadas = lista.filter((d) => !d.igual).map((d) => d.j);
+  const copiarUpdate = async (origem: number, destino: number, sentido: string) => {
+    const u = updateEntreRegistros(dados, origem, destino, listadas, tabela, chave);
+    if (!u) return setAviso("Nada para alterar");
+    const ok = await copiarTexto(u.sql);
+    setAviso(ok ? `UPDATE copiado (${sentido}): ${u.colunas} coluna(s)${u.por === "valores" ? ", registro identificado pelos valores atuais" : ""}` : "Não foi possível copiar");
+  };
 
   const ra = resumoRegistro(dados, a, perfil);
   const rb = resumoRegistro(dados, b, perfil);
@@ -55,6 +69,29 @@ export function ComparacaoRegistros({ aba, a, b, onFechar }: { aba: Aba; a: numb
             <input type="checkbox" checked={mostrarIguais} onChange={(e) => setMostrarIguais(e.target.checked)} />
             Mostrar colunas iguais
           </label>
+          <div className="relative ml-auto flex items-center gap-1.5">
+            <button
+              className="btn h-8 px-2.5 text-xs"
+              disabled={listadas.length === 0}
+              title="UPDATE que grava no registro B os valores de A, nas colunas diferentes listadas"
+              onClick={() => copiarUpdate(a, b, "B ← A")}
+            >
+              <IconeCopiar className="h-3.5 w-3.5" /> UPDATE B ← A
+            </button>
+            <button
+              className="btn h-8 px-2.5 text-xs"
+              disabled={listadas.length === 0}
+              title="UPDATE que grava no registro A os valores de B, nas colunas diferentes listadas"
+              onClick={() => copiarUpdate(b, a, "A ← B")}
+            >
+              <IconeCopiar className="h-3.5 w-3.5" /> UPDATE A ← B
+            </button>
+            {aviso && (
+              <span role="status" className="absolute top-full right-0 z-50 mt-1 rounded bg-zinc-900 px-2 py-1 text-xs whitespace-nowrap text-white dark:bg-zinc-100 dark:text-zinc-900">
+                {aviso}
+              </span>
+            )}
+          </div>
         </div>
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full table-fixed text-sm">

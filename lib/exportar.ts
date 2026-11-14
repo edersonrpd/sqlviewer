@@ -1,4 +1,5 @@
 import { formatarValor } from "./formatacao";
+import { identSql, literalSql } from "./sql";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
 
 /**
@@ -8,7 +9,16 @@ import type { Coluna, ResultadoParse, Valor } from "./tipos";
 
 const texto = (v: Valor) => (v === null ? "NULL" : v);
 
-function campoCSV(v: string): string {
+/**
+ * Texto que o Excel executaria como fórmula ao abrir o CSV (começa com = + - @, TAB ou CR)
+ * ganha um apóstrofo na frente e passa a ser lido como texto. Números (ex.: -12.50) ficam como estão.
+ */
+export function neutralizarFormula(v: string): string {
+  return /^[=+\-@\t\r]/.test(v) && !/^[+-]?\d+([.,]\d+)?$/.test(v) ? `'${v}` : v;
+}
+
+function campoCSV(bruto: string): string {
+  const v = neutralizarFormula(bruto);
   return /[;"\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
@@ -72,7 +82,7 @@ export function nomeArquivo(base: string, extensao: string): string {
 }
 
 /** Valor numérico que pode sair sem aspas (JSON/INSERT): só números "limpos", sem zero à esquerda. */
-function numeroLiteral(v: string, c: Coluna): boolean {
+export function numeroLiteral(v: string, c: Coluna): boolean {
   return (c.tipo === "inteiro" || c.tipo === "decimal") && /^-?(0|[1-9]\d*)(\.\d+)?$/.test(v) && v.length < 16;
 }
 
@@ -103,24 +113,39 @@ export function gerarMarkdown(dados: ResultadoParse, linhas: number[], colunas: 
   return out.join("\n");
 }
 
-const literalSql = (v: string) => `'${v.replace(/\\/g, "\\\\").replace(/'/g, "''")}'`;
+/**
+ * Colunas para o SQL gerado: o nome como veio no cabeçalho (não o "X (2)" dado às
+ * repetidas), entre crases quando precisa. Colunas com o mesmo nome entram uma vez só.
+ */
+function colunasSql(dados: ResultadoParse, colunas: number[]): { j: number; nome: string }[] {
+  const vistos = new Set<string>();
+  const res: { j: number; nome: string }[] = [];
+  for (const j of colunas) {
+    const original = dados.colunas[j].original ?? dados.colunas[j].nome;
+    if (vistos.has(original)) continue;
+    vistos.add(original);
+    res.push({ j, nome: identSql(original) });
+  }
+  return res;
+}
 
 /** Um INSERT por linha, com os valores originais (para reproduzir o registro em outra base). */
 export function gerarInsert(dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string): string {
-  const nomes = colunas.map((j) => dados.colunas[j].nome).join(", ");
+  const cols = colunasSql(dados, colunas);
+  const nomes = cols.map((c) => c.nome).join(", ");
   return linhas
     .map((i) => {
-      const vals = colunas.map((j) => {
+      const vals = cols.map(({ j }) => {
         const v = dados.linhas[i][j];
         return v === null ? "NULL" : numeroLiteral(v, dados.colunas[j]) ? v : literalSql(v);
       });
-      return `INSERT INTO ${tabela} (${nomes}) VALUES (${vals.join(", ")});`;
+      return `INSERT INTO ${identSql(tabela)} (${nomes}) VALUES (${vals.join(", ")});`;
     })
     .join("\n");
 }
 
 /** Condição de igualdade com o valor original (NULL vira IS NULL). */
-function condicaoSql(nome: string, v: Valor, c: Coluna): string {
+export function condicaoSql(nome: string, v: Valor, c: Coluna): string {
   return v === null ? `${nome} IS NULL` : `${nome} = ${numeroLiteral(v, c) ? v : literalSql(v)}`;
 }
 
@@ -130,25 +155,26 @@ function condicaoSql(nome: string, v: Valor, c: Coluna): string {
  * registro é identificado pelos valores das colunas copiadas (textos longos ficam de fora).
  */
 export function gerarSelect(dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string, chave?: string): string {
-  const nomes = colunas.map((j) => dados.colunas[j].nome);
-  const cabeca = `SELECT ${nomes.length === dados.colunas.length ? "*" : nomes.join(", ")}\nFROM ${tabela}`;
+  const cols = colunasSql(dados, colunas);
+  const cabeca = `SELECT ${colunas.length === dados.colunas.length ? "*" : cols.map((c) => c.nome).join(", ")}\nFROM ${identSql(tabela)}`;
   const jChave = chave ? dados.colunas.findIndex((c) => c.nome.toUpperCase() === chave.toUpperCase()) : -1;
   if (jChave >= 0) {
     const c = dados.colunas[jChave];
+    const nomeChave = identSql(c.original ?? c.nome);
     const valores = [...new Set(linhas.map((i) => dados.linhas[i][jChave]))];
     const naoNulos = valores.filter((v): v is string => v !== null).map((v) => (numeroLiteral(v, c) ? v : literalSql(v)));
     const conds: string[] = [];
-    if (naoNulos.length === 1) conds.push(`${c.nome} = ${naoNulos[0]}`);
-    else if (naoNulos.length > 1) conds.push(`${c.nome} IN (${naoNulos.join(", ")})`);
-    if (valores.includes(null)) conds.push(`${c.nome} IS NULL`);
+    if (naoNulos.length === 1) conds.push(`${nomeChave} = ${naoNulos[0]}`);
+    else if (naoNulos.length > 1) conds.push(`${nomeChave} IN (${naoNulos.join(", ")})`);
+    if (valores.includes(null)) conds.push(`${nomeChave} IS NULL`);
     return `${cabeca}\nWHERE ${conds.join(" OR ")};`;
   }
   const filtros = [
     ...new Set(
       linhas.map((i) =>
-        colunas
-          .filter((j) => (dados.linhas[i][j] ?? "").length <= 100)
-          .map((j) => condicaoSql(dados.colunas[j].nome, dados.linhas[i][j], dados.colunas[j]))
+        cols
+          .filter(({ j }) => (dados.linhas[i][j] ?? "").length <= 100)
+          .map(({ j, nome }) => condicaoSql(nome, dados.linhas[i][j], dados.colunas[j]))
           .join(" AND "),
       ),
     ),
