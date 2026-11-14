@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # o package-lock.json não traz o xlsx (vem do CDN do SheetJS); npm ci recusaria
+      - name: Dependências
+        run: npm install --no-audit --no-fund --no-package-lock
       - name: Lint
         run: npm run lint
       - name: Tipos
