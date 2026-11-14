@@ -1,5 +1,6 @@
 import type { Perfil, Relacao } from "@/config/perfis";
 import { inferirTipo } from "./parser";
+import { literalSql } from "./sql";
 import { buscarPerfil, chaveRelacao, ligacoesDoPerfil, type LigacaoPerfil } from "./perfis";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
 
@@ -19,7 +20,7 @@ function colunaChave(p: Perfil): string | undefined {
   return p.chave ?? p.colunaTitulo;
 }
 
-const literal = (v: string) => `'${v.replace(/'/g, "''")}'`;
+const literal = literalSql;
 
 /** `= 'x'` para um valor, `IN ('x', 'y')` para vários. */
 export function condicaoValores(valores: string[]): string {

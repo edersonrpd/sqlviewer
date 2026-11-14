@@ -2,6 +2,7 @@ import type { CampoTela, CorStatus, Perfil } from "@/config/perfis";
 import { textoResumoLog } from "./logs";
 import { colunaDestaque } from "./destaque";
 import { formatarValor } from "./formatacao";
+import { literalSql } from "./sql";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
 
 /** Um campo pronto para exibir na Tela. */
@@ -243,7 +244,7 @@ export function resumoRegistro(
 
 /** SQL sugerido para buscar os registros relacionados que ainda não foram colados. */
 export function sqlRelacionado(tabela: string, coluna: string, valor: string, extras: { coluna: string; chave: string | null }[] = []): string {
-  const lit = (v: string) => `'${v.replace(/'/g, "''")}'`;
+  const lit = literalSql;
   // partes da chave composta vazias neste registro não restringem a consulta
   const mais = extras.filter((e) => e.chave !== null).map((e) => ` AND ${e.coluna} = ${lit(e.chave!)}`);
   return `SELECT * FROM ${tabela} WHERE ${coluna} = ${lit(valor)}${mais.join("")};`;

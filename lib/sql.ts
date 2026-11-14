@@ -84,3 +84,32 @@ export function formatarSql(sql: string, limite = 80): string {
   }
   return out;
 }
+
+/** Literal de texto do MySQL: aspas simples dobradas e barra invertida escapada. */
+export function literalSql(v: string): string {
+  return `'${v.replace(/\\/g, "\\\\").replace(/'/g, "''")}'`;
+}
+
+// palavras reservadas mais comuns como nome de coluna (KEY, ORDER, GROUP…)
+const RESERVADAS = new Set(
+  (
+    "add all alter and as asc before between by case change character check column condition constraint create cross " +
+    "current_date database default delete desc describe distinct div drop else exists explain false for foreign from " +
+    "fulltext function group having if in index inner insert int integer interval into is join key keys kill leading " +
+    "left like limit lock long match mod not null on option or order out outer primary range read references rename " +
+    "repeat replace require right schema select set show table then to trailing trigger true union unique unlock " +
+    "update usage use using values when where while with write"
+  ).split(" "),
+);
+
+/**
+ * Nome de coluna/tabela no SQL gerado: como veio quando é um identificador simples;
+ * entre crases quando tem espaço, pontuação, começa com número ou é palavra reservada.
+ * `schema.tabela` é tratado parte a parte.
+ */
+export function identSql(nome: string): string {
+  return nome
+    .split(".")
+    .map((p) => (/^[A-Za-z_][\w$]*$/.test(p) && !RESERVADAS.has(p.toLowerCase()) ? p : `\`${p.replace(/`/g, "``")}\``))
+    .join(".");
+}
