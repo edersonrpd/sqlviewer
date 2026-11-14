@@ -33,3 +33,5 @@ export const IconeFunil = svg(<path d="M3 4h18l-7 8.5V19l-4 2v-8.5L3 4Z" />);
 export const IconeTranspor = svg(<><path d="M4 4h7v7H4zM13 13h7v7h-7z" /><path d="M15 4h3a2 2 0 0 1 2 2v3M9 20H6a2 2 0 0 1-2-2v-3" /></>);
 export const IconePainel = svg(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></>);
 export const IconeRelacoes = svg(<><rect x="2" y="3" width="7" height="6" rx="1.5" /><rect x="15" y="3" width="7" height="6" rx="1.5" /><rect x="15" y="15" width="7" height="6" rx="1.5" /><path d="M9 6h6M12 6v12h3" /></>);
+export const IconeAbas = svg(<><rect x="3" y="4" width="8" height="16" rx="1.5" /><rect x="13" y="4" width="8" height="16" rx="1.5" /><path d="M6 9h2M6 13h2M16 9h2M16 13h2" /></>);
+export const IconeChamado = svg(<><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></>);

@@ -7,11 +7,12 @@ import { gerarTabulado } from "@/lib/exportar";
 import { buscarPerfil } from "@/lib/perfis";
 import { limitarSelecao, retangulo, type Selecao } from "@/lib/selecao";
 import { BarraSelecao } from "./BarraSelecao";
+import { ComparacaoAbas } from "./ComparacaoAbas";
 import { ComparacaoRegistros } from "./ComparacaoRegistros";
 import { BotaoCopiarChamado, BotoesExportar } from "./Saidas";
 import { FichaRegistro } from "./FichaRegistro";
 import { Graficos } from "./Graficos";
-import { IconeBusca, IconeColunas, IconeComparar, IconeTranspor, IconeX } from "./Icones";
+import { IconeBusca, IconeColunas, IconeAbas, IconeComparar, IconeTranspor, IconeX } from "./Icones";
 import { ResumoConsulta } from "./ResumoConsulta";
 import { SeletorColunas } from "./SeletorColunas";
 import { TabelaTransposta } from "./TabelaTransposta";
@@ -25,6 +26,8 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
   const atualizar = useCallback((patch: Partial<Aba>) => dispatch({ tipo: "atualizar", id: aba.id, patch }), [dispatch, aba.id]);
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [comparando, setComparando] = useState<[number, number] | null>(null);
+  const [comparandoAbas, setComparandoAbas] = useState(false);
+  const temOutraAba = abas.some((x) => x.id !== aba.id && x.procedure === undefined && x.dados.colunas.length > 0);
 
   // busca global com debounce (pode varrer 200 colunas × 10.000 linhas)
   const [busca, setBusca] = useState(aba.busca);
@@ -58,7 +61,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
   const [verValor, setVerValor] = useState(false);
   const [aviso, setAviso] = useAviso(2500);
   const perfilAba = buscarPerfil(aba.perfilId);
-  const tabelaSql = perfilAba?.tabela ?? aba.nome.replace(/\W+/g, "_");
+  const tabelaSql = perfilAba?.tabela ?? perfilAba?.id ?? aba.nome.replace(/\W+/g, "_");
   const chaveSql = perfilAba?.chave ?? perfilAba?.colunaTitulo;
   const copiarSelecao = useCallback(async () => {
     if (!ret) return;
@@ -177,6 +180,19 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
             onClick={() => setComparando([selecionadasVisiveis[0], selecionadasVisiveis[1]])}
           >
             <IconeComparar /> <span className="baixa:sr-only">Comparar</span>
+          </button>
+          <button
+            className="btn"
+            disabled={!temOutraAba}
+            style={{ opacity: temOutraAba ? undefined : 0.5 }}
+            title={
+              temOutraAba
+                ? "Comparar esta aba com outra da mesma tabela (ex.: antes × depois, produção × homologação)"
+                : "Abra outra aba com a mesma tabela para comparar as duas"
+            }
+            onClick={() => setComparandoAbas(true)}
+          >
+            <IconeAbas /> <span className="baixa:sr-only">Comparar abas</span>
           </button>
           <button className="btn" title="Escolher as colunas visíveis" onClick={() => setSeletorAberto(true)}>
             <IconeColunas /> <span className="baixa:sr-only">Colunas</span>
@@ -336,6 +352,8 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
       </div>
 
       {comparando && <ComparacaoRegistros aba={aba} a={comparando[0]} b={comparando[1]} onFechar={() => setComparando(null)} />}
+
+      {comparandoAbas && <ComparacaoAbas aba={aba} abas={abas} onFechar={() => setComparandoAbas(false)} />}
 
       {seletorAberto && <SeletorColunas aba={aba} atualizar={atualizar} onFechar={() => setSeletorAberto(false)} />}
 

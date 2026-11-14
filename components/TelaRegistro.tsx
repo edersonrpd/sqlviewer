@@ -8,6 +8,7 @@ import { diagnosticar, nivelGeral, temDiagnostico } from "@/lib/diagnostico";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
+import { resumoParaChamado } from "@/lib/resumoChamado";
 import { sqlJoin } from "@/lib/join";
 import {
   cadastrosPendentes,
@@ -29,7 +30,7 @@ import {
   type SecaoMontada,
 } from "@/lib/tela";
 import { alinhamento, Celula } from "./Celula";
-import { IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeMais, IconeSeta } from "./Icones";
+import { IconeChamado, IconeCopiar, IconeDireita, IconeEsquerda, IconeLink, IconeMais, IconeSeta } from "./Icones";
 import { CodigoSql, SqlEmLinha } from "./CodigoSql";
 import { SeloMarketplace } from "./SeloMarketplace";
 import { ESTILO_NIVEL, PainelDiagnostico } from "./PainelDiagnostico";
@@ -156,6 +157,21 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                     <input type="checkbox" checked={mostrarVazios} onChange={(e) => setMostrarVazios(e.target.checked)} />
                     Mostrar campos vazios
                   </label>
+                  <button
+                    className="btn"
+                    title="Copia um resumo pronto para o chamado: identificação, situação, valores, diagnóstico e registros ligados"
+                    onClick={async () => {
+                      const texto = resumoParaChamado(
+                        tela,
+                        perfil,
+                        diagnostico,
+                        relacionados.map((r) => ({ rotulo: r.rotulo, aba: r.abaNome, quantidade: r.quantidade })),
+                      );
+                      setAviso((await copiarTexto(texto)) ? "Resumo para chamado copiado" : "Não foi possível copiar");
+                    }}
+                  >
+                    <IconeChamado /> Resumo
+                  </button>
                   <BotaoCopiarChamado
                     dados={dados}
                     tabela={perfil?.tabela}
