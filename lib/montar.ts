@@ -47,9 +47,17 @@ export function valoresDaBusca(b: BuscaRapida, valores: string[]): string[] {
   return converter ? [...new Set(valores.map(converter))] : valores;
 }
 
+/** Número só com dígitos completado com zeros à esquerda até `tamanho`; o resto fica como está. */
+export function completarZeros(valor: string, tamanho: number): string {
+  const v = valor.trim();
+  return /^\d+$/.test(v) && v.length < tamanho ? v.padStart(tamanho, "0") : v;
+}
+
 /** Conversão aplicada a cada valor digitado, quando a busca tem uma. */
 export function conversaoDaBusca(b: BuscaRapida): ((v: string) => string) | null {
   if (b.prefixarMarketplace) return normalizarNumpok;
   if (b.removerPrefixoMarketplace) return removerPrefixoMarketplace;
+  const tamanho = b.completarZeros;
+  if (tamanho) return (v) => completarZeros(v, tamanho);
   return null;
 }

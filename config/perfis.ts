@@ -875,6 +875,8 @@ export type BuscaRapida = {
   prefixarMarketplace?: boolean;
   /** tira o prefixo do marketplace do número digitado (MLB_SHML… → SHML…), ex.: order_id do HUBCitel */
   removerPrefixoMarketplace?: boolean;
+  /** completa com zeros à esquerda os números digitados até este tamanho (ex.: 6136 → 000000006136 num varchar(12)) */
+  completarZeros?: number;
   /** valores separados só por vírgula/ponto e vírgula/linha, não por espaço (ex.: nome de marca "MOTUL BRASIL") */
   separarSoPorVirgula?: boolean;
   /** segundo campo, opcional, que entra no WHERE com AND (ex.: domínio do cliente no HUB) */
@@ -894,8 +896,8 @@ export type BuscaRapida = {
 // a primeira é a opção inicial do "Montar consulta"; no menu, agrupadas por `grupo`, nesta ordem
 export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   { id: "numpok", grupo: "Autcom", rotulo: "Pedido – NUMPOK", perfil: "FATGOR", coluna: "FGO_NUMPOK", exemplo: "SHML48393430410", prefixarMarketplace: true },
-  { id: "pedido", grupo: "Autcom", rotulo: "Pedido – NUMDOC", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001" },
-  { id: "nf", grupo: "Autcom", rotulo: "Pedido – NUMFAT", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684" },
+  { id: "pedido", grupo: "Autcom", rotulo: "Pedido – NUMDOC", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001", completarZeros: 12 },
+  { id: "nf", grupo: "Autcom", rotulo: "Pedido – NUMFAT", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684", completarZeros: 12 },
   // pedidos em que o item aparece (CADITE → FATDOR)
   { id: "item", grupo: "Autcom", rotulo: "Pedido – CADITE", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
   { id: "fataut", grupo: "Autcom", rotulo: "FATAUT – NUMDOC", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818" },

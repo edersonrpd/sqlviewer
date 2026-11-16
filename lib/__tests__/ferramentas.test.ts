@@ -92,7 +92,7 @@ describe("montar consulta", () => {
 
   it("SELECT simples, com = para um valor e IN para vários", () => {
     expect(montarConsulta(busca("item"), ["00004"], false)).toBe("SELECT * FROM CADITE WHERE ITE_CODITE = '00004';");
-    expect(montarConsulta(busca("nf"), ["1", "2"], false)).toBe("SELECT * FROM FATGOR WHERE FGO_NUMFAT IN ('1', '2');");
+    expect(montarConsulta(busca("nf"), ["1", "2"], false)).toBe("SELECT * FROM FATGOR WHERE FGO_NUMFAT IN ('000000000001', '000000000002');");
     expect(montarConsulta(busca("item"), [], false)).toBeNull();
   });
 
