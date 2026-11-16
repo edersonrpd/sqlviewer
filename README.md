@@ -148,6 +148,9 @@ devolve achados. Para criar uma regra nova, copie uma existente e acrescente um 
   os iguais, os diferentes (coluna a coluna), os que só existem em A e os que só existem em
   B. Dá para ignorar colunas pelo nome (ex.: datas de alteração) e copiar o `UPDATE` de
   todos os diferentes, em qualquer sentido, ou o `INSERT` dos que faltam em B.
+- **Copiar como SQL SELECT**: o `WHERE` usa só a coluna que identifica o registro — a
+  `chave` do perfil, a coluna em destaque (ex.: NUMPOK) ou a coluna fixada na tabela, a
+  primeira que estiver preenchida. Sem nenhuma, usa os valores das colunas copiadas.
 - **Resumo** (na Tela): copia um texto pronto para o chamado, com a identificação do
   registro, situação, valores, o resultado do diagnóstico e os registros ligados.
 

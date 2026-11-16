@@ -1,3 +1,5 @@
+import type { Perfil } from "@/config/perfis";
+import { colunaDestaque } from "./destaque";
 import { formatarValor } from "./formatacao";
 import { identSql, literalSql } from "./sql";
 import type { Coluna, ResultadoParse, Valor } from "./tipos";
@@ -150,14 +152,32 @@ export function condicaoSql(nome: string, v: Valor, c: Coluna): string {
 }
 
 /**
- * SELECT que busca de volta os registros copiados, para a programação analisar.
- * Com a coluna-chave do perfil no resultado: `WHERE CHAVE IN (…)`. Sem ela, cada
- * registro é identificado pelos valores das colunas copiadas (textos longos ficam de fora).
+ * Colunas candidatas a identificar o registro no SELECT gerado, em ordem de preferência:
+ * a chave do perfil, a coluna de título, a coluna em destaque (ex.: NUMPOK) e as fixadas na tabela.
  */
-export function gerarSelect(dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string, chave?: string): string {
+export function chavesDoSelect(dados: ResultadoParse, perfil: Perfil | undefined, fixas: readonly number[] = []): string[] {
+  const nomes = [perfil?.chave, perfil?.colunaTitulo, colunaDestaque(dados.colunas, perfil)?.nome, ...fixas.map((j) => dados.colunas[j]?.nome)];
+  return [...new Set(nomes.filter((n): n is string => !!n))];
+}
+
+/**
+ * SELECT que busca de volta os registros copiados, para a programação analisar.
+ * O WHERE usa a primeira coluna candidata (`chave`) que existe no resultado e está
+ * preenchida em todos os registros: `WHERE CHAVE IN (…)`. Sem nenhuma, cada registro é
+ * identificado pelos valores das colunas copiadas (textos longos ficam de fora).
+ */
+export function gerarSelect(dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string, chave?: string | readonly string[]): string {
   const cols = colunasSql(dados, colunas);
   const cabeca = `SELECT ${colunas.length === dados.colunas.length ? "*" : cols.map((c) => c.nome).join(", ")}\nFROM ${identSql(tabela)}`;
-  const jChave = chave ? dados.colunas.findIndex((c) => c.nome.toUpperCase() === chave.toUpperCase()) : -1;
+  const candidatas = chave === undefined ? [] : typeof chave === "string" ? [chave] : chave;
+  let jChave = -1;
+  for (const nome of candidatas) {
+    const j = dados.colunas.findIndex((c) => c.nome.toUpperCase() === nome.toUpperCase());
+    if (j >= 0 && linhas.every((i) => (dados.linhas[i][j] ?? "").trim() !== "")) {
+      jChave = j;
+      break;
+    }
+  }
   if (jChave >= 0) {
     const c = dados.colunas[jChave];
     const nomeChave = identSql(c.original ?? c.nome);
@@ -215,7 +235,7 @@ export const FORMATOS_COPIA: { id: FormatoCopia; rotulo: string; descricao: stri
 ];
 
 /** Texto da seleção/resultado no formato escolhido. */
-export function gerarFormato(formato: FormatoCopia, dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string, chave?: string): string {
+export function gerarFormato(formato: FormatoCopia, dados: ResultadoParse, linhas: number[], colunas: number[], tabela: string, chave?: string | readonly string[]): string {
   switch (formato) {
     case "tabulado":
       return gerarTabulado(dados, linhas, colunas);

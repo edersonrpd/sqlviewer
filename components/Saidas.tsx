@@ -6,7 +6,7 @@ import type { ResultadoParse } from "@/lib/tipos";
 import { IconeCopiar, IconeDownload, IconeSeta } from "./Icones";
 import { baixarArquivo, copiarTexto, useAviso } from "./util";
 
-type Base = { dados: ResultadoParse; linhas: number[]; colunas: number[]; /** nome da tabela para o SQL INSERT */ tabela?: string; /** coluna que identifica o registro, para o SQL SELECT */ chave?: string };
+type Base = { dados: ResultadoParse; linhas: number[]; colunas: number[]; /** nome da tabela para o SQL INSERT */ tabela?: string; /** coluna que identifica o registro, para o SQL SELECT */ chave?: string | readonly string[] };
 
 // downloads além de CSV e Excel
 const ARQUIVOS: { formato: FormatoCopia; rotulo: string; descricao: string; extensao: string; tipo: string }[] = [

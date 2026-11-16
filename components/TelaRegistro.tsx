@@ -6,6 +6,7 @@ import type { CorStatus } from "@/config/perfis";
 import { colunaDestaque } from "@/lib/destaque";
 import { diagnosticar, nivelGeral, temDiagnostico } from "@/lib/diagnostico";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
+import { chavesDoSelect } from "@/lib/exportar";
 import { formatarNumero } from "@/lib/formatacao";
 import { buscarPerfil, linhasLigadas } from "@/lib/perfis";
 import { resumoParaChamado } from "@/lib/resumoChamado";
@@ -175,7 +176,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                   <BotaoCopiarChamado
                     dados={dados}
                     tabela={perfil?.tabela}
-                    chave={perfil?.chave ?? perfil?.colunaTitulo}
+                    chave={chavesDoSelect(dados, perfil, aba.fixas)}
                     linhas={[registro]}
                     colunas={exibidas}
                     rotulo="Copiar"

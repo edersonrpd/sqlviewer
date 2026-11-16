@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { colunasExibidas, type Aba, type Acao } from "@/lib/estado";
 import { CHAVE_NULL, colunasPorNome, filtrarOrdenar } from "@/lib/filtragem";
-import { gerarTabulado } from "@/lib/exportar";
+import { chavesDoSelect, gerarTabulado } from "@/lib/exportar";
 import { buscarPerfil } from "@/lib/perfis";
 import { limitarSelecao, retangulo, type Selecao } from "@/lib/selecao";
 import { BarraSelecao } from "./BarraSelecao";
@@ -62,7 +62,7 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
   const [aviso, setAviso] = useAviso(2500);
   const perfilAba = buscarPerfil(aba.perfilId);
   const tabelaSql = perfilAba?.tabela ?? perfilAba?.id ?? aba.nome.replace(/\W+/g, "_");
-  const chaveSql = perfilAba?.chave ?? perfilAba?.colunaTitulo;
+  const chaveSql = useMemo(() => chavesDoSelect(dados, perfilAba, aba.fixas), [dados, perfilAba, aba.fixas]);
   const copiarSelecao = useCallback(async () => {
     if (!ret) return;
     const linhas = indices.slice(ret.r0, ret.r1 + 1);
