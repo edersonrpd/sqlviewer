@@ -137,7 +137,9 @@ devolve achados. Para criar uma regra nova, copie uma existente e acrescente um 
   `SHML…`; essas tabelas ficam no **banco do HUB**, não no do ERP, e a tela avisa
   "Rodar no banco do HUB"; **HUBCitel – Itens vendidos** pelo código do item, com o
   cabeçalho do pedido no JOIN; nas duas, o campo **Domínio** (opcional) filtra o cliente), digite um ou vários valores e copie o `SELECT` — ou o JOIN completo, com
-  as tabelas relacionadas. Os tipos ficam em `BUSCAS_RAPIDAS`, em `config/perfis.ts`.
+  as tabelas relacionadas. Os tipos ficam em `BUSCAS_RAPIDAS`, em `config/perfis.ts`. Nas buscas com `completarZeros` (hoje
+  **Pedido – NUMDOC** e **Pedido – NUMFAT**, varchar(12)), um número só com dígitos é completado
+  com zeros à esquerda: `6136` vira `000000006136`.
 - **Comparar**: marque 2 linhas na tabela e clique em **Comparar** para ver só as colunas
   que diferem (com o rótulo da Tela ao lado do nome técnico). **UPDATE B ← A** / **A ← B**
   copia o `UPDATE` que leva os valores de um registro para o outro, nas colunas diferentes

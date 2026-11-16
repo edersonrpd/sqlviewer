@@ -132,3 +132,26 @@ describe("HUBCitel – resultado do JOIN de itens vendidos", () => {
     expect(p.status[0]).toEqual(expect.objectContaining({ texto: "Pago (paid)", cor: "verde" }));
   });
 });
+
+describe("completar zeros à esquerda (NUMDOC e NUMFAT da FATGOR)", () => {
+  it("6136 vira 000000006136; já completo, com letras ou maior não muda", async () => {
+    const { completarZeros } = await import("../montar");
+    expect(completarZeros("6136", 12)).toBe("000000006136");
+    expect(completarZeros(" 6136 ", 12)).toBe("000000006136");
+    expect(completarZeros("000000053684", 12)).toBe("000000053684");
+    expect(completarZeros("ABC1", 12)).toBe("ABC1");
+    expect(completarZeros("1234567890123", 12)).toBe("1234567890123");
+  });
+
+  it("vai para o SQL, inclusive com vários valores e JOIN", async () => {
+    const { buscaRapida, montarConsulta } = await import("../montar");
+    for (const id of ["nf", "pedido"]) {
+      const b = buscaRapida(id)!;
+      expect(montarConsulta(b, ["6136"], false)).toBe(`SELECT * FROM FATGOR WHERE ${b.coluna} = '000000006136';`);
+      expect(montarConsulta(b, ["6136", "000000000007", "53684"], false)).toBe(
+        `SELECT * FROM FATGOR WHERE ${b.coluna} IN ('000000006136', '000000000007', '000000053684');`,
+      );
+      expect(montarConsulta(b, ["6136"], true)).toContain(`WHERE t0.${b.coluna} = '000000006136';`);
+    }
+  });
+});

@@ -31,11 +31,11 @@ export function MontarConsulta() {
   const valores = useMemo(() => separarValores(texto, busca.separarSoPorVirgula), [texto, busca.separarSoPorVirgula]);
   const extras = useMemo(() => separarValores(textoExtra), [textoExtra]);
   const sql = montarConsulta(busca, valores, podeJoin && comJoin, extras);
-  // NUMPOK / order_id do HUB: mostra como cada número vai para o SQL (com ou sem o prefixo do marketplace)
+  // NUMPOK / order_id do HUB / NUMDOC e NUMFAT: mostra como cada número vai para o SQL (prefixo do marketplace ou zeros à esquerda)
   const convertidos = useMemo(() => {
     const converter = conversaoDaBusca(busca);
     if (!converter) return [];
-    return valores.map((v) => ({ original: v, final: converter(v) })).filter((c) => identificarMarketplace(c.final));
+    return valores.map((v) => ({ original: v, final: converter(v) })).filter((c) => identificarMarketplace(c.final) || c.final !== c.original.trim());
   }, [busca, valores]);
 
   return (
@@ -130,7 +130,7 @@ export function MontarConsulta() {
         </ul>
       )}
       {convertidos.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="NUMPOK identificados">
+        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Valores como vão para o SQL">
           {convertidos.slice(0, 8).map((c) => (
             <li
               key={c.original}
