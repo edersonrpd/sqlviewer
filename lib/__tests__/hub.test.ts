@@ -155,3 +155,11 @@ describe("completar zeros à esquerda (NUMDOC e NUMFAT da FATGOR)", () => {
     }
   });
 });
+
+describe("completar zeros em FATAUT e LOGNFE", () => {
+  it("NUMDOC de 6136 vira 000000006136", async () => {
+    const { buscaRapida, montarConsulta } = await import("../montar");
+    expect(montarConsulta(buscaRapida("fataut")!, ["6136"], false)).toBe("SELECT * FROM FATAUT WHERE FAT_NUMDOC = '000000006136';");
+    expect(montarConsulta(buscaRapida("nfe")!, ["6136", "53684"], false)).toBe("SELECT * FROM LOGNFE WHERE NFE_NUMDOC IN ('000000006136', '000000053684');");
+  });
+});

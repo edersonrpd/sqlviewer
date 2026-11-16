@@ -900,8 +900,8 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   { id: "nf", grupo: "Autcom", rotulo: "Pedido – NUMFAT", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684", completarZeros: 12 },
   // pedidos em que o item aparece (CADITE → FATDOR)
   { id: "item", grupo: "Autcom", rotulo: "Pedido – CADITE", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
-  { id: "fataut", grupo: "Autcom", rotulo: "FATAUT – NUMDOC", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818" },
-  { id: "nfe", grupo: "Autcom", rotulo: "LOGNFE – NUMDOC", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684" },
+  { id: "fataut", grupo: "Autcom", rotulo: "FATAUT – NUMDOC", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818", completarZeros: 12 },
+  { id: "nfe", grupo: "Autcom", rotulo: "LOGNFE – NUMDOC", perfil: "LOGNFE", coluna: "NFE_NUMDOC", exemplo: "000000053684", completarZeros: 12 },
   // cadastro do produto com as tabelas de cadastro ligadas (marca…)
   {
     id: "produto",
