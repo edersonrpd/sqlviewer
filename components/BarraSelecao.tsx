@@ -15,7 +15,7 @@ type Props = {
   /** nome da tabela para o INSERT */
   tabela: string;
   /** coluna que identifica o registro, para o SELECT */
-  chave?: string;
+  chave?: string | readonly string[];
   verValor: boolean;
   onVerValor: () => void;
   onAviso: (msg: string) => void;

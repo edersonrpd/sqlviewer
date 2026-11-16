@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { PERFIS } from "@/config/perfis";
 import { estadoInicial, reducer } from "../estado";
-import { gerarCSV, gerarInsert, gerarSelect, neutralizarFormula } from "../exportar";
+import { chavesDoSelect, gerarCSV, gerarInsert, gerarSelect, neutralizarFormula } from "../exportar";
 import { condicaoValores } from "../join";
 import { parsearConsulta } from "../parser";
 import { lerSessao, serializarSessao } from "../sessao";
@@ -104,5 +105,29 @@ describe("sessão com arquivo inconsistente", () => {
   it("arquivo íntegro continua abrindo igual", () => {
     const a = lerSessao(serializarSessao(s)).abas[0];
     expect(a).toMatchObject({ ordem: s.abas[0].ordem, visiveis: s.abas[0].visiveis, larguras: s.abas[0].larguras, grafico: s.abas[0].grafico });
+  });
+});
+
+describe("SELECT copiado: WHERE só pela coluna que identifica o registro", () => {
+  const movcar = PERFIS.find((p) => p.id === "MOVCAR")!;
+  const t = parsearConsulta("MCA_NUMPOK\tMCA_VALORI\tMCA_HIST01\nAMZ_702-3439868-5701854\t48.95\tREF\nAMZ_111-1111111-1111111\t10.00\tX\n\\N\t5.00\tY");
+
+  it("perfil sem chave: usa a coluna em destaque (NUMPOK)", () => {
+    const chaves = chavesDoSelect(t, movcar);
+    expect(chaves).toContain("MCA_NUMPOK");
+    expect(gerarSelect(t, [0], [0, 1], "MOVCAR", chaves)).toBe("SELECT MCA_NUMPOK, MCA_VALORI\nFROM MOVCAR\nWHERE MCA_NUMPOK = 'AMZ_702-3439868-5701854';");
+    expect(gerarSelect(t, [0, 1], [1, 2], "MOVCAR", chaves)).toBe(
+      "SELECT MCA_VALORI, MCA_HIST01\nFROM MOVCAR\nWHERE MCA_NUMPOK IN ('AMZ_702-3439868-5701854', 'AMZ_111-1111111-1111111');",
+    );
+  });
+
+  it("consulta genérica: usa a coluna fixada na tabela", () => {
+    const g = parsearConsulta("COD\tNOME\tUF\n7\tAna\tSP");
+    expect(gerarSelect(g, [0], [1, 2], "T", chavesDoSelect(g, undefined, [0]))).toBe("SELECT NOME, UF\nFROM T\nWHERE COD = 7;");
+  });
+
+  it("candidata vazia em algum registro é pulada; sem nenhuma, vale o registro inteiro", () => {
+    expect(gerarSelect(t, [2], [1], "MOVCAR", ["MCA_NUMPOK", "MCA_HIST01"])).toBe("SELECT MCA_VALORI\nFROM MOVCAR\nWHERE MCA_HIST01 = 'Y';");
+    expect(gerarSelect(t, [2], [1], "MOVCAR", ["MCA_NUMPOK"])).toBe("SELECT MCA_VALORI\nFROM MOVCAR\nWHERE MCA_VALORI = 5.00;");
   });
 });
