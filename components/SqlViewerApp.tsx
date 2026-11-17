@@ -10,11 +10,13 @@ import { AbaConsulta } from "./AbaConsulta";
 import { AbaProcedure } from "./AbaProcedure";
 import { EntradaConsulta } from "./EntradaConsulta";
 import { MapaRelacoes } from "./MapaRelacoes";
+import { BotaoInstalar, useServiceWorker } from "./Pwa";
 import { IconeBanco, IconeLua, IconeRelacoes, IconeMais, IconePasta, IconeSalvar, IconeSol, IconeX } from "./Icones";
 import { baixarArquivo, useAviso } from "./util";
 
 export function SqlViewerApp() {
   const [estado, dispatch] = useReducer(reducer, estadoInicial);
+  useServiceWorker();
   const temAbas = estado.abas.length > 0;
 
   // Uso descartável: pede confirmação ao fechar/recarregar com consultas abertas.
@@ -72,6 +74,7 @@ export function SqlViewerApp() {
         >
           <IconeRelacoes className="h-4 w-4" />
         </button>
+        <BotaoInstalar />
         <BotoesSessao estado={estado} dispatch={dispatch} />
         <BotaoTema />
       </header>
