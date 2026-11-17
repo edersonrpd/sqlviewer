@@ -7,7 +7,8 @@ do grid do cliente SQL: tabela interativa, ficha do registro, gráficos simples 
 **Todo o processamento acontece no navegador.** Não há API routes, server actions,
 analytics, logs, login nem banco de dados. Os dados colados ficam só na memória da
 página e somem ao fechá-la, a não ser que você salve a sessão em arquivo. A única coisa
-guardada no navegador (localStorage) é a escolha do tema claro/escuro.
+guardada no navegador (localStorage) é a escolha do tema claro/escuro; o cache do
+aplicativo instalado (PWA) guarda só os arquivos do próprio app, nunca dados.
 
 ## Rodar localmente
 
@@ -32,6 +33,19 @@ npm test
 ```bash
 npm run build
 ```
+
+## Instalar e usar sem internet (PWA)
+
+O SQL Viewer pode ser instalado como aplicativo: no Chrome ou no Edge, use o botão
+**Instalar** no topo (ou o ícone de instalar na barra de endereço). Ele abre em janela própria
+e funciona **sem internet**: colar, tabela, Tela, gráficos, comparar e exportar.
+
+- O service worker ([`public/sw.js`](public/sw.js)) guarda só os arquivos da aplicação
+  (HTML, scripts, estilos, fontes, ícones); **nunca** os dados colados.
+- Com internet, a página sempre vem da rede: um deploy novo vale na próxima abertura.
+- A biblioteca do Excel é buscada em segundo plano na primeira visita, para exportar
+  `.xlsx` também offline.
+- Para remover: desinstale pelo menu do app, ou limpe os dados do site no navegador.
 
 ## Segurança
 

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -10,6 +10,15 @@ export const metadata: Metadata = {
   title: "SQL Viewer",
   description: "Visualize resultados de consultas MySQL. Tudo é processado no navegador.",
   robots: { index: false, follow: false },
+  applicationName: "SQL Viewer",
+  appleWebApp: { capable: true, title: "SQL Viewer", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f9fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0d14" },
+  ],
 };
 
 // Aplica o tema antes da pintura para evitar flash: o escolhido no botão (único valor
