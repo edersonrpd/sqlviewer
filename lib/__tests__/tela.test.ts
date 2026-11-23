@@ -17,6 +17,7 @@ describe("montarTela com perfil", () => {
 
   it("título, subtítulo e destaques", () => {
     expect(t.titulo).toBe("Pedido 000001000004");
+    expect(t.valorTitulo).toBe("000001000004");
     expect(t.subtitulo.map((c) => c.texto)).toEqual(["001", "PD", "00001135", "14/10/2024 08:14:32", "AUTCOM"]);
     expect(t.destaques[0]).toMatchObject({ rotulo: "Valor contábil", texto: "R$ 165,49" });
   });

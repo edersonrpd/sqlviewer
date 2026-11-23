@@ -114,7 +114,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
                 </p>
                 <h2 className="mt-0.5 flex items-center gap-2 text-2xl font-semibold tracking-tight">
                   <span className="truncate font-mono">{tela.titulo}</span>
-                  <button className="btn-icone" title="Copiar" onClick={() => copiarValor("Título", tela.titulo)}>
+                  <button className="btn-icone" title="Copiar" onClick={() => copiarValor("Título", tela.valorTitulo)}>
                     <IconeCopiar />
                   </button>
                 </h2>
