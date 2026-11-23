@@ -28,6 +28,8 @@ export type SecaoMontada = { titulo: string; campos: CampoMontado[]; recolhida?:
 
 export type TelaMontada = {
   titulo: string;
+  /** só o valor do título (ex.: "000001000004"), para o botão de copiar */
+  valorTitulo: string;
   /** coluna-chave destacada (ex.: NUMPOK) */
   chave: CampoMontado | null;
   indicadores: IndicadorMontado[];
@@ -134,10 +136,13 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   // título: "Pedido 000001000004" ou "COLUNA: valor"
   const jTitulo = perfil?.colunaTitulo ? porNome.get(perfil.colunaTitulo) : undefined;
   let titulo: string;
+  let valorTitulo: string;
   if (jTitulo !== undefined) {
     const v = textoTitulo(linha[jTitulo]);
+    valorTitulo = v;
     titulo = tela?.titulo ? `${tela.titulo} ${v}` : `${dados.colunas[jTitulo].nome}: ${v}`;
   } else {
+    valorTitulo = dados.colunas.length ? (linha[0] ?? "NULL") : "Registro";
     titulo = dados.colunas.length ? `${dados.colunas[0].nome}: ${linha[0] ?? "NULL"}` : "Registro";
   }
 
@@ -181,7 +186,7 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   secoes.push(...noFim);
   const d = colunaDestaque(dados.colunas, perfil);
   const chave = d ? montarCampo(dados, linha, d.j, { rotulo: d.rotulo }) : null;
-  return { titulo, chave, indicadores, subtitulo, status, destaques, secoes };
+  return { titulo, valorTitulo, chave, indicadores, subtitulo, status, destaques, secoes };
 }
 
 function jsonIndentado(v: string): string | null {
