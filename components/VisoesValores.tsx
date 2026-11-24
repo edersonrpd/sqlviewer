@@ -33,9 +33,10 @@ function ConteudoValores({ aba, abas, registro, avisar }: { aba: Aba; abas: Aba[
 
   const copiarConciliacao = async () => {
     const linhas = conciliacoes.flatMap((c) => [
-      `${c.rotulo}: ${c.estado === "bate" ? "bate" : c.estado === "diferente" ? `diferença ${moeda(c.diferenca!)}` : "incompleta"}`,
+      `${c.rotulo}: ${c.estado === "bate" ? "bate" : c.estado === "diferente" ? (c.modo === "cada" ? "diverge" : `diferença ${moeda(c.diferenca!)}`) : "incompleta"}`,
       ...[...c.esperado.termos, ...c.comparado.termos].map(
-        (t) => `  ${t.sinal < 0 ? "− " : ""}${t.rotulo} (${t.origem}): ${t.valor === null ? t.falta : moeda(t.valor)}`,
+        (t) =>
+          `  ${t.sinal < 0 ? "− " : ""}${t.rotulo} (${t.origem}): ${t.valor === null ? t.falta : moeda(t.valor)}${t.bate === undefined ? "" : t.bate ? " ✓" : " ≠"}`,
       ),
     ]);
     avisar((await copiarTexto(linhas.join("\n"))) ? "Conciliação copiada" : "Não foi possível copiar");
@@ -139,32 +140,55 @@ function CartaoConciliacao({ c }: { c: ConciliacaoMontada }) {
           </td>
           <td className={`py-1.5 text-right font-mono tabular-nums ${t.sinal < 0 && t.valor ? "text-red-700 dark:text-red-400" : ""}`}>
             {t.valor === null ? <span className="font-sans text-xs text-amber-800 dark:text-amber-300">{t.falta}</span> : `${t.sinal < 0 ? "−" : ""}${moeda(t.valor)}`}
+            {t.bate !== undefined && (
+              <span
+                className={`ml-2 rounded-full px-1.5 font-sans text-[11px] font-semibold ${t.bate ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300"}`}
+              >
+                {t.bate ? "✓" : "≠"}
+              </span>
+            )}
           </td>
         </tr>
       ))}
-      <tr className="border-t border-zinc-300 font-semibold dark:border-zinc-700">
-        <td className="py-1.5 text-center font-mono text-zinc-500">{simbolo}</td>
-        <td className="py-1.5">{titulo}</td>
-        <td className="py-1.5 text-right font-mono tabular-nums">{l.total === null ? "—" : moeda(l.total)}</td>
-      </tr>
+      {(c.modo === "soma" || titulo === "Esperado") && (
+        <tr className="border-t border-zinc-300 font-semibold dark:border-zinc-700">
+          <td className="py-1.5 text-center font-mono text-zinc-500">{simbolo}</td>
+          <td className="py-1.5">{titulo}</td>
+          <td className="py-1.5 text-right font-mono tabular-nums">{l.total === null ? "—" : moeda(l.total)}</td>
+        </tr>
+      )}
     </>
   );
+  const divergentes = c.comparado.termos.filter((t) => t.bate === false).length;
 
   return (
     <section className={`painel border ${estilo.borda} p-4`}>
       <div className="flex items-center gap-2">
         <h4 className="text-sm font-semibold">{c.rotulo}</h4>
         <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums ${estilo.selo}`}>
-          {c.estado === "bate" ? "✓ bate" : c.estado === "diferente" ? `diferença ${c.diferenca! > 0 ? "+" : ""}${moeda(c.diferenca!)}` : "incompleta"}
+          {c.estado === "bate"
+            ? "✓ bate"
+            : c.estado === "diferente"
+              ? c.modo === "cada"
+                ? `${divergentes} tabela(s) diverge(m)`
+                : `diferença ${c.diferenca! > 0 ? "+" : ""}${moeda(c.diferenca!)}`
+              : "incompleta"}
         </span>
       </div>
       <table className="mt-2 w-full text-[13px]">
         <tbody>
           {lado("Esperado", c.esperado, "=")}
+          {c.modo === "cada" && (
+            <tr>
+              <td colSpan={3} className="pt-3 pb-0.5 text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+                Cada tabela deve ter o mesmo valor
+              </td>
+            </tr>
+          )}
           {lado("Encontrado", c.comparado, "=")}
         </tbody>
       </table>
-      {c.esperado.total !== null && c.comparado.total !== null && (
+      {c.modo === "soma" && c.esperado.total !== null && c.comparado.total !== null && (
         <div className="mt-3 space-y-1.5" aria-hidden>
           <div className="flex items-center gap-2">
             <span className="w-20 shrink-0 text-[11px] text-zinc-500">Esperado</span>
