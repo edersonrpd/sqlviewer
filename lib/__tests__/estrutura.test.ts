@@ -3,6 +3,8 @@ import { estadoInicial, reducer } from "../estado";
 import { montarEstruturas, normalizarCodigo, sqlEstrutura } from "../estrutura";
 import { separarPorMarcadores } from "../join";
 import { parsearConsulta } from "../parser";
+import { relacionadosDoRegistro } from "../relacionados";
+import { montarFluxo } from "../fluxo";
 import { montarConsulta } from "../montar";
 import { BUSCAS_RAPIDAS } from "@/config/perfis";
 
@@ -123,5 +125,19 @@ describe("estrutura (KIT)", () => {
     expect(montarConsulta(b, ["12188"], true, ["001"])).toBe(sqlEstrutura(["12188"], "001"));
     expect(montarConsulta(b, ["12188", "12190"], true)).toContain("WHERE g.GMT_CODITE IN ('12188', '12190');");
     expect(montarConsulta(b, ["12188"], false, ["001"])).toBe("SELECT * FROM GERMAT WHERE GMT_CODITE = '12188' AND GMT_CODEMP = '001';");
+  });
+
+  it("componente sem GERMAT: \"Não é KIT\" é normal (neutro), não erro; KIT sem componentes continua erro", () => {
+    const abas = abrir(GERMAT, DETMAT, CADITE, ITEGER);
+    const iteger = abas[3];
+    const rel = relacionadosDoRegistro(iteger, 0, abas); // ITEGER do 11901 (componente)
+    expect(rel.find((r) => r.rotulo === "Estrutura (KIT)")).toMatchObject({ quantidade: 0, vazioNormal: "Não é KIT (o item não tem estrutura)" });
+    expect(rel.find((r) => r.rotulo === "Usado em estruturas")).toMatchObject({ quantidade: 1 });
+    expect(montarFluxo(iteger, 0, abas).find((e) => e.rotulo === "Estrutura (KIT)")!.estado).toBe("neutro");
+    // KIT sem nenhum componente na DETMAT aberta: zero aqui é erro
+    const outro = abrir(tsv([["AUTOINCREM", "GMT_CODEMP", "GMT_CODITE", "GMT_TIPQTD"], ["S9", "001", "99999", "Q"]]), DETMAT);
+    const comp = relacionadosDoRegistro(outro[0], 0, outro).find((r) => r.rotulo === "Componentes do KIT")!;
+    expect(comp.quantidade).toBe(0);
+    expect(comp.vazioNormal).toBeUndefined();
   });
 });

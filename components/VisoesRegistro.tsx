@@ -133,6 +133,12 @@ const ESTILO_EVENTO: Record<EstadoEvento, { ponto: string; selo: string; rotulo:
     rotulo: "ok",
     cartao: "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-white/[0.03]",
   },
+  neutro: {
+    ponto: "bg-zinc-300 dark:bg-zinc-600",
+    selo: "bg-zinc-100 text-zinc-600 dark:bg-white/5 dark:text-zinc-400",
+    rotulo: "sem registro (normal)",
+    cartao: "border-dashed border-zinc-300 bg-white/60 dark:border-zinc-700 dark:bg-transparent",
+  },
   pendente: {
     ponto: "bg-amber-500",
     selo: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300",
@@ -188,7 +194,7 @@ function ConteudoFluxo({
   const join = useMemo(() => sqlJoin(aba.dados, registro, aba.perfilId), [aba.dados, registro, aba.perfilId]);
   const copiar = async (sql: string, msg: string) => avisar((await copiarTexto(sql)) ? msg : "Não foi possível copiar");
 
-  const conhecidos = eventos.filter((e) => e.estado !== "naoConsultado" && e.estado !== "semChave");
+  const conhecidos = eventos.filter((e) => e.estado !== "naoConsultado" && e.estado !== "semChave" && e.estado !== "neutro");
   const okCount = conhecidos.filter((e) => e.estado === "ok").length;
   const parou = conhecidos.find((e) => e.estado !== "ok");
   const atencao = (diagnostico?.achados ?? []).filter((a) => a.nivel !== "ok");
@@ -379,6 +385,7 @@ function posicionar(nos: NoMapa[]): Map<string, Pos> {
 
 const ESTILO_NO: Record<NoMapa["estado"], { caixa: string; linha: string; traco?: string }> = {
   ok: { caixa: "border-emerald-500/80 bg-white dark:bg-zinc-900", linha: "#9aa1b2" },
+  neutro: { caixa: "border-dashed border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900", linha: "#c3c8d2", traco: "4 4" },
   ausente: { caixa: "border-dashed border-red-400 bg-red-50 dark:border-red-800 dark:bg-[#2a1210]", linha: "#dc6b4a", traco: "6 5" },
   naoConsultado: { caixa: "border-dashed border-zinc-400 bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900", linha: "#8a90a0", traco: "6 5" },
   semChave: { caixa: "border-dashed border-zinc-300 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900", linha: "#b4b9c4", traco: "3 5" },

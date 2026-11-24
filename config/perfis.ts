@@ -140,6 +140,13 @@ export type Relacao = {
    * JOIN, ex.: a CADITE não traz no JOIN do produto todos os KITs que usam o item
    */
   inversoForaDoJoin?: boolean;
+  /**
+   * nenhum registro ligado é normal (não é erro): mostra este texto em cinza no
+   * lugar do aviso vermelho, ex.: item sem GERMAT = "Não é KIT"
+   */
+  vazioNormal?: string;
+  /** o mesmo, no sentido inverso (a outra tabela olhando para esta) */
+  inversoVazioNormal?: string;
 };
 
 /**
@@ -1294,6 +1301,8 @@ export const PERFIS: Perfil[] = [
         extras: [{ origem: "FDO_CODEMP", destino: "GMT_CODEMP" }],
         rotulo: "Estrutura (KIT) do item",
         inversoForaDoJoin: true,
+        vazioNormal: "Não é KIT (o item não tem estrutura)",
+        inversoVazioNormal: "Nenhum pedido com o KIT nas abas abertas",
       },
     ],
     cadastros: [
@@ -1606,6 +1615,7 @@ export const PERFIS: Perfil[] = [
         colunaDestino: "GMT_CODITE",
         extras: [{ origem: "ITE_CODEMP", destino: "GMT_CODEMP" }],
         rotulo: "Estrutura (KIT)",
+        vazioNormal: "Não é KIT (o item não tem estrutura)",
       },
       // ~300 colunas e uma linha por empresa: fica fora do JOIN do produto
       {
@@ -1659,6 +1669,7 @@ export const PERFIS: Perfil[] = [
         rotulo: "Preços e estoque do KIT",
         foraDoJoin: true,
         inversoForaDoJoin: true,
+        inversoVazioNormal: "Não é KIT (o item não tem estrutura)",
       },
     ],
   },
@@ -1675,7 +1686,14 @@ export const PERFIS: Perfil[] = [
     rotulosInversos: { GERMAT: "Estrutura (KIT)", CADITE: "Usado em estruturas" },
     tela: TELA_DETMAT,
     relacoes: [
-      { perfil: "CADITE", colunaOrigem: "DMT_ITESUB", colunaDestino: "ITE_CODITE", rotulo: "Cadastro do componente", inversoForaDoJoin: true },
+      {
+        perfil: "CADITE",
+        colunaOrigem: "DMT_ITESUB",
+        colunaDestino: "ITE_CODITE",
+        rotulo: "Cadastro do componente",
+        inversoForaDoJoin: true,
+        inversoVazioNormal: "Não é componente de nenhuma estrutura",
+      },
       {
         perfil: "ITEGER",
         colunaOrigem: "DMT_ITESUB",
@@ -1683,6 +1701,7 @@ export const PERFIS: Perfil[] = [
         extras: [{ origem: "DMT_CODEMP", destino: "ITE_CODEMP" }],
         rotulo: "Preços e estoque do componente",
         inversoForaDoJoin: true,
+        inversoVazioNormal: "Não é componente de nenhuma estrutura",
       },
     ],
   },

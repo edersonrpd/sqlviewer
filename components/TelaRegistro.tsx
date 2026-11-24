@@ -111,7 +111,7 @@ export function TelaRegistro({ aba, abas, indices, atualizar, dispatch }: Props)
     id: `tela-r-${k}`,
     rotulo: r.rotulo,
     contagem: r.quantidade,
-    alerta: r.quantidade === 0,
+    alerta: r.quantidade === 0 && !r.vazioNormal,
   }));
   const abrirLigado = (r: Relacionado) => (linha?: number) => {
     dispatch({ tipo: "abrirRelacao", destino: r.abaId, coluna: r.colunaDestino, valor: r.chave!, rotulo: r.rotulo, extras: r.extras.map((e) => ({ coluna: e.coluna, valor: e.chave })) });
@@ -673,6 +673,24 @@ function BlocoLigado({
       )}
     </div>
   );
+
+  // nenhum registro ligado, mas isso é normal (ex.: item que não é KIT): linha neutra
+  if (linhas.length === 0 && rel.vazioNormal) {
+    return (
+      <section
+        id={id}
+        data-secao
+        className="flex scroll-mt-4 flex-wrap items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-4 py-3 text-sm sm:col-span-2 dark:border-zinc-700"
+      >
+        <IconeLink className="h-4 w-4 text-zinc-400" />
+        <h3 className="font-semibold text-zinc-700 dark:text-zinc-300">{rel.rotulo}</h3>
+        <span className="font-mono text-[10px] text-zinc-500">
+          {destino.nome} · {ligacao}
+        </span>
+        <span className="text-zinc-600 dark:text-zinc-400">{rel.vazioNormal}</span>
+      </section>
+    );
+  }
 
   if (linhas.length === 0) {
     return (

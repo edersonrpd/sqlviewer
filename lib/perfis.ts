@@ -51,6 +51,8 @@ export type LigacaoPerfil = {
   rotulo: string;
   /** só no "Ver também", fora do JOIN (vale no sentido em que a relação foi declarada) */
   foraDoJoin?: boolean;
+  /** nenhum registro ligado é normal: texto neutro no lugar do aviso */
+  vazioNormal?: string;
 };
 
 /**
@@ -68,6 +70,7 @@ export function ligacoesDoPerfil(perfilId: string, perfis: Perfil[] = PERFIS): L
       extras: r.extras ?? [],
       rotulo: r.rotulo,
       ...(r.foraDoJoin ? { foraDoJoin: true } : {}),
+      ...(r.vazioNormal ? { vazioNormal: r.vazioNormal } : {}),
     });
   }
   for (const p of perfis) {
@@ -81,6 +84,7 @@ export function ligacoesDoPerfil(perfilId: string, perfis: Perfil[] = PERFIS): L
         extras: (r.extras ?? []).map((e) => ({ origem: e.destino, destino: e.origem })),
         rotulo: atual?.rotulosInversos?.[p.id] ?? p.nome,
         ...(r.inversoForaDoJoin ? { foraDoJoin: true } : {}),
+        ...(r.inversoVazioNormal ? { vazioNormal: r.inversoVazioNormal } : {}),
       });
     }
   }

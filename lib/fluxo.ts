@@ -15,7 +15,8 @@ import { montarTela, primeiraData, resumoRegistro } from "./tela";
  * consultas que ainda faltam colar.
  */
 
-export type EstadoEvento = "ok" | "pendente" | "ausente" | "naoConsultado" | "semChave";
+/** neutro: sem registro ligado, mas é normal (ex.: item que não é KIT) */
+export type EstadoEvento = "ok" | "neutro" | "pendente" | "ausente" | "naoConsultado" | "semChave";
 
 export type EventoFluxo = {
   id: string;
@@ -40,7 +41,7 @@ export function linhasDoRelacionado(r: Relacionado, abas: Aba[]): number[] {
   return linhasLigadas(r.chave, destino.dados.linhas, r.colunaDestino, extrasLigacao(r.extras));
 }
 
-const ORDEM_SEM_DATA: Record<EstadoEvento, number> = { ok: 0, pendente: 1, ausente: 2, naoConsultado: 3, semChave: 4 };
+const ORDEM_SEM_DATA: Record<EstadoEvento, number> = { ok: 0, neutro: 1, pendente: 2, ausente: 3, naoConsultado: 4, semChave: 5 };
 
 export function montarFluxo(aba: Aba, registro: number, abas: Aba[]): EventoFluxo[] {
   const perfil = buscarPerfil(aba.perfilId);
@@ -88,7 +89,7 @@ export function montarFluxo(aba: Aba, registro: number, abas: Aba[]): EventoFlux
     const resumo = linhas.length > 0 ? resumoRegistro(destino.dados, linhas[0], buscarPerfil(destino.perfilId)) : null;
     const detalhe =
       linhas.length === 0
-        ? `Nenhum registro com ${r.colunaDestinoNome} = ${r.chave ?? "NULL"}`
+        ? (r.vazioNormal ?? `Nenhum registro com ${r.colunaDestinoNome} = ${r.chave ?? "NULL"}`)
         : [resumo!.titulo, resumo!.detalhe].filter(Boolean).join(" · ") + (linhas.length > 1 ? ` (+${linhas.length - 1})` : "");
     eventos.push({
       id: `rel-${k}`,
@@ -97,7 +98,7 @@ export function montarFluxo(aba: Aba, registro: number, abas: Aba[]): EventoFlux
       quando: quando?.quando ?? null,
       colunaQuando: quando?.coluna ?? null,
       detalhe,
-      estado: linhas.length > 0 ? "ok" : "ausente",
+      estado: linhas.length > 0 ? "ok" : r.vazioNormal ? "neutro" : "ausente",
       quantidade: linhas.length,
       relacionado: r,
     });
@@ -145,7 +146,7 @@ export type NoMapa = {
   chave: string;
   quantidade: number | null;
   resumo: string;
-  estado: "ok" | "ausente" | "naoConsultado" | "semChave";
+  estado: "ok" | "neutro" | "ausente" | "naoConsultado" | "semChave";
   relacionado?: Relacionado;
   pendente?: RelacaoPendente;
 };
@@ -164,8 +165,8 @@ function noRelacionado(id: string, pai: string, nivel: 1 | 2, r: Relacionado, ab
     aba: r.abaNome,
     chave: r.colunaDestinoNome,
     quantidade: linhas.length,
-    resumo: res ? [res.titulo, res.detalhe].filter(Boolean).join(" · ") : "Nenhum registro ligado",
-    estado: linhas.length > 0 ? "ok" : "ausente",
+    resumo: res ? [res.titulo, res.detalhe].filter(Boolean).join(" · ") : (r.vazioNormal ?? "Nenhum registro ligado"),
+    estado: linhas.length > 0 ? "ok" : r.vazioNormal ? "neutro" : "ausente",
     relacionado: r,
   };
 }

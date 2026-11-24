@@ -84,6 +84,8 @@ describe("ligacoesDoPerfil", () => {
         colunaDestino: "GMT_CODITE",
         extras: [{ origem: "FDO_CODEMP", destino: "GMT_CODEMP" }],
         rotulo: "Estrutura (KIT) do item",
+        // sem GERMAT é normal: o item não é KIT (não aparece como erro)
+        vazioNormal: "Não é KIT (o item não tem estrutura)",
       },
       { perfilDestino: "FATGOR", colunaOrigem: "FDO_SEQGER", colunaDestino: "AUTOINCREM", extras: [], rotulo: "Pedido (cabeçalho)" },
     ]);
@@ -102,7 +104,14 @@ describe("ligacoesDoPerfil", () => {
     expect(ligacoesDoPerfil("CADITE")).toEqual([
       { perfilDestino: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", extras: [], rotulo: "Marca" },
       { perfilDestino: "DESSIT", colunaOrigem: "ITE_CODITE", colunaDestino: "ITE_CODITE", extras: [], rotulo: "Dados para o site" },
-      { perfilDestino: "GERMAT", colunaOrigem: "ITE_CODITE", colunaDestino: "GMT_CODITE", extras: [{ origem: "ITE_CODEMP", destino: "GMT_CODEMP" }], rotulo: "Estrutura (KIT)" },
+      {
+        perfilDestino: "GERMAT",
+        colunaOrigem: "ITE_CODITE",
+        colunaDestino: "GMT_CODITE",
+        extras: [{ origem: "ITE_CODEMP", destino: "GMT_CODEMP" }],
+        rotulo: "Estrutura (KIT)",
+        vazioNormal: "Não é KIT (o item não tem estrutura)",
+      },
       {
         perfilDestino: "ITEGER",
         colunaOrigem: "ITE_CODITE",
@@ -113,7 +122,15 @@ describe("ligacoesDoPerfil", () => {
       },
       { perfilDestino: "FATDOR", colunaOrigem: "ITE_CODITE", colunaDestino: "FDO_CODITE", extras: [], rotulo: "Pedidos com o item" },
       // estruturas que usam o item como componente: só consulta avulsa, fora do JOIN do produto
-      { perfilDestino: "DETMAT", colunaOrigem: "ITE_CODITE", colunaDestino: "DMT_ITESUB", extras: [], rotulo: "Usado em estruturas", foraDoJoin: true },
+      {
+        perfilDestino: "DETMAT",
+        colunaOrigem: "ITE_CODITE",
+        colunaDestino: "DMT_ITESUB",
+        extras: [],
+        rotulo: "Usado em estruturas",
+        foraDoJoin: true,
+        vazioNormal: "Não é componente de nenhuma estrutura",
+      },
     ]);
   });
 });
