@@ -61,9 +61,23 @@ export type IndicadorTela = CampoTela & {
   ocultarVazio?: boolean;
 };
 
+/**
+ * Etapa da linha do tempo no topo da Tela (ex.: entrada → liberado → faturado).
+ * Concluída quando `coluna` está preenchida (ou, com `feito`, quando o valor está na lista).
+ */
+export type EtapaTela = {
+  rotulo: string;
+  coluna: string;
+  feito?: string[];
+  /** valores exibidos abaixo do rótulo quando preenchidos (ex.: data e operador) */
+  detalhes?: CampoTela[];
+};
+
 export type Tela = {
   /** ex.: "Pedido" — exibido antes do valor de colunaTitulo */
   titulo?: string;
+  /** linha do tempo no cabeçalho */
+  etapas?: EtapaTela[];
   /** colunas exibidas abaixo do título */
   subtitulo?: CampoTela[];
   status?: StatusTela[];
@@ -162,6 +176,35 @@ const SIM_NAO = { S: "Sim", N: "Não" };
    coluna aparece ao lado de cada rótulo na Tela. */
 const TELA_FATGOR: Tela = {
   titulo: "Pedido",
+  etapas: [
+    { rotulo: "Entrada", coluna: "FGO_DTAENT", detalhes: [{ coluna: "FGO_DTAENT", rotulo: "Em", hora: "FGO_HORENT" }] },
+    {
+      rotulo: "Liberado",
+      coluna: "FGO_LIBERA",
+      feito: ["1", "S"],
+      detalhes: [
+        { coluna: "FGO_DTALIB", rotulo: "Em", hora: "FGO_HORLIB" },
+        { coluna: "FGO_OPELIB", rotulo: "Operador" },
+      ],
+    },
+    {
+      rotulo: "Faturado",
+      coluna: "FGO_JAFATU",
+      feito: ["1", "S"],
+      detalhes: [
+        { coluna: "FGO_NUMFAT", rotulo: "NF" },
+        { coluna: "FGO_DTAFAT", rotulo: "Em" },
+      ],
+    },
+    {
+      rotulo: "Entrega",
+      coluna: "FGO_DTENTR",
+      detalhes: [
+        { coluna: "FGO_DTENTR", rotulo: "Em" },
+        { coluna: "FGO_PREVIS", rotulo: "Previsão" },
+      ],
+    },
+  ],
   subtitulo: [
     { coluna: "FGO_CODEMP", rotulo: "Empresa" },
     { coluna: "FGO_ESPDOC", rotulo: "Espécie" },
@@ -198,6 +241,7 @@ const TELA_FATGOR: Tela = {
   destaques: [
     { coluna: "FGO_VLRCON", rotulo: "Valor contábil", formato: "moeda" },
     { coluna: "FGO_TOTPRO", rotulo: "Total de produtos", formato: "moeda" },
+    { coluna: "FGO_VALFAT", rotulo: "Valor faturado", formato: "moeda" },
     { coluna: "FGO_TOTICM", rotulo: "ICMS", formato: "moeda" },
     { coluna: "FGO_TOTFRE", rotulo: "Frete", formato: "moeda" },
   ],

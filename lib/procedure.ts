@@ -462,7 +462,8 @@ const ROTULOS = (() => {
     if (Array.isArray(o)) return o.forEach(visitar);
     const r = o as Record<string, unknown>;
     if (typeof r.coluna === "string" && typeof r.rotulo === "string" && r.json === undefined && !m.has(r.coluna)) m.set(r.coluna, r.rotulo);
-    Object.values(r).forEach(visitar);
+    // etapas da linha do tempo usam rótulos curtos ("Liberado", "Em"): não servem para nomear colunas
+    Object.entries(r).forEach(([k, v]) => k !== "etapas" && visitar(v));
   };
   visitar(PERFIS.map((p) => p.tela));
   return m;

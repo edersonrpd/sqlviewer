@@ -22,6 +22,19 @@ describe("montarTela com perfil", () => {
     expect(t.destaques[0]).toMatchObject({ rotulo: "Valor contábil", texto: "R$ 165,49" });
   });
 
+  it("etapas da linha do tempo seguem as colunas do pedido", () => {
+    expect(t.etapas.map((e) => e.rotulo)).toEqual(
+      ["Entrada", "Liberado", "Faturado", "Entrega"].filter((_, k) =>
+        ["FGO_DTAENT", "FGO_LIBERA", "FGO_JAFATU", "FGO_DTENTR"].slice(k, k + 1).every((c) => fgo.colunas.some((x) => x.nome === c)),
+      ),
+    );
+    const entrada = t.etapas.find((e) => e.nome === "FGO_DTAENT")!;
+    expect(entrada.feito).toBe(true);
+    expect(entrada.detalhe).toBe("14/10/2024 08:14:32");
+    const faturado = t.etapas.find((e) => e.nome === "FGO_JAFATU");
+    if (faturado) expect(faturado.feito).toBe(fgo.linhas[2][fgo.colunas.findIndex((c) => c.nome === "FGO_JAFATU")]?.trim() === "1");
+  });
+
   it("status com valor original quando não há tradução", () => {
     expect(t.status.find((s) => s.nome === "FGO_JAFATU")).toMatchObject({ texto: "1", cor: "cinza" });
     expect(t.status.find((s) => s.nome === "FGO_CORTPD")).toMatchObject({ texto: "Não" });
