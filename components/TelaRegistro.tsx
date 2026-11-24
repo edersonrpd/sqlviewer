@@ -909,7 +909,7 @@ function BlocoPendentes({
 }
 
 /** Lista lateral de registros (virtualizada), respeitando filtro e ordenação. */
-function ListaRegistros({
+export function ListaRegistros({
   aba,
   abas,
   indices,

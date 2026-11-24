@@ -18,6 +18,7 @@ import { SeletorColunas } from "./SeletorColunas";
 import { TabelaTransposta } from "./TabelaTransposta";
 import { TabelaVirtual } from "./TabelaVirtual";
 import { TelaRegistro } from "./TelaRegistro";
+import { FluxoRegistro, MapaRelacoes } from "./VisoesRegistro";
 import { VisualizadorValor } from "./VisualizadorValor";
 import { copiarTexto, useAviso, useDebounce } from "./util";
 
@@ -289,6 +290,10 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
       <div className="relative min-h-0 flex-1">
         {aba.visao === "tela" ? (
           <TelaRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
+        ) : aba.visao === "fluxo" ? (
+          <FluxoRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
+        ) : aba.visao === "relacoes" ? (
+          <MapaRelacoes aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
         ) : aba.visao === "tabela" ? (
           exibidas.length === 0 ? (
             <div className="p-8 text-center text-sm text-zinc-500">
@@ -408,17 +413,20 @@ function Chip({
 const VISOES = [
   { id: "tela", rotulo: "Tela" },
   { id: "tabela", rotulo: "Tabela" },
+  { id: "fluxo", rotulo: "Fluxo" },
+  { id: "relacoes", rotulo: "Relações" },
   { id: "graficos", rotulo: "Gráficos" },
 ] as const;
 
-/** Tela / Tabela / Gráficos com um indicador que desliza (com leve "mola") até a visão escolhida. */
+/** Tela / Tabela / Fluxo / Relações / Gráficos com um indicador que desliza (com leve "mola") até a visão escolhida. */
 function SeletorVisao({ visao, onTrocar }: { visao: Aba["visao"]; onTrocar: (v: Aba["visao"]) => void }) {
   const pos = Math.max(0, VISOES.findIndex((v) => v.id === visao));
   return (
     <div
       role="tablist"
       aria-label="Visão"
-      className="relative grid grid-cols-[repeat(3,96px)] rounded-xl border border-zinc-900/10 bg-white/70 p-1 dark:border-white/10 dark:bg-white/[0.03]"
+      style={{ gridTemplateColumns: `repeat(${VISOES.length}, 96px)` }}
+      className="relative grid rounded-xl border border-zinc-900/10 bg-white/70 p-1 dark:border-white/10 dark:bg-white/[0.03]"
     >
       <span
         aria-hidden

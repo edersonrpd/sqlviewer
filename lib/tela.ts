@@ -26,7 +26,14 @@ export type StatusMontado = { rotulo: string; nome: string; texto: string; cor: 
 export type IndicadorMontado = { campo: CampoMontado; detalhes: CampoMontado[]; cor: CorStatus };
 export type SecaoMontada = { titulo: string; campos: CampoMontado[]; recolhida?: boolean };
 /** Etapa da linha do tempo: concluída ou não, com os detalhes preenchidos em uma linha. */
-export type EtapaMontada = { rotulo: string; nome: string; feito: boolean; detalhe: string };
+export type EtapaMontada = {
+  rotulo: string;
+  nome: string;
+  feito: boolean;
+  detalhe: string;
+  /** data (e hora) da etapa no formato do banco ("2024-10-14 08:03:43"), para ordenar a linha do tempo */
+  quando: string | null;
+};
 
 export type TelaMontada = {
   titulo: string;
@@ -178,7 +185,14 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
       .filter((c) => !c.vazio && c.texto)
       .map((c) => c.texto)
       .join(" · ");
-    return [{ rotulo: e.rotulo, nome: e.coluna, feito, detalhe }];
+    let quando: string | null = null;
+    for (const d of e.detalhes ?? []) {
+      const jd = porNome.get(d.coluna);
+      if (jd === undefined) continue;
+      quando = valorDeData(dados, linha, jd, d.hora ? porNome.get(d.hora) : undefined);
+      if (quando) break;
+    }
+    return [{ rotulo: e.rotulo, nome: e.coluna, feito, detalhe, quando }];
   });
   const montarSecao = (s: NonNullable<typeof tela>["secoes"][number]): SecaoMontada => ({
     titulo: s.titulo,
@@ -229,6 +243,31 @@ function agruparPorTipo(dados: ResultadoParse, linha: Valor[], js: number[]): Se
 }
 
 /** Texto curto para a lista de registros: título + primeiro destaque/subtítulo. */
+/**
+ * Data de uma coluna data/datahora no formato do banco, juntando a hora de outra coluna
+ * quando houver (ex.: FGO_DTAENT + FGO_HORENT → "2024-10-14 08:03:43"). Null se vazia ou zerada.
+ */
+export function valorDeData(dados: ResultadoParse, linha: Valor[], j: number, jHora?: number): string | null {
+  const tipo = dados.colunas[j]?.tipo;
+  const v = linha[j]?.trim();
+  if ((tipo !== "data" && tipo !== "datahora") || !v || v.startsWith("0000")) return null;
+  if (tipo === "data" && jHora !== undefined && dados.colunas[jHora]?.tipo === "hora") {
+    const h = linha[jHora]?.trim();
+    if (h) return `${v} ${h}`;
+  }
+  return v;
+}
+
+/** Primeira data preenchida da linha (com a coluna de hora logo ao lado, se houver). */
+export function primeiraData(dados: ResultadoParse, linha: Valor[]): { quando: string; coluna: string } | null {
+  for (let j = 0; j < dados.colunas.length; j++) {
+    const jHora = dados.colunas[j + 1]?.tipo === "hora" ? j + 1 : undefined;
+    const quando = valorDeData(dados, linha, j, jHora);
+    if (quando) return { quando, coluna: dados.colunas[j].nome };
+  }
+  return null;
+}
+
 export function resumoRegistro(
   dados: ResultadoParse,
   registro: number,

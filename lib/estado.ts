@@ -7,7 +7,8 @@ import { colunaDestaque } from "./destaque";
 import { buscarPerfil, detectarPerfil, type Deteccao } from "./perfis";
 import type { ResultadoParse } from "./tipos";
 
-export type Visao = "tela" | "tabela" | "graficos";
+/** fluxo e relacoes mostram o mesmo registro da Tela (registroTela) */
+export type Visao = "tela" | "tabela" | "graficos" | "fluxo" | "relacoes";
 
 export type Aba = {
   id: string;
