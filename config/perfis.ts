@@ -135,6 +135,11 @@ export type Relacao = {
    * "Ver também" (a ligação com a aba aberta continua valendo)
    */
   foraDoJoin?: boolean;
+  /**
+   * no sentido inverso (a outra tabela olhando para esta) a ligação fica fora do
+   * JOIN, ex.: a CADITE não traz no JOIN do produto todos os KITs que usam o item
+   */
+  inversoForaDoJoin?: boolean;
 };
 
 /**
@@ -508,6 +513,90 @@ const TELA_FATDOR: Tela = {
 /* Rótulos da CADITE: ponto de partida a revisar pela equipe. Colunas não citadas
    (tabela nutricional, fiscais específicas etc.) vão para "Outros campos".
    O cadastro é único para todas as empresas: ITE_CODITE sozinho identifica o item. */
+// Estrutura de produto (KIT): a árvore completa fica na visão Estrutura
+const TELA_GERMAT: Tela = {
+  titulo: "KIT",
+  subtitulo: [
+    { coluna: "GMT_CODEMP", rotulo: "Empresa" },
+    { coluna: "GMT_TIPQTD", rotulo: "Tipo de quantidade" },
+  ],
+  secoes: [
+    {
+      titulo: "Estrutura",
+      campos: [
+        { coluna: "GMT_CODITE", rotulo: "Código do KIT" },
+        { coluna: "GMT_CODEMP", rotulo: "Empresa" },
+        { coluna: "GMT_REFERE", rotulo: "Referência" },
+        { coluna: "GMT_TIPQTD", rotulo: "Tipo de quantidade" },
+        { coluna: "GMT_QTDETI", rotulo: "Qtd. de etiquetas" },
+        { coluna: "GMT_ULTALT", rotulo: "Última alteração" },
+        { coluna: "AUTOINCREM", rotulo: "Sequência (liga com DMT_SEQGER)" },
+      ],
+    },
+  ],
+};
+
+const TELA_DETMAT: Tela = {
+  titulo: "Componente",
+  subtitulo: [
+    { coluna: "DMT_QTDITE", rotulo: "Quantidade por KIT" },
+    { coluna: "DMT_SEQGER", rotulo: "Estrutura" },
+  ],
+  destaques: [
+    { coluna: "DMT_QTDITE", rotulo: "Quantidade por KIT" },
+    { coluna: "DMT_CUSITE", rotulo: "Custo gravado", formato: "moeda" },
+  ],
+  secoes: [
+    {
+      titulo: "Componente",
+      campos: [
+        { coluna: "DMT_ITESUB", rotulo: "Código do componente" },
+        { coluna: "DMT_SEQUEN", rotulo: "Sequência" },
+        { coluna: "DMT_REFERE", rotulo: "Referência" },
+        { coluna: "DMT_QTDITE", rotulo: "Quantidade por KIT" },
+        { coluna: "DMT_CUSITE", rotulo: "Custo gravado", formato: "moeda" },
+        { coluna: "DMT_PRESUB", rotulo: "DMT_PRESUB" },
+        { coluna: "DMT_CODEMP", rotulo: "Empresa" },
+      ],
+    },
+  ],
+};
+
+const TELA_ITEGER: Tela = {
+  titulo: "Item",
+  subtitulo: [{ coluna: "ITE_CODEMP", rotulo: "Empresa" }],
+  destaques: [
+    { coluna: "ITE_SALDOS", rotulo: "Saldo" },
+    { coluna: "ITE_PRECUS", rotulo: "Custo", formato: "moeda" },
+    { coluna: "ITE_PREULT", rotulo: "Última compra", formato: "moeda" },
+    { coluna: "ITE_PRECOM", rotulo: "Preço de compra", formato: "moeda" },
+    { coluna: "ITE_PREVE1", rotulo: "Preço de venda 1", formato: "moeda" },
+  ],
+  secoes: [
+    {
+      titulo: "Estoque",
+      campos: [
+        { coluna: "ITE_SALDOS", rotulo: "Saldo" },
+        { coluna: "ITE_ESTMIN", rotulo: "Estoque mínimo" },
+        { coluna: "ITE_ESTMAX", rotulo: "Estoque máximo" },
+        { coluna: "ITE_LOCFIS", rotulo: "Localização física" },
+      ],
+    },
+    {
+      titulo: "Custos e preços",
+      campos: [
+        { coluna: "ITE_PRECUS", rotulo: "Custo", formato: "moeda" },
+        { coluna: "ITE_PREULT", rotulo: "Preço da última compra", formato: "moeda" },
+        { coluna: "ITE_DTAULT", rotulo: "Data da última compra" },
+        { coluna: "ITE_PRECOM", rotulo: "Preço de compra", formato: "moeda" },
+        { coluna: "ITE_PREMED", rotulo: "Preço médio", formato: "moeda" },
+        { coluna: "ITE_PREVE1", rotulo: "Preço de venda 1", formato: "moeda" },
+        { coluna: "ITE_PREVE2", rotulo: "Preço de venda 2", formato: "moeda" },
+      ],
+    },
+  ],
+};
+
 const TELA_CADITE: Tela = {
   titulo: "Item",
   subtitulo: [
@@ -955,6 +1044,8 @@ export type BuscaRapida = {
   separarSoPorVirgula?: boolean;
   /** segundo campo, opcional, que entra no WHERE com AND (ex.: domínio do cliente no HUB) */
   filtroExtra?: { coluna: string; rotulo: string; exemplo: string };
+  /** consulta própria no lugar do JOIN pelas relações (ex.: "estrutura": KIT + componentes + cadastro e preços de cada um) */
+  consulta?: "estrutura";
   /**
    * no JOIN, colunas de uma tabela repetidas na aba de outra (para filtrar/ordenar ali);
    * padrão: na aba da tabela principal, ou na de `para`
@@ -972,6 +1063,17 @@ export const BUSCAS_RAPIDAS: BuscaRapida[] = [
   { id: "numpok", grupo: "Autcom", rotulo: "Pedido – NUMPOK", perfil: "FATGOR", coluna: "FGO_NUMPOK", exemplo: "SHML48393430410", prefixarMarketplace: true },
   { id: "pedido", grupo: "Autcom", rotulo: "Pedido – NUMDOC", perfil: "FATGOR", coluna: "FGO_NUMDOC", exemplo: "000001000001", completarZeros: 12 },
   { id: "nf", grupo: "Autcom", rotulo: "Pedido – NUMFAT", perfil: "FATGOR", coluna: "FGO_NUMFAT", exemplo: "000000053684", completarZeros: 12 },
+  // estrutura de produto (KIT): componentes, com cadastro, custos e saldo de cada um (visão Estrutura)
+  {
+    id: "estrutura",
+    grupo: "Autcom",
+    rotulo: "Estrutura (KIT) – item",
+    perfil: "GERMAT",
+    coluna: "GMT_CODITE",
+    exemplo: "12188",
+    filtroExtra: { coluna: "GMT_CODEMP", rotulo: "Empresa", exemplo: "001" },
+    consulta: "estrutura",
+  },
   // pedidos em que o item aparece (CADITE → FATDOR)
   { id: "item", grupo: "Autcom", rotulo: "Pedido – CADITE", perfil: "CADITE", coluna: "ITE_CODITE", exemplo: "00004" },
   { id: "fataut", grupo: "Autcom", rotulo: "FATAUT – NUMDOC", perfil: "FATAUT", coluna: "FAT_NUMDOC", exemplo: "000000970818", completarZeros: 12 },
@@ -1184,6 +1286,15 @@ export const PERFIS: Perfil[] = [
     chave: "AUTOINCREM",
     relacoes: [
       { perfil: "CADITE", colunaOrigem: "FDO_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Cadastro do item" },
+      // no JOIN do pedido, mostra quais itens são KIT (os componentes vêm pela visão Estrutura)
+      {
+        perfil: "GERMAT",
+        colunaOrigem: "FDO_CODITE",
+        colunaDestino: "GMT_CODITE",
+        extras: [{ origem: "FDO_CODEMP", destino: "GMT_CODEMP" }],
+        rotulo: "Estrutura (KIT) do item",
+        inversoForaDoJoin: true,
+      },
     ],
     cadastros: [
       { coluna: "FDO_CODCLI", tabela: "CADCLI", colunaTabela: "CLI_CODCLI", rotulo: "Cliente" },
@@ -1483,11 +1594,28 @@ export const PERFIS: Perfil[] = [
     colunaTitulo: "ITE_CODITE",
     chave: "ITE_CODITE",
     graficoSugerido: { modo: "contagem", categoria: "ITE_CODGRU" },
-    rotulosInversos: { FATDOR: "Pedidos com o item" },
+    rotulosInversos: { FATDOR: "Pedidos com o item", DETMAT: "Usado em estruturas" },
     // relação (não só cadastro): com a aba da CADMAR aberta, a ficha do item mostra a marca
     relacoes: [
       { perfil: "CADMAR", colunaOrigem: "ITE_CODMAR", colunaDestino: "MAR_CODMAR", rotulo: "Marca" },
       { perfil: "DESSIT", colunaOrigem: "ITE_CODITE", colunaDestino: "ITE_CODITE", rotulo: "Dados para o site" },
+      // estrutura (KIT) do item, quando ele for um kit
+      {
+        perfil: "GERMAT",
+        colunaOrigem: "ITE_CODITE",
+        colunaDestino: "GMT_CODITE",
+        extras: [{ origem: "ITE_CODEMP", destino: "GMT_CODEMP" }],
+        rotulo: "Estrutura (KIT)",
+      },
+      // ~300 colunas e uma linha por empresa: fica fora do JOIN do produto
+      {
+        perfil: "ITEGER",
+        colunaOrigem: "ITE_CODITE",
+        colunaDestino: "ITE_CODITE",
+        extras: [{ origem: "ITE_CODEMP", destino: "ITE_CODEMP" }],
+        rotulo: "Preços e estoque",
+        foraDoJoin: true,
+      },
     ],
     // altura, largura e profundidade ficam na DESSIT; o peso (ITE_PESLIQ) fica na própria CADITE
     colunasLigadas: [{ perfil: "DESSIT", colunas: ["ITE_EXPALT", "ITE_EXPLAR", "ITE_EXPPRO"] }],
@@ -1508,6 +1636,71 @@ export const PERFIS: Perfil[] = [
     chave: "ITE_CODITE",
     rotulosInversos: { CADITE: "Cadastro do item" },
     tela: TELA_DESSIT,
+  },
+  {
+    // estrutura de produto (KIT): cabeçalho; os componentes ficam na DETMAT (DMT_SEQGER = AUTOINCREM)
+    id: "GERMAT",
+    nome: "Estrutura de produto (KIT)",
+    assinatura: ["GMT_CODITE", "GMT_CODEMP", "GMT_TIPQTD"],
+    colunasPadrao: ["GMT_CODITE", "GMT_CODEMP", "GMT_REFERE", "GMT_TIPQTD", "GMT_QTDETI", "GMT_OBS001", "GMT_ULTALT", "AUTOINCREM"],
+    colunasFixas: ["GMT_CODITE"],
+    colunaTitulo: "GMT_CODITE",
+    chave: "GMT_CODITE",
+    rotulosInversos: { CADITE: "Cadastro do KIT", FATDOR: "Pedidos com o KIT" },
+    tela: TELA_GERMAT,
+    relacoes: [
+      { perfil: "DETMAT", colunaOrigem: "AUTOINCREM", colunaDestino: "DMT_SEQGER", rotulo: "Componentes do KIT" },
+      // o cadastro do KIT vem pelo inverso da relação CADITE → GERMAT
+      {
+        perfil: "ITEGER",
+        colunaOrigem: "GMT_CODITE",
+        colunaDestino: "ITE_CODITE",
+        extras: [{ origem: "GMT_CODEMP", destino: "ITE_CODEMP" }],
+        rotulo: "Preços e estoque do KIT",
+        foraDoJoin: true,
+        inversoForaDoJoin: true,
+      },
+    ],
+  },
+  {
+    // componentes (subitens) de uma estrutura: DMT_ITESUB é o código do componente na CADITE
+    id: "DETMAT",
+    nome: "Componentes da estrutura (KIT)",
+    assinatura: ["DMT_SEQGER", "DMT_ITESUB", "DMT_QTDITE"],
+    colunasPadrao: ["DMT_SEQGER", "DMT_SEQUEN", "DMT_ITESUB", "DMT_REFERE", "DMT_QTDITE", "DMT_CUSITE", "DMT_PRESUB", "DMT_CODEMP"],
+    colunasFixas: ["DMT_ITESUB"],
+    colunaTitulo: "DMT_ITESUB",
+    chave: "DMT_SEQGER",
+    totais: ["DMT_QTDITE"],
+    rotulosInversos: { GERMAT: "Estrutura (KIT)", CADITE: "Usado em estruturas" },
+    tela: TELA_DETMAT,
+    relacoes: [
+      { perfil: "CADITE", colunaOrigem: "DMT_ITESUB", colunaDestino: "ITE_CODITE", rotulo: "Cadastro do componente", inversoForaDoJoin: true },
+      {
+        perfil: "ITEGER",
+        colunaOrigem: "DMT_ITESUB",
+        colunaDestino: "ITE_CODITE",
+        extras: [{ origem: "DMT_CODEMP", destino: "ITE_CODEMP" }],
+        rotulo: "Preços e estoque do componente",
+        inversoForaDoJoin: true,
+      },
+    ],
+  },
+  {
+    // preços, custos e saldo do item por empresa (uma linha por item e empresa)
+    id: "ITEGER",
+    nome: "Preços e estoque do item",
+    assinatura: ["ITE_CODITE", "ITE_CODEMP", "ITE_SALDOS", "ITE_PRECUS"],
+    colunasPadrao: [
+      "ITE_CODITE", "ITE_CODEMP", "ITE_SALDOS", "ITE_PRECOM", "ITE_PRECUS", "ITE_PREULT", "ITE_PREMED",
+      "ITE_DTAULT", "ITE_PREVE1", "ITE_PREVE2", "ITE_ESTMIN", "ITE_ESTMAX", "ITE_LOCFIS", "ITE_ULTALT",
+    ],
+    colunasFixas: ["ITE_CODITE", "ITE_CODEMP"],
+    colunaTitulo: "ITE_CODITE",
+    chave: "ITE_CODITE",
+    // o cadastro do item vem pelo inverso da relação CADITE → ITEGER
+    rotulosInversos: { CADITE: "Cadastro do item", GERMAT: "Estrutura (KIT)", DETMAT: "Usado em estruturas" },
+    tela: TELA_ITEGER,
   },
   {
     id: "CADMAR",

@@ -8,7 +8,7 @@ import { buscarPerfil, detectarPerfil, type Deteccao } from "./perfis";
 import type { ResultadoParse } from "./tipos";
 
 /** fluxo, relacoes, valores e json mostram o mesmo registro da Tela (registroTela) */
-export type Visao = "tela" | "tabela" | "graficos" | "fluxo" | "relacoes" | "valores" | "json";
+export type Visao = "tela" | "tabela" | "graficos" | "fluxo" | "relacoes" | "valores" | "json" | "estrutura";
 
 export type Aba = {
   id: string;

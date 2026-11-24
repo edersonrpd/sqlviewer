@@ -20,25 +20,28 @@ describe("sqlJoin", () => {
         "SELECT '' AS `>>FATGOR`, t0.*,",
         "       '' AS `>>FATDOR`, t1.*,",
         "       '' AS `>>CADITE`, t2.*,",
-        "       '' AS `>>EXTGOR`, t3.*,",
-        "       '' AS `>>CADCLI`, t4.*,",
-        "       '' AS `>>MOVCAR`, t5.*,",
-        "       '' AS `>>HUBCIT_INFPED`, t6.*,",
-        "       '' AS `>>HUBCIT_LOGPED`, t7.*,",
-        "       '' AS `>>ADTCLI`, t8.*,",
-        "       '' AS `>>FATAUT`, t9.*",
+        // KIT: diz quais itens do pedido são estrutura (os componentes vêm pela visão Estrutura)
+        "       '' AS `>>GERMAT`, t3.*,",
+        "       '' AS `>>EXTGOR`, t4.*,",
+        "       '' AS `>>CADCLI`, t5.*,",
+        "       '' AS `>>MOVCAR`, t6.*,",
+        "       '' AS `>>HUBCIT_INFPED`, t7.*,",
+        "       '' AS `>>HUBCIT_LOGPED`, t8.*,",
+        "       '' AS `>>ADTCLI`, t9.*,",
+        "       '' AS `>>FATAUT`, t10.*",
         "  FROM FATGOR t0",
         "  LEFT JOIN FATDOR t1\n       ON t1.FDO_SEQGER = t0.AUTOINCREM AND t0.AUTOINCREM <> ''",
         "  LEFT JOIN CADITE t2\n       ON t2.ITE_CODITE = t1.FDO_CODITE AND t1.FDO_CODITE <> ''",
-        "  LEFT JOIN EXTGOR t3\n       ON t3.FGO_SEQFGO = t0.AUTOINCREM AND t0.AUTOINCREM <> ''",
-        "  LEFT JOIN CADCLI t4\n       ON t4.CLI_CODCLI = t0.FGO_CODCLI AND t0.FGO_CODCLI <> ''",
-        "  LEFT JOIN MOVCAR t5\n       ON t5.MCA_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
-        "  LEFT JOIN HUBCIT_INFPED t6\n       ON t6.INF_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
-        "  LEFT JOIN HUBCIT_LOGPED t7\n       ON t7.LOG_PEDIDO = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
+        "  LEFT JOIN GERMAT t3\n       ON t3.GMT_CODITE = t1.FDO_CODITE AND t1.FDO_CODITE <> ''\n      AND t3.GMT_CODEMP = t1.FDO_CODEMP",
+        "  LEFT JOIN EXTGOR t4\n       ON t4.FGO_SEQFGO = t0.AUTOINCREM AND t0.AUTOINCREM <> ''",
+        "  LEFT JOIN CADCLI t5\n       ON t5.CLI_CODCLI = t0.FGO_CODCLI AND t0.FGO_CODCLI <> ''",
+        "  LEFT JOIN MOVCAR t6\n       ON t6.MCA_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
+        "  LEFT JOIN HUBCIT_INFPED t7\n       ON t7.INF_NUMPOK = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
+        "  LEFT JOIN HUBCIT_LOGPED t8\n       ON t8.LOG_PEDIDO = t0.FGO_NUMPOK AND t0.FGO_NUMPOK <> ''",
         // adiantamentos só do pedido: nº do documento + espécie + empresa
-        "  LEFT JOIN ADTCLI t8\n       ON t8.ADT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t8.ADT_ESPDOC = t0.FGO_ESPDOC\n      AND t8.ADT_CODEMP = t0.FGO_CODEMP",
+        "  LEFT JOIN ADTCLI t9\n       ON t9.ADT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t9.ADT_ESPDOC = t0.FGO_ESPDOC\n      AND t9.ADT_CODEMP = t0.FGO_CODEMP",
         // fila do faturamento automático: mesma chave composta (empresa em FAT_EMPDOC)
-        "  LEFT JOIN FATAUT t9\n       ON t9.FAT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t9.FAT_ESPDOC = t0.FGO_ESPDOC\n      AND t9.FAT_EMPDOC = t0.FGO_CODEMP",
+        "  LEFT JOIN FATAUT t10\n       ON t10.FAT_NUMDOC = t0.FGO_NUMDOC AND t0.FGO_NUMDOC <> ''\n      AND t10.FAT_ESPDOC = t0.FGO_ESPDOC\n      AND t10.FAT_EMPDOC = t0.FGO_CODEMP",
         " WHERE t0.AUTOINCREM = '00100000000000001001';",
       ].join("\n"),
     );
@@ -47,7 +50,8 @@ describe("sqlJoin", () => {
   it("a partir de um item não sobe de volta para as relações do pedido", () => {
     const d = parsearConsulta('"FDO_SEQGER"\t"FDO_CODITE"\t"AUTOINCREM"\n"00100000000000001001"\t"00004"\t"00100000000000555001"');
     const sql = sqlJoin(d, 0, "FATDOR")!;
-    expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>CADMAR", ">>DESSIT", ">>FATGOR"]);
+    // a partir do item: o cadastro, a estrutura (KIT) e os componentes; não os KITs que usam o item
+    expect(sql.match(/>>\w+/g)).toEqual([">>FATDOR", ">>CADITE", ">>CADMAR", ">>DESSIT", ">>GERMAT", ">>DETMAT", ">>FATGOR"]);
     // o item é identificado pelo AUTOINCREM, não pelo código do produto (que se repete em vários pedidos)
     expect(sql).toContain(" WHERE t0.AUTOINCREM = '00100000000000555001';");
   });
@@ -120,7 +124,7 @@ describe("produto com a marca", () => {
     expect(marca.dados.linhas).toHaveLength(1);
     expect(relacionadosDoRegistro(item, 0, s.abas)).toMatchObject([{ rotulo: "Marca", abaId: marca.id, quantidade: 1 }]);
     // com a aba aberta, a marca não aparece mais como consulta pendente
-    expect(relacoesPendentes(item, 0, s.abas).map((r) => r.perfilDestino)).toEqual(["DESSIT", "FATDOR"]);
+    expect(relacoesPendentes(item, 0, s.abas).map((r) => r.perfilDestino)).toEqual(["DESSIT", "GERMAT", "ITEGER", "FATDOR", "DETMAT"]);
   });
 
   it("ao colar o JOIN, a DESSIT vira aba própria ligada ao item", () => {
