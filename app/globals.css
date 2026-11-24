@@ -165,6 +165,19 @@ body {
   background: rgb(99 102 241 / 0.3);
 }
 
+/* listas nativas dos <select>: cores explícitas, senão as opções herdam o texto claro
+   do tema escuro sobre o fundo branco do navegador (ex.: "Trocar perfil") */
+option,
+optgroup {
+  background-color: var(--color-white);
+  color: #252a36;
+}
+.dark option,
+.dark optgroup {
+  background-color: var(--color-zinc-900);
+  color: var(--color-zinc-100);
+}
+
 input[type="checkbox"] {
   accent-color: var(--color-blue-500);
   cursor: pointer;
