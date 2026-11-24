@@ -98,7 +98,7 @@ describe("montar consulta", () => {
 
   it("JOIN completo do pedido pelo número do documento", () => {
     const sql = montarConsulta(busca("pedido"), ["000001000001"], true)!;
-    expect(sql.match(/>>\w+/g)).toEqual([">>FATGOR", ">>FATDOR", ">>CADITE", ">>EXTGOR", ">>CADCLI", ">>MOVCAR", ">>HUBCIT_INFPED", ">>HUBCIT_LOGPED", ">>ADTCLI", ">>FATAUT"]);
+    expect(sql.match(/>>\w+/g)).toEqual([">>FATGOR", ">>FATDOR", ">>CADITE", ">>GERMAT", ">>EXTGOR", ">>CADCLI", ">>MOVCAR", ">>HUBCIT_INFPED", ">>HUBCIT_LOGPED", ">>ADTCLI", ">>FATAUT"]);
     expect(sql.endsWith(" WHERE t0.FGO_NUMDOC = '000001000001';")).toBe(true);
   });
 
@@ -110,7 +110,7 @@ describe("montar consulta", () => {
     // medidas da DESSIT também na aba do item, junto do peso
     expect(sql).toContain("t0.*,\n       t2.ITE_EXPALT, t2.ITE_EXPLAR, t2.ITE_EXPPRO,");
     expect(sql.endsWith(" WHERE t0.ITE_CODITE = '00004';")).toBe(true);
-    expect(montarConsulta(busca("item"), ["00004"], true)!.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR", ">>DESSIT", ">>FATDOR"]);
+    expect(montarConsulta(busca("item"), ["00004"], true)!.match(/>>\w+/g)).toEqual([">>CADITE", ">>CADMAR", ">>DESSIT", ">>GERMAT", ">>DETMAT", ">>FATDOR"]);
   });
 
   it("toda busca aponta para um perfil existente", () => {

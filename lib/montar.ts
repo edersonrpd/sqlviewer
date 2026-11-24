@@ -1,3 +1,4 @@
+import { sqlEstrutura } from "./estrutura";
 import { BUSCAS_RAPIDAS, type BuscaRapida } from "@/config/perfis";
 import { condicaoValores, condicoesExtras, sqlJoinPor } from "./join";
 import { normalizarNumpok, removerPrefixoMarketplace } from "./marketplace";
@@ -33,6 +34,11 @@ export function montarConsulta(b: BuscaRapida, valores: string[], comJoin: boole
   if (valores.length === 0) return null;
   valores = valoresDaBusca(b, valores);
   const filtros = b.filtroExtra ? [{ coluna: b.filtroExtra.coluna, valores: extras }] : [];
+  if (comJoin && b.consulta === "estrutura") {
+    // empresa: uma só (a primeira digitada), como na tela de Estruturas do AUTCOM
+    const sql = sqlEstrutura(valores, extras.map((e) => e.trim()).find(Boolean) ?? null);
+    if (sql) return sql;
+  }
   if (comJoin) {
     const sql = sqlJoinPor(b.perfil, b.coluna, valores, undefined, filtros, b.copiarColunas, b.joins);
     if (sql) return sql;

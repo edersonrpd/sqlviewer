@@ -20,6 +20,7 @@ import { TabelaVirtual } from "./TabelaVirtual";
 import { TelaRegistro } from "./TelaRegistro";
 import { FluxoRegistro, MapaRelacoes } from "./VisoesRegistro";
 import { JsonRegistro, ValoresRegistro } from "./VisoesValores";
+import { EstruturaRegistro } from "./VisaoEstrutura";
 import { VisualizadorValor } from "./VisualizadorValor";
 import { copiarTexto, useAviso, useDebounce } from "./util";
 
@@ -299,6 +300,8 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           <ValoresRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
         ) : aba.visao === "json" ? (
           <JsonRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
+        ) : aba.visao === "estrutura" ? (
+          <EstruturaRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
         ) : aba.visao === "tabela" ? (
           exibidas.length === 0 ? (
             <div className="p-8 text-center text-sm text-zinc-500">
@@ -425,10 +428,11 @@ const VISOES = [
   { id: "relacoes", rotulo: "Relações" },
   { id: "valores", rotulo: "Valores" },
   { id: "json", rotulo: "JSON" },
+  { id: "estrutura", rotulo: "Estrutura" },
   { id: "graficos", rotulo: "Gráficos" },
 ] as const;
 
-/** Tela / Tabela / Fluxo / Relações / Valores / JSON / Gráficos com um indicador que desliza (com leve "mola") até a visão escolhida. */
+/** Tela / Tabela / Fluxo / Relações / Valores / JSON / Estrutura / Gráficos com um indicador que desliza (com leve "mola") até a visão escolhida. */
 function SeletorVisao({ visao, onTrocar }: { visao: Aba["visao"]; onTrocar: (v: Aba["visao"]) => void }) {
   const pos = Math.max(0, VISOES.findIndex((v) => v.id === visao));
   return (

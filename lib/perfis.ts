@@ -80,6 +80,7 @@ export function ligacoesDoPerfil(perfilId: string, perfis: Perfil[] = PERFIS): L
         colunaDestino: r.colunaOrigem,
         extras: (r.extras ?? []).map((e) => ({ origem: e.destino, destino: e.origem })),
         rotulo: atual?.rotulosInversos?.[p.id] ?? p.nome,
+        ...(r.inversoForaDoJoin ? { foraDoJoin: true } : {}),
       });
     }
   }

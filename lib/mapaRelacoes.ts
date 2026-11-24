@@ -115,12 +115,28 @@ export function montarMapa(perfis: Perfil[] = PERFIS, opcoes: { cadastros?: bool
     // as setas irem sempre para a direita (ex.: CADCLI depois de FATDOR, que também aponta para ele)
     const raizes = ordem.filter((id) => !(entradas.get(id) ?? []).length);
     const camada = new Map<string, number>((raizes.length ? raizes : [ordem[0]]).map((r) => [r, 0]));
-    // ciclos: no máximo uma volta por tabela
+    // setas que fecham um ciclo (ex.: CADITE → GERMAT → DETMAT → CADITE) não contam para as
+    // camadas: busca em profundidade a partir das raízes; a seta para quem ainda está na pilha volta
+    const deVolta = new Set<string>();
+    const visitado = new Set<string>();
+    const naPilha = new Set<string>();
+    const visitar = (n: string) => {
+      visitado.add(n);
+      naPilha.add(n);
+      for (const v of saidas.get(n) ?? []) {
+        if (!g.includes(v)) continue;
+        if (naPilha.has(v)) deVolta.add(`${n}>${v}`);
+        else if (!visitado.has(v)) visitar(v);
+      }
+      naPilha.delete(n);
+    };
+    for (const r of [...(raizes.length ? raizes : [ordem[0]]), ...ordem]) if (!visitado.has(r)) visitar(r);
+    // ciclos restantes: no máximo uma volta por tabela
     for (let volta = 0; volta < ordem.length; volta++) {
       let mudou = false;
       for (const a of lista) {
         const c = camada.get(a.de);
-        if (c === undefined || !g.includes(a.para)) continue;
+        if (c === undefined || !g.includes(a.para) || deVolta.has(`${a.de}>${a.para}`)) continue;
         if ((camada.get(a.para) ?? -1) < c + 1 && c + 1 < ordem.length) {
           camada.set(a.para, c + 1);
           mudou = true;
@@ -128,8 +144,10 @@ export function montarMapa(perfis: Perfil[] = PERFIS, opcoes: { cadastros?: bool
       }
       if (!mudou) break;
     }
-    const colunas: string[][] = [];
-    for (const id of ordem) (colunas[camada.get(id) ?? 0] ??= []).push(id);
+    const porCamada: string[][] = [];
+    for (const id of ordem) (porCamada[camada.get(id) ?? 0] ??= []).push(id);
+    // sem colunas vazias no meio
+    const colunas = porCamada.filter((c) => c && c.length > 0);
 
     // dentro da coluna, perto de quem aponta para ela (menos cruzamentos); cadastros por último
     const linha = new Map<string, number>();
