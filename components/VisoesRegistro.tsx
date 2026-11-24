@@ -15,7 +15,7 @@ import { SeloMarketplace } from "./SeloMarketplace";
 import { ListaRegistros } from "./TelaRegistro";
 import { copiarTexto } from "./util";
 
-type Props = {
+export type PropsVisao = {
   aba: Aba;
   abas: Aba[];
   indices: number[];
@@ -27,7 +27,7 @@ type Props = {
  * Moldura comum ao Fluxo e às Relações: mesmo registro da Tela (registroTela),
  * lista lateral quando há vários, barra com o título e anterior/próximo (← →).
  */
-function MolduraRegistro({ aba, abas, indices, atualizar, children }: Props & { children: (registro: number, avisar: (t: string) => void) => ReactNode }) {
+export function MolduraRegistro({ aba, abas, indices, atualizar, children }: PropsVisao & { children: (registro: number, avisar: (t: string) => void) => ReactNode }) {
   const [aviso, setAviso] = useState<string | null>(null);
   useEffect(() => {
     if (!aviso) return;
@@ -161,7 +161,7 @@ const ESTILO_EVENTO: Record<EstadoEvento, { ponto: string; selo: string; rotulo:
 
 /* ------------------------------------------------------------------ Fluxo */
 
-export function FluxoRegistro(props: Props) {
+export function FluxoRegistro(props: PropsVisao) {
   const { aba, abas, dispatch } = props;
   return (
     <MolduraRegistro {...props}>
@@ -330,7 +330,7 @@ function ItemFluxo({ evento: e, onAbrir, onCopiarSql }: { evento: EventoFluxo; o
 
 /* ------------------------------------------------------------- Relações */
 
-export function MapaRelacoes(props: Props) {
+export function MapaRelacoes(props: PropsVisao) {
   const { aba, abas, dispatch } = props;
   return (
     <MolduraRegistro {...props}>

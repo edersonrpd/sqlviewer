@@ -26,7 +26,7 @@ export function serializarSessao(estado: Pick<Estado, "abas" | "ativa">, agora =
 }
 
 const TIPOS: readonly TipoColuna[] = ["inteiro", "decimal", "data", "hora", "datahora", "texto"];
-const VISOES: readonly Visao[] = ["tela", "tabela", "graficos", "fluxo", "relacoes"];
+const VISOES: readonly Visao[] = ["tela", "tabela", "graficos", "fluxo", "relacoes", "valores", "json"];
 
 const objeto = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const lista = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
