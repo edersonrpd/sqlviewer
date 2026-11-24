@@ -31,6 +31,29 @@ export type CampoTela = {
   json?: string;
 };
 
+/**
+ * Parcela de uma conciliação de valores. Sem `perfil`, vem do próprio registro; com
+ * `perfil`, soma as linhas ligadas na aba aberta daquele perfil. `json` lê de dentro
+ * do JSON da coluna (soma quando o caminho tem `*`).
+ */
+export type TermoConciliacao = {
+  perfil?: string;
+  coluna: string;
+  json?: string;
+  rotulo: string;
+  /** -1 subtrai (ex.: tarifa) */
+  sinal?: 1 | -1;
+};
+
+/** Conta "esperado = comparado" mostrada na visão Valores (ex.: itens × total do pedido). */
+export type Conciliacao = {
+  rotulo: string;
+  esperado: TermoConciliacao[];
+  comparado: TermoConciliacao[];
+  /** dica mostrada quando não bate */
+  dica?: string;
+};
+
 export type StatusTela = {
   coluna: string;
   rotulo: string;
@@ -159,6 +182,8 @@ export type Perfil = {
    * Tela, o rodapé mostra créditos, débitos e saldo em vez de somar tudo junto.
    */
   saldo?: { valor: string; tipo: string; credito: string[]; debito: string[] };
+  /** contas conferidas na visão Valores */
+  conciliacoes?: Conciliacao[];
   /**
    * Colunas de uma tabela ligada (por uma relação deste perfil) mostradas na Tela
    * do registro quando a aba dela está aberta, ex.: medidas da DESSIT no item.
@@ -1035,6 +1060,34 @@ export const PERFIS: Perfil[] = [
     colunaTitulo: "FGO_NUMDOC",
     graficoSugerido: { modo: "soma", categoria: "FGO_CODVEN", valor: "FGO_VLRCON" },
     tela: TELA_FATGOR,
+    conciliacoes: [
+      {
+        rotulo: "Itens × total de produtos",
+        esperado: [{ coluna: "FGO_TOTPRO", rotulo: "Total de produtos" }],
+        comparado: [{ perfil: "FATDOR", coluna: "FDO_TOTITE", rotulo: "Soma dos itens" }],
+      },
+      {
+        rotulo: "Pedido × HUB",
+        esperado: [{ coluna: "FGO_VLRCON", rotulo: "Valor contábil do pedido" }],
+        comparado: [{ perfil: "HUBCIT_LOGPED", coluna: "LOG_VLRCON", rotulo: "Valor no log do HUB" }],
+      },
+      {
+        rotulo: "Tarifa: HUB × cartão",
+        esperado: [{ perfil: "HUBCIT_INFPED", coluna: "INF_VALTAX", rotulo: "Tarifa no HUB" }],
+        comparado: [{ perfil: "MOVCAR", coluna: "MCA_VALTAX", rotulo: "Tarifa no cartão" }],
+      },
+      {
+        rotulo: "Da venda ao recebível",
+        esperado: [
+          { perfil: "HUBCIT_LOGPED", coluna: "LOG_JSON", json: "totalPrice", rotulo: "Venda (totalPrice)" },
+          { perfil: "HUBCIT_LOGPED", coluna: "LOG_JSON", json: "totalFreightPrice", rotulo: "Frete pago pelo comprador", sinal: -1 },
+          { perfil: "HUBCIT_INFPED", coluna: "INF_VALTAX", rotulo: "Tarifa do marketplace", sinal: -1 },
+          { perfil: "HUBCIT_LOGPED", coluna: "LOG_JSON", json: "totalFreightPriceDebit", rotulo: "Frete cobrado do vendedor", sinal: -1 },
+        ],
+        comparado: [{ perfil: "MOVCAR", coluna: "MCA_VALORI", rotulo: "Valor original no cartão" }],
+        dica: "Compare com totalReceivable no JSON do HUB (visão JSON da aba HUBCIT_LOGPED).",
+      },
+    ],
     relacoes: [
       { perfil: "FATDOR", colunaOrigem: "AUTOINCREM", colunaDestino: "FDO_SEQGER", rotulo: "Itens do pedido" },
       { perfil: "EXTGOR", colunaOrigem: "AUTOINCREM", colunaDestino: "FGO_SEQFGO", rotulo: "Extensão do pedido" },

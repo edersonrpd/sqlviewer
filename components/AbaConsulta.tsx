@@ -19,6 +19,7 @@ import { TabelaTransposta } from "./TabelaTransposta";
 import { TabelaVirtual } from "./TabelaVirtual";
 import { TelaRegistro } from "./TelaRegistro";
 import { FluxoRegistro, MapaRelacoes } from "./VisoesRegistro";
+import { JsonRegistro, ValoresRegistro } from "./VisoesValores";
 import { VisualizadorValor } from "./VisualizadorValor";
 import { copiarTexto, useAviso, useDebounce } from "./util";
 
@@ -294,6 +295,10 @@ export function AbaConsulta({ aba, abas, dispatch }: { aba: Aba; abas: Aba[]; di
           <FluxoRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
         ) : aba.visao === "relacoes" ? (
           <MapaRelacoes aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
+        ) : aba.visao === "valores" ? (
+          <ValoresRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
+        ) : aba.visao === "json" ? (
+          <JsonRegistro aba={aba} abas={abas} indices={indices} atualizar={atualizar} dispatch={dispatch} />
         ) : aba.visao === "tabela" ? (
           exibidas.length === 0 ? (
             <div className="p-8 text-center text-sm text-zinc-500">
@@ -410,28 +415,33 @@ function Chip({
   );
 }
 
+/** largura de cada opção do seletor de visão */
+const LARGURA_VISAO = 84;
+
 const VISOES = [
   { id: "tela", rotulo: "Tela" },
   { id: "tabela", rotulo: "Tabela" },
   { id: "fluxo", rotulo: "Fluxo" },
   { id: "relacoes", rotulo: "Relações" },
+  { id: "valores", rotulo: "Valores" },
+  { id: "json", rotulo: "JSON" },
   { id: "graficos", rotulo: "Gráficos" },
 ] as const;
 
-/** Tela / Tabela / Fluxo / Relações / Gráficos com um indicador que desliza (com leve "mola") até a visão escolhida. */
+/** Tela / Tabela / Fluxo / Relações / Valores / JSON / Gráficos com um indicador que desliza (com leve "mola") até a visão escolhida. */
 function SeletorVisao({ visao, onTrocar }: { visao: Aba["visao"]; onTrocar: (v: Aba["visao"]) => void }) {
   const pos = Math.max(0, VISOES.findIndex((v) => v.id === visao));
   return (
     <div
       role="tablist"
       aria-label="Visão"
-      style={{ gridTemplateColumns: `repeat(${VISOES.length}, 96px)` }}
+      style={{ gridTemplateColumns: `repeat(${VISOES.length}, ${LARGURA_VISAO}px)` }}
       className="relative grid rounded-xl border border-zinc-900/10 bg-white/70 p-1 dark:border-white/10 dark:bg-white/[0.03]"
     >
       <span
         aria-hidden
-        className="absolute top-1 left-1 h-[calc(100%-8px)] w-24 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_4px_18px_-4px_rgb(99_102_241/0.9)] transition-transform duration-[350ms] ease-[cubic-bezier(.3,1.4,.5,1)]"
-        style={{ transform: `translateX(${pos * 96}px)` }}
+        style={{ width: LARGURA_VISAO, transform: `translateX(${pos * LARGURA_VISAO}px)` }}
+        className="absolute top-1 left-1 h-[calc(100%-8px)] rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_4px_18px_-4px_rgb(99_102_241/0.9)] transition-transform duration-[350ms] ease-[cubic-bezier(.3,1.4,.5,1)]"
       />
       {VISOES.map((v) => (
         <button
