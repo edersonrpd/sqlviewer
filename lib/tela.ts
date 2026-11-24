@@ -25,6 +25,8 @@ export type CampoMontado = {
 export type StatusMontado = { rotulo: string; nome: string; texto: string; cor: CorStatus };
 export type IndicadorMontado = { campo: CampoMontado; detalhes: CampoMontado[]; cor: CorStatus };
 export type SecaoMontada = { titulo: string; campos: CampoMontado[]; recolhida?: boolean };
+/** Etapa da linha do tempo: concluída ou não, com os detalhes preenchidos em uma linha. */
+export type EtapaMontada = { rotulo: string; nome: string; feito: boolean; detalhe: string };
 
 export type TelaMontada = {
   titulo: string;
@@ -33,6 +35,7 @@ export type TelaMontada = {
   /** coluna-chave destacada (ex.: NUMPOK) */
   chave: CampoMontado | null;
   indicadores: IndicadorMontado[];
+  etapas: EtapaMontada[];
   subtitulo: CampoMontado[];
   status: StatusMontado[];
   destaques: CampoMontado[];
@@ -165,6 +168,18 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
     return [{ campo, detalhes: resolver(ind.detalhes, false), cor }];
   });
   const destaques = resolver(tela?.destaques, false);
+  const etapas: EtapaMontada[] = (tela?.etapas ?? []).flatMap((e) => {
+    const j = porNome.get(e.coluna);
+    if (j === undefined) return [];
+    const campo = montarCampo(dados, linha, j);
+    const v = campo.raw?.trim() ?? null;
+    const feito = e.feito ? v !== null && e.feito.includes(v) : !campo.vazio;
+    const detalhe = resolver(e.detalhes, false)
+      .filter((c) => !c.vazio && c.texto)
+      .map((c) => c.texto)
+      .join(" · ");
+    return [{ rotulo: e.rotulo, nome: e.coluna, feito, detalhe }];
+  });
   const montarSecao = (s: NonNullable<typeof tela>["secoes"][number]): SecaoMontada => ({
     titulo: s.titulo,
     campos: resolver(s.campos, true),
@@ -186,7 +201,7 @@ export function montarTela(dados: ResultadoParse, registro: number, perfil?: Per
   secoes.push(...noFim);
   const d = colunaDestaque(dados.colunas, perfil);
   const chave = d ? montarCampo(dados, linha, d.j, { rotulo: d.rotulo }) : null;
-  return { titulo, valorTitulo, chave, indicadores, subtitulo, status, destaques, secoes };
+  return { titulo, valorTitulo, chave, indicadores, etapas, subtitulo, status, destaques, secoes };
 }
 
 function jsonIndentado(v: string): string | null {
