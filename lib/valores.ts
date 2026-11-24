@@ -3,7 +3,7 @@ import type { Aba } from "./estado";
 import { linhasDoRelacionado } from "./fluxo";
 import { buscarPerfil } from "./perfis";
 import { relacionadosDoRegistro, type Relacionado } from "./relacionados";
-import { valorJson } from "./tela";
+import { calcularSaldo, valorJson } from "./tela";
 import type { Valor } from "./tipos";
 
 /**
@@ -19,6 +19,8 @@ export type TermoMontado = {
   valor: number | null;
   /** motivo quando não deu para obter o valor (aba não aberta, sem registro ligado...) */
   falta?: string;
+  /** no modo "cada": se esta parcela bate com o esperado */
+  bate?: boolean;
 };
 
 export type LadoConciliacao = { termos: TermoMontado[]; total: number | null };
@@ -31,6 +33,7 @@ export type ConciliacaoMontada = {
   diferenca: number | null;
   estado: "bate" | "diferente" | "incompleta";
   dica?: string;
+  modo: "soma" | "cada";
 };
 
 /** Soma os números de um valor (um por linha quando veio de um caminho com `*`). */
@@ -88,12 +91,21 @@ export function montarConciliacoes(aba: Aba, registro: number, abas: Aba[]): Con
   const perfil = buscarPerfil(aba.perfilId);
   if (!perfil?.conciliacoes) return [];
   const rels = relacionadosDoRegistro(aba, registro, abas);
-  return perfil.conciliacoes.map((c) => {
+  return perfil.conciliacoes.map((c): ConciliacaoMontada => {
     const esperado = montarLado(c.esperado, aba, registro, abas, rels);
     const comparado = montarLado(c.comparado, aba, registro, abas, rels);
+    if (c.modo === "cada") {
+      // cada parcela contra o esperado; as que não deu para ler não contam
+      const lidas = comparado.termos.filter((t) => t.valor !== null);
+      for (const t of lidas) t.bate = esperado.total !== null && centavos(t.sinal * t.valor!) === centavos(esperado.total);
+      const errada = lidas.find((t) => !t.bate);
+      const diferenca = esperado.total === null || !errada ? (esperado.total === null ? null : 0) : (centavos(errada.sinal * errada.valor!) - centavos(esperado.total)) / 100;
+      const estado = esperado.total === null || lidas.length === 0 ? "incompleta" : errada ? "diferente" : lidas.length < comparado.termos.length ? "incompleta" : "bate";
+      return { rotulo: c.rotulo, esperado, comparado: { ...comparado, total: null }, diferenca, estado, dica: c.dica, modo: "cada" };
+    }
     const diferenca = esperado.total === null || comparado.total === null ? null : (centavos(comparado.total) - centavos(esperado.total)) / 100;
     const estado = diferenca === null ? "incompleta" : diferenca === 0 ? "bate" : "diferente";
-    return { rotulo: c.rotulo, esperado, comparado, diferenca, estado, dica: c.dica };
+    return { rotulo: c.rotulo, esperado, comparado, diferenca, estado, dica: c.dica, modo: "soma" };
   });
 }
 
@@ -125,7 +137,16 @@ export function valoresRepetidos(aba: Aba, registro: number, abas: Aba[]): { gru
   for (const r of relacionadosDoRegistro(aba, registro, abas)) {
     const destino = abas.find((a) => a.id === r.abaId);
     const linhas = linhasDoRelacionado(r, abas);
-    if (destino && linhas.length > 0) doRegistro(destino.nome, destino, linhas);
+    if (!destino || linhas.length === 0) continue;
+    // créditos e débitos (ex.: adiantamentos) não se somam: entram créditos, débitos e saldo
+    const cfgSaldo = buscarPerfil(destino.perfilId)?.saldo;
+    const saldo = cfgSaldo && linhas.length > 1 ? calcularSaldo(destino.dados, linhas, cfgSaldo) : null;
+    if (saldo) {
+      for (const [rotulo, v] of [["créditos", saldo.creditos], ["débitos", saldo.debitos], ["saldo", saldo.saldo]] as const)
+        if (centavos(v) !== 0) fontes.push({ origem: `${destino.nome} (${rotulo})`, valor: v });
+      continue;
+    }
+    doRegistro(destino.nome, destino, linhas);
   }
 
   const porValor = new Map<number, GrupoValor>();

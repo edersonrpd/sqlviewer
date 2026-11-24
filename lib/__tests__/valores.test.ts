@@ -79,3 +79,55 @@ describe("visão JSON", () => {
     expect([...abrir]).toEqual(expect.arrayContaining(["$", "$.products", "$.products[0]"]));
   });
 });
+
+describe("frete cobrado do vendedor e adiantamentos", () => {
+  // pedido sintético com o mesmo padrão do caso real: frete 50,55 no HUB e no cartão, zerado na extensão
+  function cenarioFrete() {
+    const N = "MLB_SHML00000000001";
+    const json = JSON.stringify({ totalPrice: 322.14, totalFreightPrice: 0, totalFreightPriceDebit: 50.55, totalReceivable: 234.54 }).replace(/"/g, '""');
+    const linha = (l: string[]) => l.map((v) => (v.startsWith("{") ? `"${v}"` : `"${v}"`)).join("\t");
+    const fgo = [
+      linha(["AUTOINCREM", "FGO_NUMDOC", "FGO_ESPDOC", "FGO_CODEMP", "FGO_JAFATU", "FGO_NUMPOK", "FGO_VLRCON", "FGO_TOTPRO"]),
+      linha(["00100000000000009101", "000001009101", "PD", "001", "1", N, "322.14", "322.14"]),
+    ].join("\n");
+    const log = [linha(["ID", "LOG_PEDIDO", "LOG_VLRCON", "LOG_VERIFICADO", "LOG_JSON"]), linha(["9", N, "322.14", "N", json])].join("\n");
+    const inf = tsv([["INF_NUMPOK", "INF_VALTAX", "INF_FREVEN"], [N, "37.05", "50.55"]]);
+    const mca = tsv([["MCA_NUMPOK", "MCA_VALORI", "MCA_VALTAX", "MCA_FREMKT"], [N, "234.54", "37.05", "50.55"]]);
+    const ext = tsv([["FGO_SEQFGO", "FGO_FREMKP", "FGO_COMMKP"], ["00100000000000009101", "0.00", "37.05"]]);
+    const adt = tsv([
+      ["ADT_CODCLI", "ADT_CODEMP", "ADT_NUMDOC", "ADT_ESPDOC", "ADT_TIPLAN", "ADT_VALLAN"],
+      ["00000001", "001", "000001009101", "PD", "C", "322.14"],
+      ["00000001", "001", "000001009101", "PD", "D", "322.14"],
+    ]);
+    let s = estadoInicial;
+    for (const t of [fgo, log, inf, mca, ext, adt]) s = reducer(s, { tipo: "criar", dados: parsearConsulta(t) });
+    return s.abas;
+  }
+
+  it("aponta a tabela em que o frete não foi gravado", () => {
+    const abas = cenarioFrete();
+    expect(abas.map((a) => a.perfilId)).toEqual(["FATGOR", "HUBCIT_LOGPED", "HUBCIT_INFPED", "MOVCAR", "EXTGOR", "ADTCLI"]);
+    const c = montarConciliacoes(abas[0], 0, abas);
+    expect(c.find((x) => x.rotulo === "Da venda ao recebível")!.estado).toBe("bate");
+    const frete = c.find((x) => x.rotulo === "Frete cobrado do vendedor")!;
+    expect(frete.modo).toBe("cada");
+    expect(frete.esperado.total).toBe(50.55);
+    expect(frete.comparado.termos.map((t) => [t.rotulo, t.valor, t.bate])).toEqual([
+      ["Dados do pedido no HUB", 50.55, true],
+      ["Movimentação de cartões", 50.55, true],
+      ["Extensão do pedido", 0, false],
+    ]);
+    expect(frete.estado).toBe("diferente");
+    expect(frete.diferenca).toBe(-50.55);
+  });
+
+  it("adiantamentos entram como créditos, débitos e saldo (não somados)", () => {
+    const abas = cenarioFrete();
+    const { grupos, avulsos } = valoresRepetidos(abas[0], 0, abas);
+    const todos = [...grupos, ...avulsos];
+    expect(todos.some((g) => g.valor === 644.28)).toBe(false);
+    const g = grupos.find((x) => x.valor === 322.14)!;
+    expect(g.origens).toEqual(expect.arrayContaining(["ADTCLI (créditos)", "ADTCLI (débitos)"]));
+    expect(todos.flatMap((x) => x.origens).some((o) => o.startsWith("ADTCLI (saldo)"))).toBe(false);
+  });
+});

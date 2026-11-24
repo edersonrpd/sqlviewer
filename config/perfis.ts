@@ -52,6 +52,11 @@ export type Conciliacao = {
   comparado: TermoConciliacao[];
   /** dica mostrada quando não bate */
   dica?: string;
+  /**
+   * "cada": confere cada parcela do comparado com o esperado, uma a uma
+   * (ex.: o mesmo frete gravado em várias tabelas). Padrão: soma as parcelas.
+   */
+  modo?: "soma" | "cada";
 };
 
 export type StatusTela = {
@@ -1086,6 +1091,17 @@ export const PERFIS: Perfil[] = [
         ],
         comparado: [{ perfil: "MOVCAR", coluna: "MCA_VALORI", rotulo: "Valor original no cartão" }],
         dica: "Compare com totalReceivable no JSON do HUB (visão JSON da aba HUBCIT_LOGPED).",
+      },
+      {
+        rotulo: "Frete cobrado do vendedor",
+        modo: "cada",
+        esperado: [{ perfil: "HUBCIT_LOGPED", coluna: "LOG_JSON", json: "totalFreightPriceDebit", rotulo: "Frete no JSON do HUB" }],
+        comparado: [
+          { perfil: "HUBCIT_INFPED", coluna: "INF_FREVEN", rotulo: "Dados do pedido no HUB" },
+          { perfil: "MOVCAR", coluna: "MCA_FREMKT", rotulo: "Movimentação de cartões" },
+          { perfil: "EXTGOR", coluna: "FGO_FREMKP", rotulo: "Extensão do pedido" },
+        ],
+        dica: "O frete cobrado pelo marketplace deveria ser o mesmo em todas as tabelas; a que diverge não recebeu o valor do HUB.",
       },
     ],
     relacoes: [
