@@ -19,6 +19,8 @@ export type Relacionado = {
   /** demais colunas da chave composta, na aba destino, com o valor deste registro */
   extras: { coluna: number; nome: string; chave: string | null }[];
   quantidade: number;
+  /** nenhum registro ligado é normal (ex.: "Não é KIT"): mostrar neutro, não como erro */
+  vazioNormal?: string;
 };
 
 /**
@@ -51,6 +53,7 @@ export function relacionadosDoRegistro(aba: Aba, registro: number, abas: Aba[]):
         chave: chaveRelacao(valor),
         extras,
         quantidade: linhasLigadas(valor, destino.dados.linhas, jDestino, extrasLigacao(extras)).length,
+        ...(lig.vazioNormal ? { vazioNormal: lig.vazioNormal } : {}),
       });
     }
   }
