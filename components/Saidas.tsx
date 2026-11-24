@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { celulasPlanilha, FORMATOS_COPIA, gerarCSV, gerarFormato, nomeArquivo, type FormatoCopia } from "@/lib/exportar";
 import type { ResultadoParse } from "@/lib/tipos";
 import { IconeCopiar, IconeDownload, IconeSeta } from "./Icones";
@@ -22,7 +23,6 @@ export function BotoesExportar({ dados, linhas, colunas, nomeBase, tabela = "TAB
   const [aberto, setAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const vazio = colunas.length === 0;
-  useFecharAoClicarFora(aberto, ref, () => setAberto(false));
 
   const exportarCSV = () => {
     baixarArquivo(gerarCSV(dados, linhas, colunas), nomeArquivo(nomeBase, "csv"), "text/csv;charset=utf-8");
@@ -66,7 +66,7 @@ export function BotoesExportar({ dados, linhas, colunas, nomeBase, tabela = "TAB
         <IconeSeta className="h-3.5 w-3.5" />
       </button>
       {aberto && (
-        <div role="menu" className="painel absolute right-0 z-50 mt-1 w-72 animate-surgir p-1 shadow-lg">
+        <MenuFlutuante ancora={ref} onFechar={() => setAberto(false)}>
           <button
             role="menuitem"
             className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -103,21 +103,76 @@ export function BotoesExportar({ dados, linhas, colunas, nomeBase, tabela = "TAB
               <span className="block text-xs text-zinc-500">{a.descricao}</span>
             </button>
           ))}
-        </div>
+        </MenuFlutuante>
       )}
     </div>
   );
 }
 
-function useFecharAoClicarFora(aberto: boolean, ref: React.RefObject<HTMLElement | null>, fechar: () => void) {
+/**
+ * Menu preso a um botão, desenhado por cima da página (portal com posição fixa):
+ * não é cortado por painéis com rolagem (ex.: a coluna de Ações da Tela).
+ * Alinha pela direita do botão, sem sair da janela, e abre para cima quando
+ * falta espaço embaixo. Fecha ao clicar fora ou com Esc.
+ */
+function MenuFlutuante({ ancora, onFechar, children }: { ancora: React.RefObject<HTMLElement | null>; onFechar: () => void; children: ReactNode }) {
+  const menu = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const calcular = () => {
+      const a = ancora.current?.getBoundingClientRect();
+      const m = menu.current;
+      if (!a || !m) return;
+      const margem = 8;
+      const largura = m.offsetWidth;
+      const altura = m.scrollHeight;
+      let left = a.right - largura;
+      if (left < margem) left = a.left;
+      left = Math.max(margem, Math.min(left, window.innerWidth - largura - margem));
+      const abaixo = window.innerHeight - a.bottom - margem - 4;
+      const acima = a.top - margem - 4;
+      const paraCima = altura > abaixo && acima > abaixo;
+      const maxHeight = Math.max(120, paraCima ? acima : abaixo);
+      const top = paraCima ? a.top - 4 - Math.min(altura, maxHeight) : a.bottom + 4;
+      setPos({ top, left, maxHeight });
+    };
+    calcular();
+    window.addEventListener("resize", calcular);
+    window.addEventListener("scroll", calcular, true);
+    return () => {
+      window.removeEventListener("resize", calcular);
+      window.removeEventListener("scroll", calcular, true);
+    };
+  }, [ancora]);
+
   useEffect(() => {
-    if (!aberto) return;
     const fora = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) fechar();
+      const alvo = e.target as Node;
+      if (!menu.current?.contains(alvo) && !ancora.current?.contains(alvo)) onFechar();
+    };
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onFechar();
     };
     document.addEventListener("mousedown", fora);
-    return () => document.removeEventListener("mousedown", fora);
-  }, [aberto, ref, fechar]);
+    document.addEventListener("keydown", tecla);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", tecla);
+    };
+  }, [ancora, onFechar]);
+
+  return createPortal(
+    <div
+      ref={menu}
+      role="menu"
+      style={pos ?? { top: 0, left: 0, visibility: "hidden" }}
+      className="painel fixed z-[70] w-72 animate-surgir overflow-auto bg-white/95 p-1 shadow-2xl dark:bg-zinc-900/95"
+    >
+      {children}
+    </div>,
+    document.body,
+  );
 }
 
 /** Copia registros em "Lista" (COLUNA: valor) ou "Tabulado" (para colar no Excel). */
@@ -135,7 +190,6 @@ export function BotaoCopiarChamado({
   const [aviso, setAviso] = useAviso();
   const ref = useRef<HTMLDivElement>(null);
 
-  useFecharAoClicarFora(aberto, ref, () => setAberto(false));
 
   const copiar = async (formato: FormatoCopia) => {
     setAberto(false);
@@ -160,7 +214,7 @@ export function BotaoCopiarChamado({
         <IconeSeta className="h-3.5 w-3.5" />
       </button>
       {aberto && (
-        <div role="menu" className="painel absolute right-0 z-50 mt-1 max-h-[70vh] w-72 animate-surgir overflow-auto p-1 shadow-lg">
+        <MenuFlutuante ancora={ref} onFechar={() => setAberto(false)}>
           {/* "Lista" primeiro: é o formato mais usado em chamados */}
           {[...FORMATOS_COPIA.filter((f) => f.id === "lista"), ...FORMATOS_COPIA.filter((f) => f.id !== "lista")].map((f) => (
             <button key={f.id} role="menuitem" className="block w-full rounded px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => copiar(f.id)}>
@@ -168,7 +222,7 @@ export function BotaoCopiarChamado({
               <span className="block text-xs text-zinc-500">{f.descricao}</span>
             </button>
           ))}
-        </div>
+        </MenuFlutuante>
       )}
       {aviso && (
         <span role="status" className="absolute top-full right-0 z-50 mt-1 rounded bg-zinc-900 px-2 py-1 text-xs whitespace-nowrap text-white dark:bg-zinc-100 dark:text-zinc-900">
