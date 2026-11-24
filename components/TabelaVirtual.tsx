@@ -75,7 +75,7 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar, sele
     return d ? String(d.j) : null;
   }, [dados.colunas, aba.perfilId]);
   const fundoCabecalho = (id: string) =>
-    `bg-[#f8f9fc] dark:bg-[#13151d] ${id === idDestaque ? "text-cyan-700 dark:text-cyan-300" : ""}`;
+    `bg-zinc-100 dark:bg-[#13151d] ${id === idDestaque ? "text-cyan-700 dark:text-cyan-300" : ""}`;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Cada novo conjunto de linhas (abrir, filtrar, ordenar) ganha uma "geração": as linhas
@@ -415,7 +415,7 @@ export function TabelaVirtual({ aba, colunas, qtdFixas, indices, atualizar, sele
     >
       <div style={{ width: larguraTotal, minWidth: "100%" }}>
         {/* cabeçalho fixo */}
-        <div className="sticky top-0 z-20 flex bg-[#f8f9fc] dark:bg-[#13151d]" style={{ height: ALTURA_CABECALHO, width: larguraTotal }} role="row">
+        <div className="sticky top-0 z-20 flex bg-zinc-100 dark:bg-[#13151d]" style={{ height: ALTURA_CABECALHO, width: larguraTotal }} role="row">
           {esquerda.map((c, k) => (
             <div
               key={c.id}
